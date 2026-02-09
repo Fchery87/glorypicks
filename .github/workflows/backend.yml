@@ -1,0 +1,50 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff mypy
+
+      - name: Run Ruff linter
+        run: ruff check app/
+
+      - name: Run Ruff formatter check
+        run: ruff format --check app/
+
+      - name: Run mypy type checker
+        run: mypy app/ --ignore-missing-imports
+
+      - name: Run pytest
+        run: pytest tests/ -v --tb=short
+        env:
+          FINNHUB_API_KEY: test_key
+          ALPHAVANTAGE_API_KEY: test_key

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: glorypicks-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
+      - ALPHAVANTAGE_API_KEY=${ALPHAVANTAGE_API_KEY}
+      - PROVIDER_PRIORITY=finnhub,alphavantage,binance
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+      - HOST=0.0.0.0
+      - PORT=8000
+      - LOG_LEVEL=info
+      - CACHE_ENABLED=true
+      - CACHE_TTL_SECONDS=300
+    networks:
+      - glorypicks-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: glorypicks-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_WS_URL=ws://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - glorypicks-network
+    restart: unless-stopped
+
+networks:
+  glorypicks-network:
+    driver: bridge
