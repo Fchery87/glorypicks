@@ -11,7 +11,7 @@ from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
 from app.adapters.binance_ws import binance_ws_manager
 from app.adapters.finnhub_ws import finnhub_ws_manager
 from app.config import settings
-from app.models import Interval
+from app.models import Interval, Signal
 from app.routers.signal import get_signal
 
 logger = logging.getLogger(__name__)
@@ -22,18 +22,18 @@ router = APIRouter()
 class ConnectionManager:
     """Manage WebSocket connections with provider streams."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.active_connections: dict[str, set[WebSocket]] = {}
         self.provider_clients: dict[str, Any] = {}
 
-    async def connect(self, websocket: WebSocket, symbol: str):
+    async def connect(self, websocket: WebSocket, symbol: str) -> Any:
         """Accept and register a new connection."""
         await websocket.accept()
         if symbol not in self.active_connections:
             self.active_connections[symbol] = set()
         self.active_connections[symbol].add(websocket)
 
-    def disconnect(self, websocket: WebSocket, symbol: str):
+    def disconnect(self, websocket: WebSocket, symbol: str) -> Any:
         """Remove a connection."""
         if symbol in self.active_connections:
             self.active_connections[symbol].discard(websocket)
@@ -42,7 +42,7 @@ class ConnectionManager:
                 # Cleanup provider subscription if no more clients
                 asyncio.create_task(self._cleanup_provider(symbol))
 
-    async def _cleanup_provider(self, symbol: str):
+    async def _cleanup_provider(self, symbol: str) -> Any:
         """Cleanup provider WebSocket subscriptions."""
         try:
             # Unsubscribe from Finnhub
@@ -52,7 +52,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error cleaning up provider for {symbol}: {e}")
 
-    async def broadcast_to_symbol(self, symbol: str, message: dict):
+    async def broadcast_to_symbol(self, symbol: str, message: dict[str, Any]) -> Any:
         """Broadcast message to all connections subscribed to a symbol."""
         if symbol not in self.active_connections:
             return
@@ -72,7 +72,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def send_heartbeat(websocket: WebSocket):
+async def send_heartbeat(websocket: WebSocket) -> Any:
     """Send periodic heartbeat to keep connection alive."""
     try:
         while True:
@@ -84,7 +84,7 @@ async def send_heartbeat(websocket: WebSocket):
         pass
 
 
-async def setup_provider_stream(symbol: str, websocket: WebSocket):
+async def setup_provider_stream(symbol: str, websocket: WebSocket) -> Any:
     """
     Setup real-time provider WebSocket stream.
 
@@ -92,7 +92,7 @@ async def setup_provider_stream(symbol: str, websocket: WebSocket):
     """
 
     # Callback function to handle provider updates
-    async def on_provider_update(data: dict):
+    async def on_provider_update(data: dict[str, Any]) -> Any:
         """Handle updates from provider and broadcast to clients."""
         try:
             # Add symbol to message if not present
@@ -110,9 +110,9 @@ async def setup_provider_stream(symbol: str, websocket: WebSocket):
     if is_crypto:
         # Use Binance WebSocket for crypto
         logger.info(f"Setting up Binance WebSocket stream for {symbol}")
-        client = await binance_ws_manager.get_client(symbol, on_provider_update)
-        if client:
-            return client
+        binance_client = await binance_ws_manager.get_client(symbol, on_provider_update)
+        if binance_client:
+            return binance_client
         else:
             logger.warning(f"Failed to setup Binance stream for {symbol}")
             return None
@@ -120,9 +120,9 @@ async def setup_provider_stream(symbol: str, websocket: WebSocket):
         # Use Finnhub WebSocket for stocks/forex
         if settings.FINNHUB_API_KEY:
             logger.info(f"Setting up Finnhub WebSocket stream for {symbol}")
-            client = await finnhub_ws_manager.get_client(symbol, on_provider_update)
-            if client:
-                return client
+            finnhub_client = await finnhub_ws_manager.get_client(symbol, on_provider_update)
+            if finnhub_client:
+                return finnhub_client
             else:
                 logger.warning(f"Failed to setup Finnhub stream for {symbol}")
         return None
@@ -131,7 +131,7 @@ async def setup_provider_stream(symbol: str, websocket: WebSocket):
 from app.services.alert_service import alert_service
 
 
-async def stream_signal_updates(websocket: WebSocket, symbol: str):
+async def stream_signal_updates(websocket: WebSocket, symbol: str) -> Any:
     """
     Stream signal updates periodically.
 
@@ -149,7 +149,12 @@ async def stream_signal_updates(websocket: WebSocket, symbol: str):
                 )
 
                 # Check for triggered alerts
-                triggered_alerts = alert_service.check_signal(signal)
+                alert_signal = Signal(
+                    symbol=signal.symbol,
+                    recommendation=signal.recommendation,
+                    strength=signal.strength,
+                )
+                triggered_alerts = alert_service.check_signal(alert_signal)
                 if triggered_alerts:
                     # Broadcast triggered alerts to all clients
                     for triggered in triggered_alerts:
@@ -172,7 +177,7 @@ async def stream_signal_updates(websocket: WebSocket, symbol: str):
         logger.error(f"Signal stream error for {symbol}: {e}")
 
 
-async def fallback_polling_stream(websocket: WebSocket, symbol: str):
+async def fallback_polling_stream(websocket: WebSocket, symbol: str) -> Any:
     """
     Fallback to polling if WebSocket streams are unavailable.
 
@@ -214,7 +219,7 @@ async def fallback_polling_stream(websocket: WebSocket, symbol: str):
 @router.websocket("/ws")
 async def websocket_endpoint(
     websocket: WebSocket, symbol: str = Query(..., description="Trading symbol to subscribe to")
-):
+) -> None:
     """
     WebSocket endpoint for real-time updates.
 

@@ -13,6 +13,7 @@ SMC focuses on institutional order flow and liquidity manipulation.
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -70,6 +71,7 @@ class MitigationZone:
     timestamp: int
     direction: str  # 'bullish' or 'bearish'
     subsequent_rejection: bool = False
+    signal_generated: bool = False
 
 
 @dataclass
@@ -104,7 +106,7 @@ class SMCSignalResult:
 class SMCStrategies:
     """Smart Money Concepts strategies implementation"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.liquidity_pools: list[LiquidityPool] = []
         self.inducements: list[InducementPattern] = []
         self.mitigation_zones: list[MitigationZone] = []
@@ -132,7 +134,7 @@ class SMCStrategies:
             ]
         )
 
-        results = []
+        results: list[SMCSignalResult] = []
         current_price = df["close"].iloc[-1]
 
         # 1. Detect Liquidity Pools and Sweeps
@@ -155,7 +157,7 @@ class SMCStrategies:
 
         return self._rank_and_filter_signals(results)
 
-    def _detect_liquidity_pools(self, df: pd.DataFrame):
+    def _detect_liquidity_pools(self, df: pd.DataFrame) -> Any:
         """Detect liquidity pools (equal highs/lows)"""
         window = 20
 
@@ -203,7 +205,7 @@ class SMCStrategies:
         self, df: pd.DataFrame, current_price: float
     ) -> list[SMCSignalResult]:
         """Detect liquidity sweeps (taking out equal highs/lows)"""
-        results = []
+        results: list[SMCSignalResult] = []
         recent_data = df.tail(5)
 
         for pool in self.liquidity_pools:
@@ -283,7 +285,7 @@ class SMCStrategies:
 
     def _detect_inducements(self, df: pd.DataFrame) -> list[SMCSignalResult]:
         """Detect inducement patterns (false breakouts)"""
-        results = []
+        results: list[SMCSignalResult] = []
 
         if len(df) < 5:
             return results
@@ -370,7 +372,7 @@ class SMCStrategies:
 
     def _detect_bpr_zones(self, df: pd.DataFrame, current_price: float) -> list[SMCSignalResult]:
         """Detect Balanced Price Range zones"""
-        results = []
+        results: list[SMCSignalResult] = []
 
         if len(df) < 10:
             return results
@@ -437,7 +439,7 @@ class SMCStrategies:
 
         return results
 
-    def _update_mitigation_tracking(self, df: pd.DataFrame):
+    def _update_mitigation_tracking(self, df: pd.DataFrame) -> Any:
         """Update which zones have been mitigated (filled)"""
         current_price = df["close"].iloc[-1]
 
@@ -451,10 +453,10 @@ class SMCStrategies:
 
     def _detect_mitigation_setups(self, current_price: float) -> list[SMCSignalResult]:
         """Detect setups from mitigated zones with rejection"""
-        results = []
+        results: list[SMCSignalResult] = []
 
         for zone in self.mitigation_zones:
-            if zone.subsequent_rejection and not hasattr(zone, "signal_generated"):
+            if zone.subsequent_rejection and not zone.signal_generated:
                 zone.signal_generated = True
 
                 if zone.direction == "bullish":
@@ -501,7 +503,7 @@ class SMCStrategies:
         fill_price: float,
         timestamp: int,
         direction: str,
-    ):
+    ) -> None:
         """Add a zone to mitigation tracking (called from ICT engine)"""
         zone = MitigationZone(
             original_type=original_type,
@@ -522,8 +524,8 @@ class SMCStrategies:
         sorted_signals = sorted(signals, key=lambda x: (x.strength * x.confidence), reverse=True)
 
         # Remove duplicates and keep top 3
-        unique_signals = []
-        seen_types = set()
+        unique_signals: list[SMCSignalResult] = []
+        seen_types: set[SMCSignal] = set()
 
         for signal in sorted_signals:
             if signal.signal_type not in seen_types and len(unique_signals) < 3:
@@ -532,7 +534,7 @@ class SMCStrategies:
 
         return unique_signals
 
-    def get_liquidity_analysis(self) -> dict:
+    def get_liquidity_analysis(self) -> dict[str, Any]:
         """Get current liquidity analysis"""
         return {
             "buy_side_pools": [p for p in self.liquidity_pools if p.type == "buy_side"],

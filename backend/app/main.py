@@ -1,11 +1,13 @@
 """FastAPI application entry point for GloryPicks backend."""
 
 import logging
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
+from typing import Any, cast
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -26,14 +28,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Global cache instance
-cache_manager: CacheManager = None
+cache_manager: CacheManager | None = None
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> Any:
     """Application lifespan manager for startup and shutdown events."""
     # Startup
     global cache_manager
@@ -91,7 +93,14 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestSizeLimitMiddleware, max_size=1 * 1024 * 1024)  # 1MB limit
 
 # Add rate limiting exception handler
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(
+    RateLimitExceeded,
+    cast(
+        Callable[[Request, Exception], Response | Awaitable[Response]]
+        | Callable[[WebSocket, Exception], Awaitable[None]],
+        _rate_limit_exceeded_handler,
+    ),
+)
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
@@ -104,7 +113,7 @@ app.include_router(journal.router)
 
 
 @app.get("/")
-async def root():
+async def root() -> Any:
     """Root endpoint with API information."""
     return {
         "name": "GloryPicks API",
@@ -123,7 +132,7 @@ async def root():
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
+async def global_exception_handler(request: Request, exc: Exception) -> Any:
     """Global exception handler for unhandled errors."""
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(

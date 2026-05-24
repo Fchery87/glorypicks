@@ -10,6 +10,9 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import Any
+
+from app.utils.time import utc_now
 
 from .kill_zones import KillZoneDetector, KillZoneType
 
@@ -26,7 +29,7 @@ class KillZoneStats:
     avg_duration_minutes: float = 0.0
     best_pattern: str = ""
     worst_pattern: str = ""
-    last_updated: datetime = field(default_factory=datetime.utcnow)
+    last_updated: datetime = field(default_factory=utc_now)
 
 
 @dataclass
@@ -38,7 +41,7 @@ class SymbolKillZoneProfile:
     overall_best_zone: KillZoneType | None = None
     overall_worst_zone: KillZoneType | None = None
     optimal_session: str = ""
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=utc_now)
 
 
 class KillZonePerformanceTracker:
@@ -52,14 +55,14 @@ class KillZonePerformanceTracker:
     - Optimal trading windows identification
     """
 
-    def __init__(self, data_dir: str = "data/killzone_stats"):
+    def __init__(self, data_dir: str = "data/killzone_stats") -> None:
         self.data_dir = data_dir
         self.profiles: dict[str, SymbolKillZoneProfile] = {}
         self.kill_zone_detector = KillZoneDetector()
         self._ensure_data_dir()
         self._load_profiles()
 
-    def _ensure_data_dir(self):
+    def _ensure_data_dir(self) -> Any:
         """Create data directory if it doesn't exist"""
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
@@ -69,7 +72,7 @@ class KillZonePerformanceTracker:
         safe_symbol = symbol.replace("/", "_").upper()
         return os.path.join(self.data_dir, f"{safe_symbol}_killzone.json")
 
-    def _load_profiles(self):
+    def _load_profiles(self) -> Any:
         """Load all saved profiles from disk"""
         if not os.path.exists(self.data_dir):
             return
@@ -84,7 +87,7 @@ class KillZonePerformanceTracker:
                 except Exception as e:
                     print(f"Error loading profile {filename}: {e}")
 
-    def _deserialize_profile(self, data: dict):
+    def _deserialize_profile(self, data: dict[str, Any]) -> Any:
         """Deserialize profile from JSON"""
         symbol = data["symbol"]
         profile = SymbolKillZoneProfile(symbol=symbol)
@@ -101,7 +104,7 @@ class KillZonePerformanceTracker:
                 best_pattern=stats_data.get("best_pattern", ""),
                 worst_pattern=stats_data.get("worst_pattern", ""),
                 last_updated=datetime.fromisoformat(
-                    stats_data.get("last_updated", datetime.utcnow().isoformat())
+                    stats_data.get("last_updated", utc_now().isoformat())
                 ),
             )
             profile.zone_stats[zone_type] = stats
@@ -113,13 +116,11 @@ class KillZonePerformanceTracker:
             KillZoneType(data["overall_worst_zone"]) if data.get("overall_worst_zone") else None
         )
         profile.optimal_session = data.get("optimal_session", "")
-        profile.updated_at = datetime.fromisoformat(
-            data.get("updated_at", datetime.utcnow().isoformat())
-        )
+        profile.updated_at = datetime.fromisoformat(data.get("updated_at", utc_now().isoformat()))
 
         self.profiles[symbol] = profile
 
-    def _serialize_profile(self, profile: SymbolKillZoneProfile) -> dict:
+    def _serialize_profile(self, profile: SymbolKillZoneProfile) -> dict[str, Any]:
         """Serialize profile to JSON"""
         return {
             "symbol": profile.symbol,
@@ -147,7 +148,7 @@ class KillZonePerformanceTracker:
             "updated_at": profile.updated_at.isoformat(),
         }
 
-    def _save_profile(self, symbol: str):
+    def _save_profile(self, symbol: str) -> Any:
         """Save profile to disk"""
         if symbol not in self.profiles:
             return
@@ -173,7 +174,7 @@ class KillZonePerformanceTracker:
         signal_strength: float,
         pattern_type: str,
         recommendation: str,
-    ):
+    ) -> None:
         """
         Record a new signal for tracking
 
@@ -195,9 +196,9 @@ class KillZonePerformanceTracker:
 
         stats = profile.zone_stats[zone_type]
         stats.total_signals += 1
-        stats.last_updated = datetime.utcnow()
+        stats.last_updated = utc_now()
 
-        profile.updated_at = datetime.utcnow()
+        profile.updated_at = utc_now()
         self._save_profile(symbol)
 
     def record_trade_outcome(
@@ -208,7 +209,7 @@ class KillZonePerformanceTracker:
         return_percent: float,
         duration_minutes: float,
         pattern_type: str,
-    ):
+    ) -> None:
         """
         Record the outcome of a trade
 
@@ -257,15 +258,15 @@ class KillZonePerformanceTracker:
                 (stats.avg_duration_minutes * (total_trades - 1)) + duration_minutes
             ) / total_trades
 
-        stats.last_updated = datetime.utcnow()
+        stats.last_updated = utc_now()
 
         # Update overall best/worst zones
         self._update_overall_stats(profile)
 
-        profile.updated_at = datetime.utcnow()
+        profile.updated_at = utc_now()
         self._save_profile(symbol)
 
-    def _update_overall_stats(self, profile: SymbolKillZoneProfile):
+    def _update_overall_stats(self, profile: SymbolKillZoneProfile) -> Any:
         """Update overall best/worst zone statistics"""
         if not profile.zone_stats:
             return
@@ -289,7 +290,9 @@ class KillZonePerformanceTracker:
         profile.overall_worst_zone = worst_zone[0]
 
         # Determine optimal session
-        session_performance = defaultdict(lambda: {"wins": 0, "total": 0})
+        session_performance: defaultdict[str, dict[str, int]] = defaultdict(
+            lambda: {"wins": 0, "total": 0}
+        )
 
         for zone_type, stats in qualified_zones.items():
             session = self._get_session_from_zone(zone_type)
@@ -297,8 +300,8 @@ class KillZonePerformanceTracker:
             session_performance[session]["total"] += stats.successful_trades + stats.failed_trades
 
         # Calculate win rates per session
-        best_session = None
-        best_rate = 0
+        best_session: str | None = None
+        best_rate = 0.0
         for session, data in session_performance.items():
             if data["total"] > 0:
                 rate = (data["wins"] / data["total"]) * 100
@@ -318,7 +321,7 @@ class KillZonePerformanceTracker:
         }
         return mapping.get(zone_type, "")
 
-    def get_zone_recommendation(self, symbol: str, zone_type: KillZoneType) -> dict:
+    def get_zone_recommendation(self, symbol: str, zone_type: KillZoneType) -> dict[str, Any]:
         """
         Get trading recommendation for specific zone
 
@@ -373,7 +376,7 @@ class KillZonePerformanceTracker:
             "is_worst_zone": profile.overall_worst_zone == zone_type,
         }
 
-    def _format_stats(self, stats: KillZoneStats) -> dict:
+    def _format_stats(self, stats: KillZoneStats) -> dict[str, Any]:
         """Format statistics for display"""
         total_trades = stats.successful_trades + stats.failed_trades
         return {
@@ -385,7 +388,7 @@ class KillZonePerformanceTracker:
             "worst_pattern": stats.worst_pattern,
         }
 
-    def get_symbol_summary(self, symbol: str) -> dict:
+    def get_symbol_summary(self, symbol: str) -> dict[str, Any]:
         """
         Get comprehensive summary for a symbol
 
@@ -394,7 +397,7 @@ class KillZonePerformanceTracker:
         """
         profile = self.get_or_create_profile(symbol)
 
-        summary = {
+        summary: dict[str, Any] = {
             "symbol": symbol,
             "optimal_session": profile.optimal_session,
             "overall_best_zone": profile.overall_best_zone.value
@@ -437,7 +440,7 @@ class KillZonePerformanceTracker:
 
         return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def get_recent_performance(self, symbol: str, days: int = 30) -> dict:
+    def get_recent_performance(self, symbol: str, days: int = 30) -> dict[str, Any]:
         """
         Get recent performance data
 
@@ -448,7 +451,7 @@ class KillZonePerformanceTracker:
         Returns:
             Recent performance statistics
         """
-        cutoff_date = datetime.utcnow() - timedelta(days=days)
+        cutoff_date = utc_now() - timedelta(days=days)
         profile = self.get_or_create_profile(symbol)
 
         recent_stats = {}

@@ -53,7 +53,7 @@ class ProviderAdapter(ABC):
         """
         pass
 
-    def _interval_to_provider_format(self, interval: Interval) -> str:
+    def _interval_to_provider_format(self, interval: Interval) -> str | tuple[str, str | None]:
         """
         Convert internal interval to provider-specific format.
         Override in subclasses as needed.

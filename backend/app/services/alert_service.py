@@ -1,6 +1,8 @@
 # pylint: disable=too-few-public-methods
 from __future__ import annotations
 
+from typing import Any
+
 """
 Alert Service - Business logic for alert management and condition checking.
 
@@ -23,6 +25,7 @@ from app.models.alert import (
     AlertStats,
     AlertTriggered,
 )
+from app.utils.time import utc_now
 
 # =============================================================================
 # Alert Service
@@ -34,7 +37,7 @@ class AlertService:
     Service for managing trading alerts and checking trigger conditions.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the alert service with in-memory storage."""
         self._storage: dict[str, Alert] = {}
         self._history: list[AlertTriggered] = []
@@ -75,7 +78,9 @@ class AlertService:
             expires_at=data.expires_at,
             notes=data.notes,
             status="active",
-            created_at=datetime.now(),
+            created_at=utc_now(),
+            triggered_at=None,
+            trigger_data=None,
         )
 
         self._storage[alert.id] = alert
@@ -88,7 +93,7 @@ class AlertService:
             return alert
         return None
 
-    def list(self, user_id: str, symbol: str | None = None) -> list[Alert]:
+    def list_alerts(self, user_id: str, symbol: str | None = None) -> list[Alert]:
         """
         List all alerts for a user, optionally filtered by symbol.
 
@@ -109,7 +114,7 @@ class AlertService:
         alerts.sort(key=lambda a: a.created_at, reverse=True)
         return alerts
 
-    def update(self, user_id: str, alert_id: str, data: dict) -> Alert | None:
+    def update(self, user_id: str, alert_id: str, data: dict[str, Any]) -> Alert | None:
         """Update an existing alert."""
         alert = self.get(user_id, alert_id)
         if not alert:
@@ -154,7 +159,7 @@ class AlertService:
             if a.symbol == signal.symbol
             and a.enabled
             and a.status == "active"
-            and (a.expires_at is None or a.expires_at > datetime.now())
+            and (a.expires_at is None or a.expires_at > utc_now())
         ]
 
         for alert in relevant_alerts:
@@ -164,20 +169,17 @@ class AlertService:
                 cache_key = f"{alert.id}:{signal.symbol}"
                 last_triggered = self._triggered_cache.get(cache_key)
 
-                if (
-                    last_triggered is None
-                    or (datetime.now() - last_triggered) > self._cooldown_period
-                ):
+                if last_triggered is None or (utc_now() - last_triggered) > self._cooldown_period:
                     # Update alert status
                     alert.status = "triggered"
-                    alert.triggered_at = datetime.now()
+                    alert.triggered_at = utc_now()
                     alert.trigger_data = triggered_alert.trigger_data
 
                     # Add to history
                     self._history.append(triggered_alert)
 
                     # Update cooldown cache
-                    self._triggered_cache[cache_key] = datetime.now()
+                    self._triggered_cache[cache_key] = utc_now()
 
                     triggered.append(triggered_alert)
 
@@ -234,7 +236,7 @@ class AlertService:
                 symbol=alert.symbol,
                 alert_type=alert.alert_type,
                 message=message,
-                triggered_at=datetime.now(),
+                triggered_at=utc_now(),
                 trigger_data=trigger_data,
             )
 
@@ -244,7 +246,7 @@ class AlertService:
     # Condition Checkers
     # =======================================================================
 
-    def _check_signal_flip(self, alert: Alert, signal: Signal) -> tuple[dict | None, str]:
+    def _check_signal_flip(self, alert: Alert, signal: Signal) -> tuple[dict[str, Any] | None, str]:
         """Check if signal flipped from buy to sell or vice versa."""
         if not signal.recommendation:
             return None, ""
@@ -263,7 +265,9 @@ class AlertService:
 
         return None, ""
 
-    def _check_strength_above(self, alert: Alert, signal: Signal) -> tuple[dict | None, str]:
+    def _check_strength_above(
+        self, alert: Alert, signal: Signal
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if strength rises above threshold."""
         if not signal.strength or not alert.strength_threshold:
             return None, ""
@@ -280,7 +284,9 @@ class AlertService:
 
         return None, ""
 
-    def _check_strength_below(self, alert: Alert, signal: Signal) -> tuple[dict | None, str]:
+    def _check_strength_below(
+        self, alert: Alert, signal: Signal
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if strength falls below threshold."""
         if not signal.strength or not alert.strength_threshold:
             return None, ""
@@ -297,7 +303,7 @@ class AlertService:
 
         return None, ""
 
-    def _check_price_above(self, alert: Alert, signal: Signal) -> tuple[dict | None, str]:
+    def _check_price_above(self, alert: Alert, signal: Signal) -> tuple[dict[str, Any] | None, str]:
         """Check if price crosses above threshold."""
         if not signal.price or not alert.price_threshold:
             return None, ""
@@ -313,7 +319,7 @@ class AlertService:
 
         return None, ""
 
-    def _check_price_below(self, alert: Alert, signal: Signal) -> tuple[dict | None, str]:
+    def _check_price_below(self, alert: Alert, signal: Signal) -> tuple[dict[str, Any] | None, str]:
         """Check if price crosses below threshold."""
         if not signal.price or not alert.price_threshold:
             return None, ""
@@ -331,7 +337,7 @@ class AlertService:
 
     def _check_pattern_appeared(
         self, alert: Alert, signal: Signal, pattern_type: str
-    ) -> tuple[dict | None, str]:
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if a specific pattern appeared."""
         patterns = signal.patterns or {}
 
@@ -351,7 +357,7 @@ class AlertService:
 
     def _check_structure_change(
         self, alert: Alert, signal: Signal, structure_type: str
-    ) -> tuple[dict | None, str]:
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if BOS or MSS formed."""
         structure_data = signal.structure or {}
 
@@ -393,7 +399,7 @@ class AlertService:
         active = [a for a in user_alerts if a.enabled and a.status == "active"]
 
         # Count triggers today
-        today = datetime.now().date()
+        today = utc_now().date()
         triggered_today = len(
             [
                 h

@@ -77,7 +77,7 @@ class ICTPhase1Enhancements:
     - Can be disabled via feature flags
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize ICT Phase 1 enhancements"""
         self.enabled_kill_zones = settings.ENABLE_KILL_ZONES
         self.enabled_pd_arrays = settings.ENABLE_PD_ARRAYS
@@ -121,50 +121,50 @@ class ICTPhase1Enhancements:
         minute = dt.minute
         time_decimal = hour + minute / 60.0
 
-        # Define kill zones with strength multipliers
-        kill_zones = {
-            KillZoneType.LONDON_OPEN: {
-                "start": 7.0,  # 07:00 UTC
-                "end": 10.0,  # 10:00 UTC
-                "multiplier": 1.30,  # +30% signal strength
-                "description": "London Open Kill Zone - Highest probability setups",
-            },
-            KillZoneType.NY_OPEN: {
-                "start": 12.0,  # 12:00 UTC
-                "end": 15.0,  # 15:00 UTC
-                "multiplier": 1.25,  # +25% signal strength
-                "description": "New York Open Kill Zone - Second highest probability",
-            },
-            KillZoneType.LONDON_CLOSE: {
-                "start": 15.0,  # 15:00 UTC
-                "end": 17.0,  # 17:00 UTC
-                "multiplier": 1.15,  # +15% signal strength
-                "description": "London Close Kill Zone - Moderate probability",
-            },
-            KillZoneType.ASIAN_SESSION: {
-                "start": 0.0,  # 00:00 UTC
-                "end": 8.0,  # 08:00 UTC
-                "multiplier": 1.10,  # +10% signal strength
-                "description": "Asian Session - Moderate activity",
-            },
-            KillZoneType.NY_CLOSE: {
-                "start": 19.0,  # 19:00 UTC
-                "end": 21.0,  # 21:00 UTC
-                "multiplier": 1.05,  # +5% signal strength
-                "description": "New York Close Kill Zone - Lower probability",
-            },
-        }
+        # Define kill zones with strength multipliers.
+        # Tuple fields: zone, start hour, end hour, multiplier, description.
+        kill_zones: tuple[tuple[KillZoneType, float, float, float, str], ...] = (
+            (
+                KillZoneType.LONDON_OPEN,
+                7.0,
+                10.0,
+                1.30,
+                "London Open Kill Zone - Highest probability setups",
+            ),
+            (
+                KillZoneType.NY_OPEN,
+                12.0,
+                15.0,
+                1.25,
+                "New York Open Kill Zone - Second highest probability",
+            ),
+            (
+                KillZoneType.LONDON_CLOSE,
+                15.0,
+                17.0,
+                1.15,
+                "London Close Kill Zone - Moderate probability",
+            ),
+            (KillZoneType.ASIAN_SESSION, 0.0, 8.0, 1.10, "Asian Session - Moderate activity"),
+            (
+                KillZoneType.NY_CLOSE,
+                19.0,
+                21.0,
+                1.05,
+                "New York Close Kill Zone - Lower probability",
+            ),
+        )
 
         # Check which kill zone we're in
-        for zone_type, zone_info in kill_zones.items():
-            if zone_info["start"] <= time_decimal < zone_info["end"]:
+        for zone_type, start, end, multiplier, description in kill_zones:
+            if start <= time_decimal < end:
                 return KillZoneInfo(
                     zone_type=zone_type,
                     is_active=True,
-                    strength_multiplier=zone_info["multiplier"],
-                    description=zone_info["description"],
-                    start_hour=int(zone_info["start"]),
-                    end_hour=int(zone_info["end"]),
+                    strength_multiplier=multiplier,
+                    description=description,
+                    start_hour=int(start),
+                    end_hour=int(end),
                 )
 
         # Off hours (no kill zone active)
@@ -285,7 +285,10 @@ class ICTPhase1Enhancements:
     # ============================================================================
 
     def detect_liquidity_sweeps(
-        self, candles: list[Candle], liquidity_pools: dict[str, float], lookback: int = 10
+        self,
+        candles: list[Candle],
+        liquidity_pools: dict[str, dict[str, float]],
+        lookback: int = 10,
     ) -> list[LiquiditySweep]:
         """
         Detect when price sweeps liquidity pools (takes out stops) and reverses.
@@ -309,7 +312,7 @@ class ICTPhase1Enhancements:
         if not candles or len(candles) < lookback:
             return []
 
-        sweeps = []
+        sweeps: list[LiquiditySweep] = []
         recent_candles = candles[-lookback:]
 
         # Calculate average volume for confirmation
@@ -372,7 +375,7 @@ class ICTPhase1Enhancements:
     def calculate_phase1_enhancement(
         self,
         candles: list[Candle],
-        liquidity_pools: dict[str, float],
+        liquidity_pools: dict[str, dict[str, float]],
         base_strength: float,
         recommendation: str,
     ) -> tuple[float, list[str]]:
@@ -392,7 +395,7 @@ class ICTPhase1Enhancements:
             Tuple of (enhancement_bonus, rationale_list)
         """
         enhancement_bonus = 0.0
-        rationale_parts = []
+        rationale_parts: list[str] = []
 
         if not candles:
             return enhancement_bonus, rationale_parts
@@ -437,7 +440,7 @@ class ICTPhase1Enhancements:
 
         if recent_sweeps:
             # Check if sweep expectation aligns with recommendation
-            aligned_sweeps = []
+            aligned_sweeps: list[LiquiditySweep] = []
             for sweep in recent_sweeps:
                 if (recommendation.lower() == "buy" and sweep.expectation == "bullish_move") or (
                     recommendation.lower() == "sell" and sweep.expectation == "bearish_move"

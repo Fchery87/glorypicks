@@ -80,7 +80,7 @@ async def list_alerts(
     **Query Parameters:**
     - `symbol`: Optional symbol filter
     """
-    return alert_service.list(user_id, symbol)
+    return alert_service.list_alerts(user_id, symbol)
 
 
 @router.get("/history", response_model=list[AlertTriggered])

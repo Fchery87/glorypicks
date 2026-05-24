@@ -6,10 +6,12 @@ Alert data models.
 Defines the structure for alert creation, updates, and responses.
 """
 
-from datetime import datetime
-from typing import Literal
+from datetime import UTC, datetime
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+
+from app.utils.time import utc_now
 
 # =============================================================================
 # Alert Types
@@ -90,7 +92,7 @@ class AlertCreate(BaseModel):
 
     @field_validator("strength_threshold")
     @classmethod
-    def validate_strength_threshold(cls, v: float | None, info) -> float | None:
+    def validate_strength_threshold(cls, v: float | None, info: ValidationInfo) -> float | None:
         """Validate strength threshold is provided for strength alerts."""
         if info.data.get("alert_type") in ["strength_above", "strength_below"]:
             if v is None:
@@ -99,7 +101,7 @@ class AlertCreate(BaseModel):
 
     @field_validator("price_threshold")
     @classmethod
-    def validate_price_threshold(cls, v: float | None, info) -> float | None:
+    def validate_price_threshold(cls, v: float | None, info: ValidationInfo) -> float | None:
         """Validate price threshold is provided for price alerts."""
         if info.data.get("alert_type") in ["price_above", "price_below"]:
             if v is None:
@@ -110,8 +112,10 @@ class AlertCreate(BaseModel):
     @classmethod
     def validate_expiration(cls, v: datetime | None) -> datetime | None:
         """Validate expiration is in the future."""
-        if v and v <= datetime.now():
-            raise ValueError("expires_at must be in the future")
+        if v:
+            comparable = v.replace(tzinfo=UTC) if v.tzinfo is None else v.astimezone(UTC)
+            if comparable <= utc_now():
+                raise ValueError("expires_at must be in the future")
         return v
 
 
@@ -152,17 +156,18 @@ class Alert(BaseModel):
     sound_name: str = "default"
 
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=utc_now)
     triggered_at: datetime | None = Field(None, description="When alert was triggered")
     expires_at: datetime | None = Field(None, description="Alert expiration time")
 
     # Trigger data (populated when triggered)
-    trigger_data: dict | None = Field(None, description="Data about what triggered the alert")
+    trigger_data: dict[str, Any] | None = Field(
+        None, description="Data about what triggered the alert"
+    )
 
     notes: str | None = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AlertTriggered(BaseModel):
@@ -172,8 +177,8 @@ class AlertTriggered(BaseModel):
     symbol: str
     alert_type: AlertType
     message: str
-    triggered_at: datetime = Field(default_factory=datetime.now)
-    trigger_data: dict | None = None
+    triggered_at: datetime = Field(default_factory=utc_now)
+    trigger_data: dict[str, Any] | None = None
 
 
 class AlertHistory(BaseModel):
@@ -184,7 +189,7 @@ class AlertHistory(BaseModel):
     alert_type: AlertType
     triggered_at: datetime
     message: str
-    trigger_data: dict | None = None
+    trigger_data: dict[str, Any] | None = None
 
 
 class AlertStats(BaseModel):

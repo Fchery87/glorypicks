@@ -1,6 +1,7 @@
 """Watchlist router with REST API endpoints."""
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
@@ -28,7 +29,7 @@ async def get_user_id(x_session_id: str = Header(..., alias="X-Session-ID")) -> 
 
 
 @router.post("", response_model=Watchlist, status_code=201)
-async def create_watchlist(data: WatchlistCreate, user_id: str = Depends(get_user_id)):
+async def create_watchlist(data: WatchlistCreate, user_id: str = Depends(get_user_id)) -> Any:
     """Create a new watchlist.
 
     Args:
@@ -51,7 +52,7 @@ async def create_watchlist(data: WatchlistCreate, user_id: str = Depends(get_use
 
 
 @router.get("", response_model=list[Watchlist])
-async def list_watchlists(user_id: str = Depends(get_user_id)):
+async def list_watchlists(user_id: str = Depends(get_user_id)) -> Any:
     """List all watchlists for the current user.
 
     Args:
@@ -66,7 +67,7 @@ async def list_watchlists(user_id: str = Depends(get_user_id)):
 
 
 @router.get("/{watchlist_id}", response_model=Watchlist)
-async def get_watchlist(watchlist_id: str, user_id: str = Depends(get_user_id)):
+async def get_watchlist(watchlist_id: str, user_id: str = Depends(get_user_id)) -> Any:
     """Get a specific watchlist by ID.
 
     Args:
@@ -89,7 +90,7 @@ async def get_watchlist(watchlist_id: str, user_id: str = Depends(get_user_id)):
 @router.put("/{watchlist_id}", response_model=Watchlist)
 async def update_watchlist(
     watchlist_id: str, data: WatchlistUpdate, user_id: str = Depends(get_user_id)
-):
+) -> Watchlist:
     """Update an existing watchlist.
 
     Args:
@@ -112,7 +113,7 @@ async def update_watchlist(
 
 
 @router.delete("/{watchlist_id}")
-async def delete_watchlist(watchlist_id: str, user_id: str = Depends(get_user_id)):
+async def delete_watchlist(watchlist_id: str, user_id: str = Depends(get_user_id)) -> Any:
     """Delete a watchlist.
 
     Args:
@@ -136,7 +137,7 @@ async def delete_watchlist(watchlist_id: str, user_id: str = Depends(get_user_id
 @router.post("/{watchlist_id}/symbols/{symbol}", response_model=Watchlist)
 async def add_symbol_to_watchlist(
     watchlist_id: str, symbol: str, user_id: str = Depends(get_user_id)
-):
+) -> Watchlist:
     """Add a symbol to a watchlist.
 
     Args:
@@ -166,7 +167,7 @@ async def add_symbol_to_watchlist(
 @router.delete("/{watchlist_id}/symbols/{symbol}", response_model=Watchlist)
 async def remove_symbol_from_watchlist(
     watchlist_id: str, symbol: str, user_id: str = Depends(get_user_id)
-):
+) -> Watchlist:
     """Remove a symbol from a watchlist.
 
     Args:

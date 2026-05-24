@@ -11,6 +11,7 @@ ICT Kill Zones are specific time windows when institutional activity is highest:
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta, timezone
 from enum import Enum
+from typing import Any
 
 from ..models import Candle
 
@@ -73,11 +74,11 @@ class KillZoneDetector:
         KillZoneType.ASIAN_SESSION: (time(20, 0), time(0, 0)),
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.statistics: dict[KillZoneType, KillZoneStatistics] = {}
         self._initialize_statistics()
 
-    def _initialize_statistics(self):
+    def _initialize_statistics(self) -> Any:
         """Initialize empty statistics for all zones"""
         for zone_type in KillZoneType:
             if zone_type != KillZoneType.OFF_HOURS:
@@ -227,7 +228,7 @@ class KillZoneDetector:
         Returns:
             Dict mapping kill zone types to lists of candles
         """
-        zone_candles = {zone: [] for zone in KillZoneType}
+        zone_candles: dict[KillZoneType, list[Candle]] = {zone: [] for zone in KillZoneType}
 
         for candle in candles:
             info = self.get_current_kill_zone(candle.t)
@@ -235,7 +236,7 @@ class KillZoneDetector:
 
         return zone_candles
 
-    def get_kill_zone_bias(self, zone_type: KillZoneType) -> dict:
+    def get_kill_zone_bias(self, zone_type: KillZoneType) -> dict[str, Any]:
         """
         Get trading bias recommendations for specific kill zone
 

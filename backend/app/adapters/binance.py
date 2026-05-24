@@ -1,6 +1,7 @@
 """Binance data provider adapter for cryptocurrency data."""
 
 import logging
+from typing import Any
 
 import httpx
 
@@ -15,7 +16,7 @@ class BinanceAdapter(ProviderAdapter):
 
     BASE_URL = "https://api.binance.com/api/v3"
 
-    def __init__(self, api_key: str = ""):
+    def __init__(self, api_key: str = "") -> None:
         """Initialize Binance adapter (no API key required for public data)."""
         super().__init__(api_key)
         self.client = httpx.AsyncClient(timeout=30.0)
@@ -83,6 +84,6 @@ class BinanceAdapter(ProviderAdapter):
         except Exception as e:
             return False, str(e)
 
-    async def close(self):
+    async def close(self) -> Any:
         """Close HTTP client."""
         await self.client.aclose()

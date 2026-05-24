@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -227,7 +227,7 @@ class WebSocketMessage(BaseModel):
     ]
     symbol: str | None = None
     timestamp: int | None = None
-    payload: dict | None = None
+    payload: dict[str, Any] | None = None
 
 
 class PriceUpdate(BaseModel):

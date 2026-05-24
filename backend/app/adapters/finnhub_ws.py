@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import websockets
 
@@ -17,15 +18,15 @@ class FinnhubWebSocket:
 
     WS_URL = "wss://ws.finnhub.io"
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str) -> None:
         """Initialize with API key."""
         self.api_key = api_key
-        self.ws: websockets.WebSocketClientProtocol | None = None
+        self.ws: Any | None = None
         self.subscriptions: set[str] = set()
         self.running = False
-        self.callback: Callable[[dict], Awaitable[None]] | None = None
+        self.callback: Callable[[dict[str, Any]], Awaitable[None]] | None = None
 
-    async def connect(self):
+    async def connect(self) -> Any:
         """Establish WebSocket connection."""
         try:
             uri = f"{self.WS_URL}?token={self.api_key}"
@@ -37,7 +38,7 @@ class FinnhubWebSocket:
             logger.error(f"Finnhub WebSocket connection error: {e}")
             return False
 
-    async def subscribe(self, symbol: str):
+    async def subscribe(self, symbol: str) -> Any:
         """Subscribe to a symbol's real-time updates."""
         if not self.ws:
             return False
@@ -52,7 +53,7 @@ class FinnhubWebSocket:
             logger.error(f"Error subscribing to {symbol}: {e}")
             return False
 
-    async def unsubscribe(self, symbol: str):
+    async def unsubscribe(self, symbol: str) -> Any:
         """Unsubscribe from a symbol."""
         if not self.ws:
             return
@@ -65,7 +66,7 @@ class FinnhubWebSocket:
         except Exception as e:
             logger.error(f"Error unsubscribing from {symbol}: {e}")
 
-    async def listen(self, callback: Callable[[dict], Awaitable[None]]):
+    async def listen(self, callback: Callable[[dict[str, Any]], Awaitable[None]]) -> Any:
         """
         Listen for incoming messages and call callback.
 
@@ -119,7 +120,7 @@ class FinnhubWebSocket:
         finally:
             await self.close()
 
-    async def close(self):
+    async def close(self) -> Any:
         """Close WebSocket connection."""
         self.running = False
         if self.ws:
@@ -131,12 +132,12 @@ class FinnhubWebSocket:
 class FinnhubWebSocketManager:
     """Manage Finnhub WebSocket connections with automatic reconnection."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.clients: dict[str, FinnhubWebSocket] = {}
         self.reconnect_delay = 5
 
     async def get_client(
-        self, symbol: str, callback: Callable[[dict], Awaitable[None]]
+        self, symbol: str, callback: Callable[[dict[str, Any]], Awaitable[None]]
     ) -> FinnhubWebSocket | None:
         """Get or create a WebSocket client for a symbol."""
         if not settings.FINNHUB_API_KEY:
@@ -158,13 +159,13 @@ class FinnhubWebSocketManager:
         await client.subscribe(symbol)
         return client
 
-    async def unsubscribe_symbol(self, symbol: str):
+    async def unsubscribe_symbol(self, symbol: str) -> Any:
         """Unsubscribe a symbol from all clients."""
         for client in self.clients.values():
             if symbol.upper() in client.subscriptions:
                 await client.unsubscribe(symbol)
 
-    async def close_all(self):
+    async def close_all(self) -> Any:
         """Close all WebSocket connections."""
         for client in self.clients.values():
             await client.close()

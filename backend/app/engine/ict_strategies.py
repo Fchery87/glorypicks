@@ -12,6 +12,7 @@ Based on ICT methodology by Michael J. Huddleston
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 import pandas as pd
 
@@ -94,7 +95,7 @@ class ICTSignalResult:
 class ICTStrategies:
     """Main ICT strategies class"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.order_blocks: list[OrderBlock] = []
         self.fair_value_gaps: list[FairValueGap] = []
         self.market_structure = MarketStructure(
@@ -106,7 +107,7 @@ class ICTStrategies:
         )
         self._initialize_market_structure()
 
-    def _initialize_market_structure(self):
+    def _initialize_market_structure(self) -> Any:
         """Initialize market structure with basic state"""
         self.market_structure = MarketStructure(
             trend="neutral",
@@ -136,7 +137,7 @@ class ICTStrategies:
             ]
         )
 
-        results = []
+        results: list[ICTSignalResult] = []
 
         # 1. Detect Order Blocks
         self._detect_order_blocks(df)
@@ -159,7 +160,7 @@ class ICTStrategies:
         # 6. Combine and rank signals
         return self._rank_and_filter_signals(results)
 
-    def _detect_order_blocks(self, df: pd.DataFrame):
+    def _detect_order_blocks(self, df: pd.DataFrame) -> Any:
         """Detect order blocks in price action"""
         recent_candles = df.tail(20)
 
@@ -188,7 +189,7 @@ class ICTStrategies:
                 )
                 self.order_blocks.append(block)
 
-    def _detect_fair_value_gaps(self, df: pd.DataFrame):
+    def _detect_fair_value_gaps(self, df: pd.DataFrame) -> Any:
         """Detect Fair Value Gaps (price imbalances)"""
         for i in range(2, len(df)):
             current = df.iloc[i]
@@ -219,7 +220,7 @@ class ICTStrategies:
 
     def _analyze_market_structure(self, df: pd.DataFrame) -> list[ICTSignalResult]:
         """Analyze market structure for BOS/MSS patterns"""
-        results = []
+        results: list[ICTSignalResult] = []
 
         if len(df) < 10:
             return results
@@ -284,10 +285,12 @@ class ICTStrategies:
         if len(self.order_blocks) == 0:
             return False
 
+        bearish_blocks = [block.high for block in self.order_blocks if block.type == "bearish"]
+        if not bearish_blocks:
+            return False
+
         # Look for recent resistance break
-        recent_resistance = max(
-            [block.high for block in self.order_blocks if block.type == "bearish"]
-        )
+        recent_resistance = max(bearish_blocks)
         return self.market_structure.last_swing_high > recent_resistance * 1.001
 
     def _check_bearish_bos(self) -> bool:
@@ -295,13 +298,17 @@ class ICTStrategies:
         if len(self.order_blocks) == 0:
             return False
 
+        bullish_blocks = [block.low for block in self.order_blocks if block.type == "bullish"]
+        if not bullish_blocks:
+            return False
+
         # Look for recent support break
-        recent_support = min([block.low for block in self.order_blocks if block.type == "bullish"])
+        recent_support = min(bullish_blocks)
         return self.market_structure.last_swing_low < recent_support * 0.999
 
     def _detect_breaker_blocks(self, recent_candles: list[Candle]) -> list[ICTSignalResult]:
         """Detect Breaker Blocks in recent price action"""
-        results = []
+        results: list[ICTSignalResult] = []
 
         if len(recent_candles) < 3:
             return results
@@ -359,7 +366,7 @@ class ICTStrategies:
 
     def _analyze_market_maker_model(self, df: pd.DataFrame) -> list[ICTSignalResult]:
         """Analyze Market Maker Model patterns"""
-        results = []
+        results: list[ICTSignalResult] = []
 
         if len(df) < 30:
             return results
@@ -457,8 +464,8 @@ class ICTStrategies:
         sorted_signals = sorted(signals, key=lambda x: (x.strength * x.confidence), reverse=True)
 
         # Remove duplicates and keep top 3
-        unique_signals = []
-        seen_types = set()
+        unique_signals: list[ICTSignalResult] = []
+        seen_types: set[ICTSignal] = set()
 
         for signal in sorted_signals:
             if signal.signal_type not in seen_types and len(unique_signals) < 3:
@@ -467,9 +474,9 @@ class ICTStrategies:
 
         return unique_signals
 
-    def get_liquidity_pools(self, current_price: float) -> dict[str, float]:
+    def get_liquidity_pools(self, current_price: float) -> dict[str, dict[str, float]]:
         """Get identified liquidity pools"""
-        liquidity_pools = {"buy_side": {}, "sell_side": {}}
+        liquidity_pools: dict[str, dict[str, float]] = {"buy_side": {}, "sell_side": {}}
 
         # Find buy-side liquidity (resistance levels)
         for block in self.order_blocks:

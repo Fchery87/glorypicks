@@ -1,6 +1,7 @@
 """Router dependencies for authentication and session management."""
 
 import uuid
+from typing import cast
 
 from fastapi import Header, Request
 
@@ -24,7 +25,7 @@ def get_session_id(
 
     # Check if there's a session ID in the request state
     if hasattr(request.state, "session_id"):
-        return request.state.session_id
+        return cast(str, request.state.session_id)
 
     # Generate a new session ID
     session_id = str(uuid.uuid4())

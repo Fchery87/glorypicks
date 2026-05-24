@@ -1,6 +1,6 @@
 """Technical indicators calculation module."""
 
-from typing import List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -11,7 +11,7 @@ class Indicators:
     """Technical indicators calculator with incremental updates."""
 
     @staticmethod
-    def sma(prices: list[float], period: int) -> list[float]:
+    def sma(prices: list[float], period: int) -> list[float | None]:
         """
         Calculate Simple Moving Average.
 
@@ -29,11 +29,11 @@ class Indicators:
         sma_values = np.convolve(prices_array, np.ones(period) / period, mode="valid")
 
         # Pad with None for the first (period-1) values
-        result = [None] * (period - 1) + sma_values.tolist()
+        result: list[float | None] = [None] * (period - 1) + list(map(float, sma_values))
         return result
 
     @staticmethod
-    def rsi(prices: list[float], period: int = 14) -> list[float]:
+    def rsi(prices: list[float], period: int = 14) -> list[float | None]:
         """
         Calculate Relative Strength Index.
 
@@ -74,13 +74,13 @@ class Indicators:
         rsi_values[(avg_loss == 0) & (avg_gain == 0)] = 50
 
         # Pad with None for insufficient data
-        result = [None] * period + rsi_values[period:].tolist()
+        result: list[float | None] = [None] * period + list(map(float, rsi_values[period:]))
         return result
 
     @staticmethod
     def macd(
         prices: list[float], fast_period: int = 12, slow_period: int = 26, signal_period: int = 9
-    ) -> tuple[list[float], list[float], list[float]]:
+    ) -> tuple[list[float | None], list[float | None], list[float | None]]:
         """
         Calculate MACD (Moving Average Convergence Divergence).
 
@@ -94,7 +94,7 @@ class Indicators:
             Tuple of (macd_line, signal_line, histogram)
         """
         if len(prices) < slow_period:
-            none_list = [None] * len(prices)
+            none_list: list[float | None] = [None] * len(prices)
             return none_list, none_list, none_list
 
         prices_array = np.array(prices)
@@ -115,14 +115,20 @@ class Indicators:
         # Convert to lists with None padding
         min_period = slow_period + signal_period - 1
 
-        macd_result = [None] * (slow_period - 1) + macd_line[slow_period - 1 :].tolist()
-        signal_result = [None] * min_period + signal_line[min_period:].tolist()
-        histogram_result = [None] * min_period + histogram[min_period:].tolist()
+        macd_result: list[float | None] = [None] * (slow_period - 1) + list(
+            map(float, macd_line[slow_period - 1 :])
+        )
+        signal_result: list[float | None] = [None] * min_period + list(
+            map(float, signal_line[min_period:])
+        )
+        histogram_result: list[float | None] = [None] * min_period + list(
+            map(float, histogram[min_period:])
+        )
 
         return macd_result, signal_result, histogram_result
 
     @staticmethod
-    def _ema(data: np.ndarray, period: int) -> np.ndarray:
+    def _ema(data: np.ndarray[Any, Any], period: int) -> np.ndarray[Any, Any]:
         """
         Calculate Exponential Moving Average.
 
@@ -143,7 +149,7 @@ class Indicators:
         return ema
 
     @staticmethod
-    def calculate_all_indicators(candles: list[Candle]) -> dict:
+    def calculate_all_indicators(candles: list[Candle]) -> dict[str, list[float | None]]:
         """
         Calculate all indicators for a list of candles.
 
@@ -156,13 +162,14 @@ class Indicators:
         if not candles:
             return {}
 
-        closes = [c.c for c in candles]
+        closes: list[float | None] = [c.c for c in candles]
 
         # Calculate all indicators
-        sma50 = Indicators.sma(closes, 50)
-        sma200 = Indicators.sma(closes, 200)
-        rsi14 = Indicators.rsi(closes, 14)
-        macd_line, signal_line, histogram = Indicators.macd(closes)
+        price_values = [c.c for c in candles]
+        sma50 = Indicators.sma(price_values, 50)
+        sma200 = Indicators.sma(price_values, 200)
+        rsi14 = Indicators.rsi(price_values, 14)
+        macd_line, signal_line, histogram = Indicators.macd(price_values)
 
         return {
             "sma50": sma50,

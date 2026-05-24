@@ -1,6 +1,7 @@
 """Health check router."""
 
 import time
+from typing import Any, Literal
 
 from fastapi import APIRouter
 
@@ -72,7 +73,7 @@ async def get_provider_statuses() -> list[ProviderStatus]:
 
 
 @router.get("/health", response_model=HealthResponse)
-async def health_check():
+async def health_check() -> Any:
     """
     Health check endpoint.
 
@@ -84,6 +85,7 @@ async def health_check():
     available_count = sum(1 for p in provider_statuses if p.available)
     total_count = len(provider_statuses)
 
+    status: Literal["healthy", "degraded", "unhealthy"]
     if available_count == total_count:
         status = "healthy"
     elif available_count > 0:

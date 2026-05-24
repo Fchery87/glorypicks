@@ -2,14 +2,16 @@
 
 import asyncio
 from datetime import datetime, timedelta
+from typing import Any
 
 from app.models import Candle, Interval, SignalResponse
+from app.utils.time import utc_now
 
 
 class CacheManager:
     """In-memory cache for candle data and signals."""
 
-    def __init__(self, ttl_seconds: int = 300):
+    def __init__(self, ttl_seconds: int = 300) -> None:
         """
         Initialize cache manager.
 
@@ -47,7 +49,7 @@ class CacheManager:
             candles, timestamp = self._candle_cache[symbol][interval]
 
             # Check if expired
-            if datetime.utcnow() - timestamp > timedelta(seconds=self.ttl_seconds):
+            if utc_now() - timestamp > timedelta(seconds=self.ttl_seconds):
                 # Remove expired entry
                 del self._candle_cache[symbol][interval]
                 if not self._candle_cache[symbol]:
@@ -56,7 +58,7 @@ class CacheManager:
 
             return candles
 
-    async def set_candles(self, symbol: str, interval: Interval, candles: list[Candle]):
+    async def set_candles(self, symbol: str, interval: Interval, candles: list[Candle]) -> Any:
         """
         Cache candles for a symbol and interval.
 
@@ -69,7 +71,7 @@ class CacheManager:
             if symbol not in self._candle_cache:
                 self._candle_cache[symbol] = {}
 
-            self._candle_cache[symbol][interval] = (candles, datetime.utcnow())
+            self._candle_cache[symbol][interval] = (candles, utc_now())
 
     async def get_signal(self, symbol: str) -> SignalResponse | None:
         """
@@ -88,13 +90,13 @@ class CacheManager:
             signal, timestamp = self._signal_cache[symbol]
 
             # Check if expired
-            if datetime.utcnow() - timestamp > timedelta(seconds=self.ttl_seconds):
+            if utc_now() - timestamp > timedelta(seconds=self.ttl_seconds):
                 del self._signal_cache[symbol]
                 return None
 
             return signal
 
-    async def set_signal(self, symbol: str, signal: SignalResponse):
+    async def set_signal(self, symbol: str, signal: SignalResponse) -> Any:
         """
         Cache signal for a symbol.
 
@@ -103,9 +105,9 @@ class CacheManager:
             signal: SignalResponse to cache
         """
         async with self._lock:
-            self._signal_cache[symbol] = (signal, datetime.utcnow())
+            self._signal_cache[symbol] = (signal, utc_now())
 
-    async def invalidate_symbol(self, symbol: str):
+    async def invalidate_symbol(self, symbol: str) -> Any:
         """
         Invalidate all cached data for a symbol.
 
@@ -118,13 +120,13 @@ class CacheManager:
             if symbol in self._signal_cache:
                 del self._signal_cache[symbol]
 
-    async def clear_all(self):
+    async def clear_all(self) -> Any:
         """Clear all cached data."""
         async with self._lock:
             self._candle_cache.clear()
             self._signal_cache.clear()
 
-    def get_stats(self) -> dict:
+    def get_stats(self) -> dict[str, int]:
         """Get cache statistics."""
         return {
             "cached_symbols": len(self._candle_cache),

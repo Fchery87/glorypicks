@@ -1,64 +1,15 @@
-"""Base service class with common patterns."""
+"""Base service class with common storage."""
 
-from abc import ABC, abstractmethod
 from typing import Any
 
 
-class BaseService(ABC):
-    """Base class for all services.
+class BaseService:
+    """Base class for services that need shared in-memory storage.
 
-    Provides common storage patterns and interface that all services must implement.
+    Concrete services expose domain-specific method signatures, so this base
+    class intentionally does not define CRUD abstract methods.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the base service with in-memory storage."""
         self._storage: dict[str, Any] = {}
-
-    @abstractmethod
-    async def get(self, id: str) -> Any | None:
-        """Get item by ID.
-
-        Args:
-            id: Unique identifier for the item
-
-        Returns:
-            The item if found, None otherwise
-        """
-        pass
-
-    @abstractmethod
-    async def create(self, item: Any) -> Any:
-        """Create new item.
-
-        Args:
-            item: The item to create
-
-        Returns:
-            The created item with generated ID
-        """
-        pass
-
-    @abstractmethod
-    async def update(self, id: str, item: Any) -> Any | None:
-        """Update existing item.
-
-        Args:
-            id: Unique identifier for the item
-            item: Updated item data
-
-        Returns:
-            The updated item if found, None otherwise
-        """
-        pass
-
-    @abstractmethod
-    async def delete(self, id: str) -> bool:
-        """Delete item by ID.
-
-        Args:
-            id: Unique identifier for the item
-
-        Returns:
-            True if deleted, False if not found
-        """
-        pass

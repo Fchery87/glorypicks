@@ -16,6 +16,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from app.utils.time import utc_now
+
 from ..models import Candle
 
 
@@ -79,11 +81,11 @@ class AIEnhancer:
     without requiring external ML libraries.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.pattern_performance_db: dict[str, PatternPerformance] = {}
         self.market_regime_history: list[tuple[datetime, MarketRegime]] = []
         self.symbol_volatility_cache: dict[str, float] = {}
-        self.false_signal_patterns: list[dict] = []
+        self.false_signal_patterns: list[dict[str, Any]] = []
 
     def enhance_signal(
         self,
@@ -93,8 +95,8 @@ class AIEnhancer:
         base_confidence: float,
         symbol: str = "",
         timeframe: str = "1h",
-        ict_signals: list[Any] = None,
-        smc_signals: list[Any] = None,
+        ict_signals: list[Any] | None = None,
+        smc_signals: list[Any] | None = None,
     ) -> AIConfidenceScore:
         """
         Enhance a signal with AI-powered confidence scoring
@@ -317,7 +319,7 @@ class AIEnhancer:
             failed_signals=0,
             win_rate=50.0,  # Neutral default
             avg_return_r=1.0,
-            last_updated=datetime.utcnow(),
+            last_updated=utc_now(),
         )
 
     def _calculate_false_signal_risk(
@@ -527,7 +529,7 @@ class AIEnhancer:
 
     def update_pattern_performance(
         self, pattern_type: str, symbol: str, timeframe: str, success: bool, return_r: float
-    ):
+    ) -> None:
         """Update pattern performance after trade completion"""
         key = f"{pattern_type}_{symbol}_{timeframe}"
 
@@ -541,7 +543,7 @@ class AIEnhancer:
                 failed_signals=0,
                 win_rate=50.0,
                 avg_return_r=1.0,
-                last_updated=datetime.utcnow(),
+                last_updated=utc_now(),
             )
 
         perf = self.pattern_performance_db[key]
@@ -563,7 +565,7 @@ class AIEnhancer:
                 perf.avg_return_r * (perf.total_signals - 1) + return_r
             ) / perf.total_signals
 
-        perf.last_updated = datetime.utcnow()
+        perf.last_updated = utc_now()
 
     def get_market_regime(self) -> MarketRegime:
         """Get current market regime"""

@@ -1,6 +1,7 @@
 """Security middleware for HTTP headers and security policies."""
 
 import logging
+from typing import Any
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -33,7 +34,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     """Limit request body size to prevent DoS attacks."""
 
-    def __init__(self, app, max_size: int = 1 * 1024 * 1024):  # 1MB default
+    def __init__(self, app: Any, max_size: int = 1 * 1024 * 1024) -> None:  # 1MB default
         super().__init__(app)
         self.max_size = max_size
 

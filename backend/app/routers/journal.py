@@ -1,6 +1,7 @@
 """Trade Journal API router."""
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException, Query
 
@@ -38,7 +39,7 @@ async def get_trades(
     ict_pattern: ICTPatternType | None = None,
     limit: int = Query(50, ge=1, le=100),
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
-):
+) -> list[TradeEntry]:
     """Get all trades for the current user with optional filtering."""
     user_id = get_user_id(x_session_id)
 
@@ -60,7 +61,7 @@ async def get_trades(
 
 
 @router.get("/trades/open", response_model=list[TradeEntry])
-async def get_open_trades(x_session_id: str | None = Header(None, alias="X-Session-ID")):
+async def get_open_trades(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> Any:
     """Get all open trades for the current user."""
     user_id = get_user_id(x_session_id)
 
@@ -73,7 +74,9 @@ async def get_open_trades(x_session_id: str | None = Header(None, alias="X-Sessi
 
 
 @router.get("/trades/{trade_id}", response_model=TradeEntry)
-async def get_trade(trade_id: str, x_session_id: str | None = Header(None, alias="X-Session-ID")):
+async def get_trade(
+    trade_id: str, x_session_id: str | None = Header(None, alias="X-Session-ID")
+) -> Any:
     """Get a specific trade by ID."""
     trade = await trade_journal_service.get(trade_id)
 
@@ -86,7 +89,7 @@ async def get_trade(trade_id: str, x_session_id: str | None = Header(None, alias
 @router.post("/trades", response_model=TradeEntry, status_code=201)
 async def create_trade(
     request: TradeCreateRequest, x_session_id: str | None = Header(None, alias="X-Session-ID")
-):
+) -> TradeEntry:
     """Create a new trade entry."""
     user_id = get_user_id(x_session_id)
 
@@ -106,7 +109,7 @@ async def update_trade(
     trade_id: str,
     request: TradeUpdateRequest,
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
-):
+) -> TradeEntry:
     """Update an existing trade."""
     try:
         trade = await trade_journal_service.update(trade_id, request)
@@ -127,7 +130,7 @@ async def close_trade(
     trade_id: str,
     request: TradeCloseRequest,
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
-):
+) -> TradeEntry:
     """Close a trade with exit details."""
     try:
         trade = await trade_journal_service.close_trade(trade_id, request)
@@ -147,7 +150,7 @@ async def close_trade(
 @router.delete("/trades/{trade_id}", status_code=204)
 async def delete_trade(
     trade_id: str, x_session_id: str | None = Header(None, alias="X-Session-ID")
-):
+) -> None:
     """Delete a trade by ID."""
     success = await trade_journal_service.delete(trade_id)
 
@@ -161,7 +164,7 @@ async def delete_trade(
 async def get_statistics(
     days: int | None = Query(None, ge=1, le=365, description="Number of days to analyze"),
     x_session_id: str | None = Header(None, alias="X-Session-ID"),
-):
+) -> TradeStatistics:
     """Get trade statistics for the current user.
 
     **Premium Feature**: Detailed analytics including win rate by pattern,
@@ -187,7 +190,7 @@ async def get_statistics(
 
 
 @router.get("/analytics", response_model=JournalAnalyticsResponse)
-async def get_analytics(x_session_id: str | None = Header(None, alias="X-Session-ID")):
+async def get_analytics(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> Any:
     """Get comprehensive journal analytics.
 
     **Premium Feature**: Full analytics dashboard with streaks,
@@ -213,7 +216,7 @@ async def get_analytics(x_session_id: str | None = Header(None, alias="X-Session
 
 
 @router.get("/tier-limits", response_model=UserTierLimits)
-async def get_tier_limits(x_session_id: str | None = Header(None, alias="X-Session-ID")):
+async def get_tier_limits(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> Any:
     """Get current user's tier limits and remaining quota."""
     user_id = get_user_id(x_session_id)
 
@@ -226,7 +229,9 @@ async def get_tier_limits(x_session_id: str | None = Header(None, alias="X-Sessi
 
 
 @router.post("/trades/sample", response_model=list[TradeEntry], include_in_schema=False)
-async def create_sample_trades(x_session_id: str | None = Header(None, alias="X-Session-ID")):
+async def create_sample_trades(
+    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+) -> Any:
     """Create sample trades for demo purposes."""
     user_id = get_user_id(x_session_id)
 
@@ -288,7 +293,7 @@ async def create_sample_trades(x_session_id: str | None = Header(None, alias="X-
 
 
 @router.get("/patterns")
-async def get_pattern_options():
+async def get_pattern_options() -> Any:
     """Get available ICT pattern options for trade tagging."""
     return {
         "patterns": [

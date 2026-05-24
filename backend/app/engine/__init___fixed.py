@@ -1,9 +1,10 @@
 """Signal generation engine using ICT strategy and multi-timeframe analysis."""
 
-from datetime import datetime
+from typing import Any, cast
 
 from app.indicators import Indicators
 from app.models import Candle, Interval, MiniSignal, Recommendation, SignalBreakdown, SignalResponse
+from app.utils.time import utc_iso_z
 
 from .ict_phase1_enhancements import ICTPhase1Enhancements
 from .ict_strategies import ICTSignalResult, ICTStrategies
@@ -22,7 +23,7 @@ class SignalEngine:
     # Timeframe weights for final recommendation
     TIMEFRAME_WEIGHTS = {Interval.M15: 0.35, Interval.H1: 0.35, Interval.D1: 0.30}
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize signal engine with ICT strategies and Phase 1 enhancements"""
         self.ict_strategies = ICTStrategies()
         self.ict_phase1 = ICTPhase1Enhancements()
@@ -33,7 +34,7 @@ class SignalEngine:
         candles_15m: list[Candle],
         candles_1h: list[Candle],
         candles_1d: list[Candle],
-    ) -> tuple[list[ICTSignalResult], dict]:
+    ) -> tuple[list[ICTSignalResult], dict[str, Any]]:
         """
         Analyze data using ICT strategies and return detailed results.
 
@@ -97,6 +98,14 @@ class SignalEngine:
         # Check if we have valid indicator values
         if any(v is None for v in [sma50, sma200, rsi, macd_line, macd_signal]):
             return MiniSignal.NEUTRAL, 0.0, f"{interval.value}: Indicators not ready"
+
+        close = cast(float, close)
+        sma50 = cast(float, sma50)
+        sma200 = cast(float, sma200)
+        rsi = cast(float, rsi)
+        macd_line = cast(float, macd_line)
+        macd_signal = cast(float, macd_signal)
+        macd_hist = cast(float, macd_hist)
 
         # Initialize scoring
         bullish_score = 0
@@ -278,10 +287,12 @@ class SignalEngine:
             strength=final_strength,
             breakdown=SignalBreakdown(d1=d1_signal, h1=h1_signal, m15=m15_signal),
             rationale=enhanced_rationale,
-            updated_at=datetime.utcnow().isoformat() + "Z",
+            updated_at=utc_iso_z(),
         )
 
-    def _calculate_ict_boost(self, ict_signals: list[ICTSignalResult], ict_metadata: dict) -> float:
+    def _calculate_ict_boost(
+        self, ict_signals: list[ICTSignalResult], ict_metadata: dict[str, Any]
+    ) -> float:
         """
         Calculate strength boost from ICT strategy analysis.
 
@@ -313,14 +324,14 @@ class SignalEngine:
     def _build_enhanced_rationale(
         self,
         ict_signals: list[ICTSignalResult],
-        ict_metadata: dict,
+        ict_metadata: dict[str, Any],
         timeframe_rationale: list[str],
-        phase1_rationale: list[str] = None,
+        phase1_rationale: list[str] | None = None,
     ) -> list[str]:
         """
         Build enhanced rationale combining traditional, ICT, and Phase 1 analysis
         """
-        rationale = []
+        rationale: list[str] = []
 
         # Add timeframe analysis
         rationale.extend(timeframe_rationale)
@@ -421,5 +432,5 @@ class SignalEngine:
             strength=final_strength,
             breakdown=SignalBreakdown(d1=d1_signal, h1=h1_signal, m15=m15_signal),
             rationale=[d1_rationale, h1_rationale, m15_rationale],
-            updated_at=datetime.utcnow().isoformat() + "Z",
+            updated_at=utc_iso_z(),
         )

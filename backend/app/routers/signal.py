@@ -1,7 +1,7 @@
 """Signal generation router."""
 
 import logging
-from datetime import datetime
+from typing import Any, cast
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -13,11 +13,16 @@ from app.models import (
     AssetClass,
     Candle,
     ICTAnalysis,
+    ICTSignalType,
     Interval,
     MarketStructure,
     SignalResponse,
 )
+from app.models import (
+    ICTSignalResult as ICTSignalResultModel,
+)
 from app.utils import CacheManager
+from app.utils.time import utc_now, utc_timestamp
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +36,19 @@ _signal_engine: SignalEngine | None = None
 _kill_zone_detector = KillZoneDetector()
 
 
-def set_cache(cache: CacheManager):
+def set_cache(cache: CacheManager) -> Any:
     """Set the global cache instance."""
     global _cache
     _cache = cache
 
 
-def set_signal_engine(engine: SignalEngine):
+def set_signal_engine(engine: SignalEngine) -> Any:
     """Set the global signal engine instance."""
     global _signal_engine
     _signal_engine = engine
 
 
-async def get_provider_for_symbol(symbol: str):
+async def get_provider_for_symbol(symbol: str) -> Any:
     """
     Determine the best provider for a symbol.
 
@@ -108,7 +113,7 @@ async def fetch_candles_with_failover(
             candles = await prov.get_historical_data(symbol, interval, limit)
             if candles:
                 logger.info(f"Using {prov_name} provider for {symbol} {interval} (signal)")
-                return candles
+                return cast(list[Candle], candles)
         except Exception as e:
             logger.warning(f"{prov_name} provider failed for {symbol} {interval}: {e}")
             continue
@@ -121,7 +126,9 @@ async def fetch_candles_with_failover(
 
 
 @router.get("/signal", response_model=SignalResponse)
-async def get_signal(symbol: str = Query(..., description="Trading symbol (e.g., AAPL, BTC/USDT)")):
+async def get_signal(
+    symbol: str = Query(..., description="Trading symbol (e.g., AAPL, BTC/USDT)"),
+) -> Any:
     """
     Generate trading signal for a symbol.
 
@@ -171,7 +178,7 @@ async def get_signal(symbol: str = Query(..., description="Trading symbol (e.g.,
 
 
 @router.get("/signal/{symbol}/ict", response_model=ICTAnalysis)
-async def get_ict_analysis(symbol: str):
+async def get_ict_analysis(symbol: str) -> Any:
     """
     Get detailed ICT strategy analysis for a symbol.
 
@@ -202,19 +209,19 @@ async def get_ict_analysis(symbol: str):
         # Build ICT analysis response
         analysis = ICTAnalysis(
             signals=[
-                {
-                    "signal_type": signal.signal_type.value,
-                    "strength": signal.strength,
-                    "confidence": signal.confidence,
-                    "price": signal.price,
-                    "entry_zone_low": signal.entry_zone[0],
-                    "entry_zone_high": signal.entry_zone[1],
-                    "stop_loss": signal.stop_loss,
-                    "take_profit": signal.take_profit,
-                    "rationale": signal.rationale,
-                    "market_phase": signal.market_phase,
-                    "liquidity_pool": signal.liquidity_pool,
-                }
+                ICTSignalResultModel(
+                    signal_type=ICTSignalType(signal.signal_type.value),
+                    strength=signal.strength,
+                    confidence=signal.confidence,
+                    price=signal.price,
+                    entry_zone_low=signal.entry_zone[0],
+                    entry_zone_high=signal.entry_zone[1],
+                    stop_loss=signal.stop_loss,
+                    take_profit=signal.take_profit,
+                    rationale=signal.rationale,
+                    market_phase=signal.market_phase,
+                    liquidity_pool=signal.liquidity_pool,
+                )
                 for signal in ict_signals
             ],
             market_structure=MarketStructure(
@@ -244,7 +251,7 @@ async def get_ict_analysis(symbol: str):
 
 
 @router.get("/killzone")
-async def get_kill_zone_status():
+async def get_kill_zone_status() -> Any:
     """
     Get current ICT Kill Zone status.
 
@@ -255,7 +262,7 @@ async def get_kill_zone_status():
     - Expected volatility level
     """
     try:
-        current_timestamp = int(datetime.utcnow().timestamp())
+        current_timestamp = utc_timestamp()
         kill_zone_info = _kill_zone_detector.get_current_kill_zone(current_timestamp)
 
         # Get recommended timeframes
@@ -279,7 +286,7 @@ async def get_kill_zone_status():
             "recommended_timeframes": recommended_timeframes,
             "bias": bias_info.get("bias"),
             "timestamp": current_timestamp,
-            "formatted_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "formatted_time": utc_now().strftime("%Y-%m-%d %H:%M UTC"),
         }
 
     except Exception as e:
@@ -288,7 +295,7 @@ async def get_kill_zone_status():
 
 
 @router.get("/killzone/all")
-async def get_all_kill_zones():
+async def get_all_kill_zones() -> Any:
     """
     Get information about all kill zones and their schedules.
 
@@ -315,7 +322,7 @@ async def get_all_kill_zones():
                 }
 
         return {
-            "current_time": datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC"),
+            "current_time": utc_now().strftime("%Y-%m-%d %H:%M UTC"),
             "timezone_note": "All times in EST (New York)",
             "kill_zones": zones,
         }

@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta
+from typing import Any
 
 import httpx
 
@@ -16,7 +17,7 @@ class FinnhubAdapter(ProviderAdapter):
 
     BASE_URL = "https://finnhub.io/api/v1"
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str) -> None:
         """Initialize Finnhub adapter with API key."""
         super().__init__(api_key)
         self.client = httpx.AsyncClient(timeout=30.0)
@@ -105,6 +106,6 @@ class FinnhubAdapter(ProviderAdapter):
         except Exception as e:
             return False, str(e)
 
-    async def close(self):
+    async def close(self) -> Any:
         """Close HTTP client."""
         await self.client.aclose()

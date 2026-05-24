@@ -1,10 +1,10 @@
 """Signal generation engine using ICT strategy and multi-timeframe analysis."""
 
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, cast
 
 from app.indicators import Indicators
 from app.models import Candle, Interval, MiniSignal, Recommendation, SignalBreakdown, SignalResponse
+from app.utils.time import utc_iso_z, utc_timestamp
 
 from .ai_enhancer import AIConfidenceScore, AIEnhancer, MarketRegime, SignalQuality
 from .ict_phase1_enhancements import ICTPhase1Enhancements
@@ -26,7 +26,7 @@ class SignalEngine:
     # Timeframe weights for final recommendation
     TIMEFRAME_WEIGHTS = {Interval.M15: 0.35, Interval.H1: 0.35, Interval.D1: 0.30}
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize signal engine with ICT, SMC strategies, AI enhancement, and Kill Zone detection"""
         self.ict_strategies = ICTStrategies()
         self.ict_phase1 = ICTPhase1Enhancements()
@@ -40,7 +40,7 @@ class SignalEngine:
         candles_15m: list[Candle],
         candles_1h: list[Candle],
         candles_1d: list[Candle],
-    ) -> tuple[list[ICTSignalResult], dict]:
+    ) -> tuple[list[ICTSignalResult], dict[str, Any]]:
         """
         Analyze data using ICT strategies and return detailed results.
 
@@ -104,6 +104,14 @@ class SignalEngine:
         # Check if we have valid indicator values
         if any(v is None for v in [sma50, sma200, rsi, macd_line, macd_signal]):
             return MiniSignal.NEUTRAL, 0.0, f"{interval.value}: Indicators not ready"
+
+        close = cast(float, close)
+        sma50 = cast(float, sma50)
+        sma200 = cast(float, sma200)
+        rsi = cast(float, rsi)
+        macd_line = cast(float, macd_line)
+        macd_signal = cast(float, macd_signal)
+        macd_hist = cast(float, macd_hist)
 
         # Initialize scoring
         bullish_score = 0
@@ -178,8 +186,8 @@ class SignalEngine:
         self,
         ict_signals: list[ICTSignalResult],
         smc_signals: list[SMCSignalResult],
-        ict_metadata: dict,
-        smc_metadata: dict,
+        ict_metadata: dict[str, Any],
+        smc_metadata: dict[str, Any],
         timeframe_rationale: list[str],
         phase1_rationale: list[str] | None,
         ai_score: AIConfidenceScore,
@@ -438,7 +446,7 @@ class SignalEngine:
         # 7. Kill Zone Detection
         # ========================================
         # Get current kill zone info
-        current_timestamp = int(datetime.utcnow().timestamp())
+        current_timestamp = utc_timestamp()
         kill_zone_info = self.kill_zone_detector.get_current_kill_zone(current_timestamp)
 
         # Check if we should trade based on kill zone
@@ -477,10 +485,12 @@ class SignalEngine:
             strength=final_strength,
             breakdown=SignalBreakdown(d1=d1_signal, h1=h1_signal, m15=m15_signal),
             rationale=enhanced_rationale,
-            updated_at=datetime.utcnow().isoformat() + "Z",
+            updated_at=utc_iso_z(),
         )
 
-    def _calculate_ict_boost(self, ict_signals: list[ICTSignalResult], ict_metadata: dict) -> float:
+    def _calculate_ict_boost(
+        self, ict_signals: list[ICTSignalResult], ict_metadata: dict[str, Any]
+    ) -> float:
         """
         Calculate strength boost from ICT strategy analysis.
 
@@ -512,7 +522,7 @@ class SignalEngine:
     def _build_enhanced_rationale(
         self,
         ict_signals: list[ICTSignalResult],
-        ict_metadata: dict,
+        ict_metadata: dict[str, Any],
         timeframe_rationale: list[str],
         phase1_rationale: list[str] | None = None,
     ) -> list[str]:
@@ -620,5 +630,5 @@ class SignalEngine:
             strength=final_strength,
             breakdown=SignalBreakdown(d1=d1_signal, h1=h1_signal, m15=m15_signal),
             rationale=[d1_rationale, h1_rationale, m15_rationale],
-            updated_at=datetime.utcnow().isoformat() + "Z",
+            updated_at=utc_iso_z(),
         )

@@ -2,6 +2,7 @@
 
 import random
 import time
+from typing import Any
 
 from app.adapters.base import ProviderAdapter
 from app.models import AssetClass, Candle, Interval
@@ -10,7 +11,7 @@ from app.models import AssetClass, Candle, Interval
 class DemoAdapter(ProviderAdapter):
     """Demo adapter that generates realistic mock market data."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize demo adapter (no API key needed)."""
         super().__init__("demo")
         self._base_prices = {
@@ -128,6 +129,6 @@ class DemoAdapter(ProviderAdapter):
         # Add small random variation
         return round(base_price * random.uniform(0.995, 1.005), 2)
 
-    async def close(self):
+    async def close(self) -> Any:
         """No cleanup needed for demo adapter."""
         pass

@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from typing import Any
 
 import websockets
 
@@ -15,15 +16,15 @@ class BinanceWebSocket:
 
     WS_URL = "wss://stream.binance.com:9443/ws"
 
-    def __init__(self, symbol: str):
+    def __init__(self, symbol: str) -> None:
         """Initialize with trading pair."""
         # Convert symbol to Binance format (e.g., BTC/USDT -> btcusdt)
         self.symbol = symbol.replace("/", "").lower()
-        self.ws: websockets.WebSocketClientProtocol | None = None
+        self.ws: Any | None = None
         self.running = False
-        self.callback: Callable[[dict], Awaitable[None]] | None = None
+        self.callback: Callable[[dict[str, Any]], Awaitable[None]] | None = None
 
-    async def connect(self):
+    async def connect(self) -> Any:
         """Establish WebSocket connection for trade stream."""
         try:
             # Subscribe to trades and kline streams
@@ -42,7 +43,7 @@ class BinanceWebSocket:
             logger.error(f"Binance WebSocket connection error: {e}")
             return False
 
-    async def listen(self, callback: Callable[[dict], Awaitable[None]]):
+    async def listen(self, callback: Callable[[dict[str, Any]], Awaitable[None]]) -> Any:
         """
         Listen for incoming messages and call callback.
 
@@ -121,7 +122,7 @@ class BinanceWebSocket:
         finally:
             await self.close()
 
-    async def close(self):
+    async def close(self) -> Any:
         """Close WebSocket connection."""
         self.running = False
         if self.ws:
@@ -133,11 +134,11 @@ class BinanceWebSocket:
 class BinanceWebSocketManager:
     """Manage Binance WebSocket connections."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.clients: dict[str, BinanceWebSocket] = {}
 
     async def get_client(
-        self, symbol: str, callback: Callable[[dict], Awaitable[None]]
+        self, symbol: str, callback: Callable[[dict[str, Any]], Awaitable[None]]
     ) -> BinanceWebSocket | None:
         """Get or create a WebSocket client for a symbol."""
         normalized_symbol = symbol.replace("/", "").lower()
@@ -153,14 +154,14 @@ class BinanceWebSocketManager:
 
         return self.clients[normalized_symbol]
 
-    async def close_client(self, symbol: str):
+    async def close_client(self, symbol: str) -> Any:
         """Close WebSocket for a specific symbol."""
         normalized_symbol = symbol.replace("/", "").lower()
         if normalized_symbol in self.clients:
             await self.clients[normalized_symbol].close()
             del self.clients[normalized_symbol]
 
-    async def close_all(self):
+    async def close_all(self) -> Any:
         """Close all WebSocket connections."""
         for client in self.clients.values():
             await client.close()

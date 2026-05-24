@@ -1,6 +1,7 @@
 """Data retrieval router for historical candles."""
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -17,13 +18,13 @@ router = APIRouter()
 _cache: CacheManager | None = None
 
 
-def set_cache(cache: CacheManager):
+def set_cache(cache: CacheManager) -> Any:
     """Set the global cache instance."""
     global _cache
     _cache = cache
 
 
-async def get_provider_for_symbol(symbol: str):
+async def get_provider_for_symbol(symbol: str) -> Any:
     """
     Determine the best provider for a symbol.
 
@@ -61,7 +62,7 @@ async def get_historical_data(
     symbol: str = Query(..., description="Trading symbol (e.g., AAPL, BTC/USDT)"),
     interval: Interval = Query(..., description="Timeframe interval"),
     limit: int = Query(200, ge=1, le=500, description="Number of candles to return"),
-):
+) -> HistoricalDataResponse:
     """
     Fetch historical OHLCV candle data.
 

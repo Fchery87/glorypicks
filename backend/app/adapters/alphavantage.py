@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime
+from typing import Any
 
 import httpx
 
@@ -16,7 +17,7 @@ class AlphaVantageAdapter(ProviderAdapter):
 
     BASE_URL = "https://www.alphavantage.co/query"
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str) -> None:
         """Initialize with Alpha Vantage API key."""
         super().__init__(api_key)
         self.client = httpx.AsyncClient(timeout=15.0)
@@ -25,7 +26,7 @@ class AlphaVantageAdapter(ProviderAdapter):
         """Alpha Vantage supports stocks and forex."""
         return asset_class in [AssetClass.STOCK, AssetClass.FOREX]
 
-    def _interval_to_provider_format(self, interval: Interval) -> tuple[str, str]:
+    def _interval_to_provider_format(self, interval: Interval) -> tuple[str, str | None]:
         """
         Convert interval to Alpha Vantage function and interval.
 
@@ -130,6 +131,6 @@ class AlphaVantageAdapter(ProviderAdapter):
         except Exception as e:
             return False, str(e)
 
-    async def close(self):
+    async def close(self) -> Any:
         """Close the HTTP client."""
         await self.client.aclose()

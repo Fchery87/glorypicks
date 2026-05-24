@@ -1,6 +1,6 @@
 """Configuration management for GloryPicks backend."""
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -45,9 +45,7 @@ class Settings(BaseSettings):
     ENABLE_MARKET_CONDITION_FILTER: bool = False
     ENABLE_SIGNAL_SCORING: bool = False
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @property
     def allowed_origins_list(self) -> list[str]:

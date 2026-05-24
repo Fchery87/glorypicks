@@ -2,10 +2,10 @@
 
 import logging
 import uuid
-from datetime import datetime
 
 from app.models.watchlist import Watchlist, WatchlistCreate, WatchlistUpdate
 from app.services.base import BaseService
+from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class WatchlistService(BaseService):
     - Automatic timestamp management
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the watchlist service."""
         super().__init__()
         self._storage: dict[str, Watchlist] = {}
@@ -59,8 +59,8 @@ class WatchlistService(BaseService):
             user_id=user_id,
             name=data.name.strip(),
             symbols=normalized_symbols,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=utc_now(),
+            updated_at=utc_now(),
         )
 
         # Store watchlist
@@ -132,7 +132,7 @@ class WatchlistService(BaseService):
             watchlist.symbols = [s.upper() for s in data.symbols]
 
         # Update timestamp
-        watchlist.updated_at = datetime.utcnow()
+        watchlist.updated_at = utc_now()
         self._storage[watchlist_id] = watchlist
 
         logger.info(f"Updated watchlist {watchlist_id} for user {user_id}")
@@ -190,7 +190,7 @@ class WatchlistService(BaseService):
         symbol_normalized = symbol.upper()
         if symbol_normalized not in watchlist.symbols:
             watchlist.symbols.append(symbol_normalized)
-            watchlist.updated_at = datetime.utcnow()
+            watchlist.updated_at = utc_now()
             self._storage[watchlist_id] = watchlist
 
             logger.info(f"Added symbol {symbol_normalized} to watchlist {watchlist_id}")
@@ -216,7 +216,7 @@ class WatchlistService(BaseService):
         symbol_normalized = symbol.upper()
         if symbol_normalized in watchlist.symbols:
             watchlist.symbols.remove(symbol_normalized)
-            watchlist.updated_at = datetime.utcnow()
+            watchlist.updated_at = utc_now()
             self._storage[watchlist_id] = watchlist
 
             logger.info(f"Removed symbol {symbol_normalized} from watchlist {watchlist_id}")

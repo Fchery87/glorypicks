@@ -1,7 +1,9 @@
 """Trade Journal service for managing trade entries and analytics."""
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from app.utils.time import utc_now
 
 from ..models.journal import (
     JournalAnalyticsResponse,
@@ -24,7 +26,7 @@ class TradeJournalService(BaseService):
     FREE_TIER_MAX_TRADES = 10
     PREMIUM_MAX_TRADES = float("inf")
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize trade journal service."""
         super().__init__()
         # Store trades by user_id -> list of trades
@@ -48,14 +50,13 @@ class TradeJournalService(BaseService):
         user_trades = self._get_user_trades(user_id)
         total_trades = len(user_trades)
 
-        max_trades = self.PREMIUM_MAX_TRADES if is_premium else self.FREE_TIER_MAX_TRADES
+        max_trades = -1 if is_premium else self.FREE_TIER_MAX_TRADES
+        trades_remaining = -1 if is_premium else max(0, max_trades - total_trades)
 
         return UserTierLimits(
             is_premium=is_premium,
-            max_trades=max_trades if max_trades != float("inf") else -1,
-            trades_remaining=max(0, max_trades - total_trades)
-            if max_trades != float("inf")
-            else -1,
+            max_trades=max_trades,
+            trades_remaining=trades_remaining,
             can_export=is_premium,
             can_view_analytics=is_premium,
             can_tag_emotions=is_premium,
@@ -96,7 +97,7 @@ class TradeJournalService(BaseService):
             symbol=request.symbol.upper(),
             direction=request.direction,
             entry_price=request.entry_price,
-            entry_time=datetime.utcnow(),
+            entry_time=utc_now(),
             position_size=request.position_size,
             stop_loss=request.stop_loss,
             take_profit=request.take_profit,
@@ -127,11 +128,11 @@ class TradeJournalService(BaseService):
                     if request.status == TradeStatus.CLOSED and trade.status == TradeStatus.OPEN:
                         if not request.exit_price:
                             raise ValueError("exit_price required when closing trade")
-                        update_data["exit_time"] = request.exit_time or datetime.utcnow()
+                        update_data["exit_time"] = request.exit_time or utc_now()
 
                     # Update trade object
                     updated_trade = trade.copy(update=update_data)
-                    updated_trade.updated_at = datetime.utcnow()
+                    updated_trade.updated_at = utc_now()
 
                     # Recalculate P&L if closing
                     if updated_trade.status == TradeStatus.CLOSED and updated_trade.exit_price:
@@ -194,7 +195,7 @@ class TradeJournalService(BaseService):
 
         # Filter by date range if specified
         if days:
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = utc_now() - timedelta(days=days)
             trades = [t for t in trades if t.entry_time >= cutoff_date]
 
         # Filter closed trades only for statistics
@@ -218,23 +219,25 @@ class TradeJournalService(BaseService):
 
         # Calculate basic stats
         total_trades = len(closed_trades)
-        winning_trades = [t for t in closed_trades if t.pnl_dollar > 0]
-        losing_trades = [t for t in closed_trades if t.pnl_dollar <= 0]
+
+        def pnl(trade: TradeEntry) -> float:
+            if trade.pnl_dollar is None:
+                raise ValueError("Closed trade is missing P&L")
+            return trade.pnl_dollar
+
+        winning_trades = [t for t in closed_trades if pnl(t) > 0]
+        losing_trades = [t for t in closed_trades if pnl(t) <= 0]
 
         win_rate = (len(winning_trades) / total_trades) * 100 if total_trades > 0 else 0
 
-        total_pnl = sum(t.pnl_dollar for t in closed_trades)
+        total_pnl = sum(pnl(t) for t in closed_trades)
 
-        avg_win = (
-            sum(t.pnl_dollar for t in winning_trades) / len(winning_trades) if winning_trades else 0
-        )
-        avg_loss = (
-            sum(t.pnl_dollar for t in losing_trades) / len(losing_trades) if losing_trades else 0
-        )
+        avg_win = sum(pnl(t) for t in winning_trades) / len(winning_trades) if winning_trades else 0
+        avg_loss = sum(pnl(t) for t in losing_trades) / len(losing_trades) if losing_trades else 0
 
         # Profit factor
-        gross_profit = sum(t.pnl_dollar for t in winning_trades)
-        gross_loss = abs(sum(t.pnl_dollar for t in losing_trades))
+        gross_profit = sum(pnl(t) for t in winning_trades)
+        gross_loss = abs(sum(pnl(t) for t in losing_trades))
         profit_factor = gross_profit / gross_loss if gross_loss > 0 else gross_profit
 
         # Expectancy
@@ -253,8 +256,8 @@ class TradeJournalService(BaseService):
         patterns = {t.ict_pattern for t in closed_trades if t.ict_pattern}
         for pattern in patterns:
             pattern_trades = [t for t in closed_trades if t.ict_pattern == pattern]
-            pattern_wins = [t for t in pattern_trades if t.pnl_dollar > 0]
-            win_rate_by_pattern[pattern] = (
+            pattern_wins = [t for t in pattern_trades if pnl(t) > 0]
+            win_rate_by_pattern[pattern.value] = (
                 (len(pattern_wins) / len(pattern_trades) * 100) if pattern_trades else 0
             )
 
@@ -263,7 +266,7 @@ class TradeJournalService(BaseService):
         timeframes = {t.timeframe for t in closed_trades if t.timeframe}
         for tf in timeframes:
             tf_trades = [t for t in closed_trades if t.timeframe == tf]
-            tf_wins = [t for t in tf_trades if t.pnl_dollar > 0]
+            tf_wins = [t for t in tf_trades if pnl(t) > 0]
             win_rate_by_timeframe[tf] = (len(tf_wins) / len(tf_trades) * 100) if tf_trades else 0
 
         # Win rate by emotion
@@ -271,8 +274,8 @@ class TradeJournalService(BaseService):
         emotions = {t.emotional_state for t in closed_trades if t.emotional_state}
         for emotion in emotions:
             emotion_trades = [t for t in closed_trades if t.emotional_state == emotion]
-            emotion_wins = [t for t in emotion_trades if t.pnl_dollar > 0]
-            win_rate_by_emotion[emotion] = (
+            emotion_wins = [t for t in emotion_trades if pnl(t) > 0]
+            win_rate_by_emotion[emotion.value] = (
                 (len(emotion_wins) / len(emotion_trades) * 100) if emotion_trades else 0
             )
 
@@ -295,7 +298,9 @@ class TradeJournalService(BaseService):
     async def get_analytics(self, user_id: str) -> JournalAnalyticsResponse:
         """Get comprehensive analytics for a user."""
         trades = self._get_user_trades(user_id)
-        closed_trades = [t for t in trades if t.status == TradeStatus.CLOSED]
+        closed_trades = [
+            t for t in trades if t.status == TradeStatus.CLOSED and t.pnl_dollar is not None
+        ]
 
         # Get statistics
         statistics = await self.get_statistics(user_id)
@@ -304,10 +309,12 @@ class TradeJournalService(BaseService):
         recent_trades = sorted(trades, key=lambda x: x.entry_time, reverse=True)[:10]
 
         # Top and worst performers by symbol
-        symbol_pnl = {}
+        symbol_pnl: dict[str, float] = {}
         for trade in closed_trades:
+            if trade.pnl_dollar is None:
+                continue
             if trade.symbol not in symbol_pnl:
-                symbol_pnl[trade.symbol] = 0
+                symbol_pnl[trade.symbol] = 0.0
             symbol_pnl[trade.symbol] += trade.pnl_dollar
 
         sorted_symbols = sorted(symbol_pnl.items(), key=lambda x: x[1], reverse=True)
@@ -329,7 +336,7 @@ class TradeJournalService(BaseService):
         max_loss = 0
 
         for trade in sorted_closed:
-            if trade.pnl_dollar > 0:
+            if trade.pnl_dollar is not None and trade.pnl_dollar > 0:
                 current_win += 1
                 current_loss = 0
                 max_win = max(max_win, current_win)

@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from app.utils.time import utc_now
+
 
 class TradeDirection(str, Enum):
     """Trade direction enum."""
@@ -81,8 +83,8 @@ class TradeEntry(BaseModel):
     emotional_state: EmotionalState | None = Field(default=None, description="Emotional state")
     pre_trade_notes: str | None = Field(default=None, description="Pre-trade analysis/plan")
     post_trade_notes: str | None = Field(default=None, description="Post-trade review")
-    tags: list[str] = Field(default=[], description="Custom tags")
-    screenshots: list[str] = Field(default=[], description="Screenshot URLs/identifiers")
+    tags: list[str] = Field(default_factory=list, description="Custom tags")
+    screenshots: list[str] = Field(default_factory=list, description="Screenshot URLs/identifiers")
 
     # Calculated fields (computed on exit)
     pnl_dollar: float | None = Field(default=None, description="Profit/Loss in dollars")
@@ -90,8 +92,8 @@ class TradeEntry(BaseModel):
     r_multiple: float | None = Field(default=None, description="R-multiple (risk-adjusted return)")
 
     # Metadata
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class TradeStatistics(BaseModel):
@@ -114,9 +116,15 @@ class TradeStatistics(BaseModel):
     max_drawdown: float | None = Field(default=None, description="Maximum drawdown")
 
     # ICT-specific
-    win_rate_by_pattern: dict | None = Field(default={}, description="Win rate by ICT pattern")
-    win_rate_by_timeframe: dict | None = Field(default={}, description="Win rate by timeframe")
-    win_rate_by_emotion: dict | None = Field(default={}, description="Win rate by emotional state")
+    win_rate_by_pattern: dict[str, float] = Field(
+        default_factory=dict, description="Win rate by ICT pattern"
+    )
+    win_rate_by_timeframe: dict[str, float] = Field(
+        default_factory=dict, description="Win rate by timeframe"
+    )
+    win_rate_by_emotion: dict[str, float] = Field(
+        default_factory=dict, description="Win rate by emotional state"
+    )
 
 
 class TradeJournalFilters(BaseModel):
@@ -157,7 +165,7 @@ class TradeCreateRequest(BaseModel):
     signal_strength: int | None = None
     emotional_state: EmotionalState | None = None
     pre_trade_notes: str | None = None
-    tags: list[str] = []
+    tags: list[str] = Field(default_factory=list)
 
 
 class TradeUpdateRequest(BaseModel):
@@ -175,7 +183,7 @@ class TradeCloseRequest(BaseModel):
     """Request model for closing a trade."""
 
     exit_price: float
-    exit_time: datetime = Field(default_factory=datetime.utcnow)
+    exit_time: datetime = Field(default_factory=utc_now)
     post_trade_notes: str | None = None
     emotional_state: EmotionalState | None = None
 
@@ -187,7 +195,7 @@ class JournalAnalyticsResponse(BaseModel):
     recent_trades: list[TradeEntry]
     top_performers: list[str] = Field(..., description="Best performing symbols")
     worst_performers: list[str] = Field(..., description="Worst performing symbols")
-    streaks: dict = Field(..., description="Win/loss streaks")
+    streaks: dict[str, int] = Field(..., description="Win/loss streaks")
 
 
 class UserTierLimits(BaseModel):
