@@ -129,14 +129,16 @@ export function useWebSocket(symbol: string) {
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', {
+        // Browser WebSocket errors do not expose useful details. Keep this as a
+        // debug warning and let onclose drive reconnects to avoid toast spam while
+        // the backend is starting or unavailable.
+        console.warn('WebSocket connection issue:', {
           type: error.type,
           timestamp: new Date().toISOString(),
           url: ws.url,
           readyState: ws.readyState,
         });
         setWsConnected(false);
-        addToast(`WebSocket connection failed to ${WS_URL}`, 'error');
       };
 
       ws.onclose = (event) => {

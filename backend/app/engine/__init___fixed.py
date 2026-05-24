@@ -47,8 +47,16 @@ class SignalEngine:
         Returns:
             Tuple of (ict_signals, ict_metadata)
         """
-        # Use the most recent timeframe for ICT analysis (1H provides good balance)
-        analysis_candles = candles_1h if candles_1h else candles_15m
+        # Prefer 1H for strategy analysis, but gracefully fall back to any
+        # available timeframe so sparse provider responses do not crash signal generation.
+        analysis_candles = candles_1h or candles_15m or candles_1d
+        if not analysis_candles:
+            return [], {
+                "timeframe_bias": {},
+                "liquidity_pools": {"buy_side": {}, "sell_side": {}},
+                "order_blocks_count": 0,
+                "fair_value_gaps_count": 0,
+            }
 
         # Analyze with ICT strategies
         ict_signals = self.ict_strategies.analyze_candles(analysis_candles)

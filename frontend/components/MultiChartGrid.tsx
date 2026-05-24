@@ -104,10 +104,12 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
     }
   };
 
-  if (!isPremium && chartLayout !== '1x1') {
-    // Reset to single chart if user lost premium
-    setChartLayout('1x1');
-  }
+  useEffect(() => {
+    if (!isPremium && chartLayout !== '1x1') {
+      // Reset to single chart if user lost premium without updating state during render.
+      setChartLayout('1x1');
+    }
+  }, [isPremium, chartLayout, setChartLayout]);
 
   return (
     <section className="space-y-4">
