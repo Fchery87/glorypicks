@@ -22,7 +22,6 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
     isLoadingAlerts,
     setAlerts,
     setIsLoadingAlerts,
-    addAlert,
     updateAlert: updateStoreAlert,
     deleteAlert: deleteStoreAlert,
     addToast,
@@ -86,9 +85,7 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
     }
   };
 
-  const filteredAlerts = filterSymbol
-    ? alerts.filter((a) => a.symbol === filterSymbol)
-    : alerts;
+  const filteredAlerts = filterSymbol ? alerts.filter((a) => a.symbol === filterSymbol) : alerts;
 
   return (
     <>
@@ -97,14 +94,9 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>🚨 Alert Manager</CardTitle>
-              <CardDescription>
-                Manage your trading alerts and notifications
-              </CardDescription>
+              <CardDescription>Manage your trading alerts and notifications</CardDescription>
             </div>
-            <Button
-              onClick={() => setIsCreateDialogOpen(true)}
-              size="sm"
-            >
+            <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               New Alert
             </Button>
@@ -124,17 +116,13 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
 
           {/* Alerts list */}
           {isLoadingAlerts ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading alerts...
-            </div>
+            <div className="text-center py-8 text-muted-foreground">Loading alerts...</div>
           ) : filteredAlerts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               {filterSymbol ? (
                 <>No alerts found for {filterSymbol}</>
               ) : (
-                <>
-                  No alerts yet. Click "New Alert" to create your first alert!
-                </>
+                <>No alerts yet. Click "New Alert" to create your first alert!</>
               )}
             </div>
           ) : (
@@ -233,11 +221,7 @@ function AlertItem({ alert, onToggleEnabled, onDelete, onReset }: AlertItemProps
               <Bell className="h-4 w-4 text-muted-foreground" />
             </span>
           )}
-          {alert.play_sound && (
-            <span title={`Sound: ${alert.sound_name}`}>
-              🎵
-            </span>
-          )}
+          {alert.play_sound && <span title={`Sound: ${alert.sound_name}`}>🎵</span>}
 
           {/* Enable/Disable Toggle */}
           <Switch
@@ -258,12 +242,7 @@ function AlertItem({ alert, onToggleEnabled, onDelete, onReset }: AlertItemProps
           )}
 
           {/* Delete Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(alert.id)}
-            title="Delete alert"
-          >
+          <Button variant="ghost" size="sm" onClick={() => onDelete(alert.id)} title="Delete alert">
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
@@ -271,17 +250,11 @@ function AlertItem({ alert, onToggleEnabled, onDelete, onReset }: AlertItemProps
 
       {/* Threshold display */}
       {getThresholdDisplay() && (
-        <div className="text-sm text-muted-foreground">
-          {getThresholdDisplay()}
-        </div>
+        <div className="text-sm text-muted-foreground">{getThresholdDisplay()}</div>
       )}
 
       {/* Notes */}
-      {alert.notes && (
-        <div className="text-sm text-muted-foreground italic">
-          {alert.notes}
-        </div>
-      )}
+      {alert.notes && <div className="text-sm text-muted-foreground italic">{alert.notes}</div>}
 
       {/* Triggered time */}
       {alert.triggered_at && (

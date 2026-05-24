@@ -1,42 +1,35 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
-import { useStore, ChartLayout, ChartConfig } from "@/lib/store";
-import { LightweightChart } from "@/components/LightweightChart";
-import { LayoutGrid, Columns2, Square, Lock } from "lucide-react";
-import type { Interval } from "@/types";
+} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { useStore, ChartLayout, ChartConfig } from '@/lib/store';
+import { LightweightChart } from '@/components/LightweightChart';
+import { LayoutGrid, Columns2, Square, Lock } from 'lucide-react';
+import type { Interval } from '@/types';
 
 interface MultiChartGridProps {
   isPremium: boolean;
 }
 
-const INTERVALS: Interval[] = ["1m", "5m", "15m", "30m", "1h", "2h", "4h", "1d"];
+const INTERVALS: Interval[] = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d'];
 
 const LAYOUT_OPTIONS: { value: ChartLayout; label: string; icon: React.ReactNode }[] = [
-  { value: "1x1", label: "Single", icon: <Square className="h-4 w-4" /> },
-  { value: "2x1", label: "2 Charts", icon: <Columns2 className="h-4 w-4" /> },
-  { value: "2x2", label: "4 Charts", icon: <LayoutGrid className="h-4 w-4" /> },
+  { value: '1x1', label: 'Single', icon: <Square className="h-4 w-4" /> },
+  { value: '2x1', label: '2 Charts', icon: <Columns2 className="h-4 w-4" /> },
+  { value: '2x2', label: '4 Charts', icon: <LayoutGrid className="h-4 w-4" /> },
 ];
 
 export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
-  const {
-    symbol,
-    chartLayout,
-    setChartLayout,
-    charts,
-    setChartInterval,
-    candles,
-  } = useStore();
+  const { symbol, chartLayout, setChartLayout, charts, setChartInterval, candles } = useStore();
 
   // Data loading for each chart's interval
   const [chartData, setChartData] = useState<Record<string, any[]>>({});
@@ -46,7 +39,7 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
     // Load data for each chart's interval
     charts.forEach(async (chart) => {
       const interval = chart.interval;
-      
+
       // Check if we already have this data
       if (candles[interval] && candles[interval].length > 0) {
         setChartData((prev) => ({
@@ -59,7 +52,7 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
       // Fetch data for this interval
       setIsLoading((prev) => ({ ...prev, [chart.id]: true }));
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         const response = await fetch(
           `${apiUrl}/data?symbol=${encodeURIComponent(symbol)}&interval=${interval}&limit=200`
         );
@@ -81,7 +74,7 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
 
   // Handle layout change
   const handleLayoutChange = (layout: ChartLayout) => {
-    if (layout !== "1x1" && !isPremium) {
+    if (layout !== '1x1' && !isPremium) {
       return;
     }
     setChartLayout(layout);
@@ -90,68 +83,72 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
   // Get grid class based on layout
   const getGridClass = () => {
     switch (chartLayout) {
-      case "2x1":
-        return "grid-cols-1 lg:grid-cols-2";
-      case "2x2":
-        return "grid-cols-1 lg:grid-cols-2";
+      case '2x1':
+        return 'grid-cols-1 lg:grid-cols-2';
+      case '2x2':
+        return 'grid-cols-1 lg:grid-cols-2';
       default:
-        return "grid-cols-1";
+        return 'grid-cols-1';
     }
   };
 
   // Get chart height based on layout
   const getChartHeight = () => {
     switch (chartLayout) {
-      case "2x1":
-        return "h-[400px]";
-      case "2x2":
-        return "h-[350px]";
+      case '2x1':
+        return 'h-[400px]';
+      case '2x2':
+        return 'h-[350px]';
       default:
-        return "h-[500px]";
+        return 'h-[500px]';
     }
   };
 
-  if (!isPremium && chartLayout !== "1x1") {
+  if (!isPremium && chartLayout !== '1x1') {
     // Reset to single chart if user lost premium
-    setChartLayout("1x1");
+    setChartLayout('1x1');
   }
 
   return (
-    <div className="space-y-4">
+    <section className="space-y-4">
       {/* Layout Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border-subtle bg-bg-secondary/50 p-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="section-eyebrow">Workspace</p>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-text-primary">
+            Market structure matrix
+          </h2>
+        </div>
         <div className="flex items-center gap-2">
           {LAYOUT_OPTIONS.map((option) => (
             <Button
               key={option.value}
-              variant={chartLayout === option.value ? "default" : "outline"}
+              variant={chartLayout === option.value ? 'primary' : 'outline'}
               size="sm"
               onClick={() => handleLayoutChange(option.value)}
-              disabled={option.value !== "1x1" && !isPremium}
+              disabled={option.value !== '1x1' && !isPremium}
               className={cn(
-                "gap-2",
-                option.value !== "1x1" && !isPremium && "opacity-50 cursor-not-allowed"
+                'gap-2 rounded-lg',
+                option.value !== '1x1' && !isPremium && 'opacity-50 cursor-not-allowed'
               )}
             >
               {option.icon}
               {option.label}
-              {option.value !== "1x1" && !isPremium && (
-                <Lock className="h-3 w-3 ml-1" />
-              )}
+              {option.value !== '1x1' && !isPremium && <Lock className="h-3 w-3 ml-1" />}
             </Button>
           ))}
         </div>
 
         {!isPremium && (
-          <p className="text-sm text-text-tertiary">
-            Multi-chart layouts are a Premium feature
+          <p className="text-xs text-text-tertiary sm:text-sm">
+            Upgrade unlocks stacked multi-timeframe workspaces
           </p>
         )}
       </div>
 
       {/* Charts Grid */}
-      <div className={cn("grid gap-4", getGridClass())}>
-        {charts.map((chart, index) => (
+      <div className={cn('grid gap-4', getGridClass())}>
+        {charts.map((chart) => (
           <ChartCard
             key={chart.id}
             chart={chart}
@@ -164,7 +161,7 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -188,13 +185,16 @@ function ChartCard({
   showIntervalSelector,
 }: ChartCardProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="p-3 border-b border-border-subtle">
+    <Card className="overflow-hidden border-border-default/80">
+      <CardHeader className="p-3 border-b border-border-subtle bg-bg-primary/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-mono font-semibold text-text-primary">
-              {symbol}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-accent-cyan shadow-[0_0_14px_var(--color-accent-cyan)]" />
+              <span className="font-mono font-semibold tracking-[0.08em] text-text-primary">
+                {symbol}
+              </span>
+            </div>
             {showIntervalSelector ? (
               <Select
                 value={chart.interval}
@@ -219,14 +219,14 @@ function ChartCard({
           </div>
 
           {candles.length > 0 && (
-            <div className="text-xs text-text-tertiary">
+            <div className="rounded-full border border-border-subtle bg-bg-secondary px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-tertiary">
               {candles.length} candles
             </div>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className={cn("p-0 relative", height)}>
+      <CardContent className={cn('p-0 relative', height)}>
         {isLoading ? (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex items-center gap-2 text-text-secondary">
@@ -235,11 +235,7 @@ function ChartCard({
             </div>
           </div>
         ) : candles.length > 0 ? (
-          <LightweightChart
-            symbol={symbol}
-            interval={chart.interval}
-            candles={candles}
-          />
+          <LightweightChart symbol={symbol} interval={chart.interval} candles={candles} />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-text-secondary">
             <span className="text-sm">No data available</span>

@@ -28,7 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useStore } from '@/lib/store';
 import { createAlert } from '@/lib/alertApi';
-import { getAlertTypeName, getAlertTypeDescription, alertTypeRequiresThreshold } from '@/lib/alertApi';
+import { getAlertTypeDescription, alertTypeRequiresThreshold } from '@/lib/alertApi';
 import type { AlertType, SoundName } from '@/lib/store';
 
 interface CreateAlertDialogProps {
@@ -37,7 +37,11 @@ interface CreateAlertDialogProps {
   defaultSymbol?: string;
 }
 
-export function CreateAlertDialog({ open, onOpenChange, defaultSymbol = '' }: CreateAlertDialogProps) {
+export function CreateAlertDialog({
+  open,
+  onOpenChange,
+  defaultSymbol = '',
+}: CreateAlertDialogProps) {
   const { addAlert, addToast } = useStore();
 
   // Form state
@@ -214,24 +218,37 @@ export function CreateAlertDialog({ open, onOpenChange, defaultSymbol = '' }: Cr
             {/* Notification Settings */}
             <div className="space-y-3 pt-2 border-t">
               <div className="flex items-center justify-between">
-                <Label htmlFor="enabled" className="cursor-pointer">Enable Alert</Label>
+                <Label htmlFor="enabled" className="cursor-pointer">
+                  Enable Alert
+                </Label>
                 <Switch id="enabled" checked={enabled} onCheckedChange={setEnabled} />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="sendNotification" className="cursor-pointer">Browser Notification</Label>
-                <Switch id="sendNotification" checked={sendNotification} onCheckedChange={setSendNotification} />
+                <Label htmlFor="sendNotification" className="cursor-pointer">
+                  Browser Notification
+                </Label>
+                <Switch
+                  id="sendNotification"
+                  checked={sendNotification}
+                  onCheckedChange={setSendNotification}
+                />
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="playSound" className="cursor-pointer">Play Sound</Label>
+                <Label htmlFor="playSound" className="cursor-pointer">
+                  Play Sound
+                </Label>
                 <Switch id="playSound" checked={playSound} onCheckedChange={setPlaySound} />
               </div>
 
               {playSound && (
                 <div className="space-y-2">
                   <Label htmlFor="soundName">Sound</Label>
-                  <Select value={soundName} onValueChange={(value) => setSoundName(value as SoundName)}>
+                  <Select
+                    value={soundName}
+                    onValueChange={(value) => setSoundName(value as SoundName)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

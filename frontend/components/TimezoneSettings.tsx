@@ -1,12 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
-import { Globe, Clock } from "lucide-react";
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Globe, Clock } from 'lucide-react';
 
 interface TimezoneContextType {
   userTimezone: string;
@@ -20,7 +25,7 @@ interface TimezoneContextType {
 const TimezoneContext = createContext<TimezoneContextType | undefined>(undefined);
 
 export function TimezoneProvider({ children }: { children: ReactNode }) {
-  const [userTimezone, setUserTimezone] = useState<string>("America/New_York");
+  const [userTimezone, setUserTimezone] = useState<string>('America/New_York');
   const [useLocalTimezone, setUseLocalTimezone] = useState<boolean>(true);
 
   useEffect(() => {
@@ -31,7 +36,7 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
 
   const convertTime = (hour: number, minute: number) => {
     if (!useLocalTimezone) {
-      return { hour, minute, timezone: "EST" };
+      return { hour, minute, timezone: 'EST' };
     }
 
     // Create a date object with EST time
@@ -39,16 +44,16 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
     estDate.setHours(hour, minute, 0, 0);
 
     // Convert to user's timezone
-    const userFormatter = new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
+    const userFormatter = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
       hour12: false,
       timeZone: userTimezone,
     });
 
     const parts = userFormatter.formatToParts(estDate);
-    const userHour = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
-    const userMinute = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
+    const userHour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0');
+    const userMinute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0');
 
     return { hour: userHour, minute: userMinute, timezone: userTimezone };
   };
@@ -59,8 +64,8 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
     }
 
     // Parse times
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    const [endHour, endMin] = endTime.split(":").map(Number);
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
 
     // Convert to local
     const convertedStart = convertTime(startHour, startMin);
@@ -68,17 +73,18 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
 
     // Format
     const formatTime = (hour: number, minute: number) => {
-      const period = hour >= 12 ? "PM" : "AM";
+      const period = hour >= 12 ? 'PM' : 'AM';
       const displayHour = hour % 12 || 12;
-      return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
     };
 
-    const timezoneAbbr = new Intl.DateTimeFormat("en-US", {
-      timeZone: userTimezone,
-      timeZoneName: "short",
-    })
-      .formatToParts(new Date())
-      .find((part) => part.type === "timeZoneName")?.value || userTimezone;
+    const timezoneAbbr =
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: userTimezone,
+        timeZoneName: 'short',
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value || userTimezone;
 
     return `${formatTime(convertedStart.hour, convertedStart.minute)} - ${formatTime(
       convertedEnd.hour,
@@ -105,7 +111,7 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
 export function useTimezone() {
   const context = useContext(TimezoneContext);
   if (context === undefined) {
-    throw new Error("useTimezone must be used within a TimezoneProvider");
+    throw new Error('useTimezone must be used within a TimezoneProvider');
   }
   return context;
 }
@@ -123,17 +129,17 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
     formatKillZoneTime,
   } = useTimezone();
 
-  const [currentTime, setCurrentTime] = useState<string>("");
+  const [currentTime, setCurrentTime] = useState<string>('');
 
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
       setCurrentTime(
-        now.toLocaleTimeString("en-US", {
-          timeZone: useLocalTimezone ? userTimezone : "America/New_York",
-          hour: "numeric",
-          minute: "2-digit",
-          timeZoneName: "short",
+        now.toLocaleTimeString('en-US', {
+          timeZone: useLocalTimezone ? userTimezone : 'America/New_York',
+          hour: 'numeric',
+          minute: '2-digit',
+          timeZoneName: 'short',
         })
       );
     };
@@ -145,27 +151,27 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
 
   // Common timezones
   const timezones = [
-    { value: "America/New_York", label: "New York (EST/EDT)" },
-    { value: "America/Chicago", label: "Chicago (CST/CDT)" },
-    { value: "America/Denver", label: "Denver (MST/MDT)" },
-    { value: "America/Los_Angeles", label: "Los Angeles (PST/PDT)" },
-    { value: "Europe/London", label: "London (GMT/BST)" },
-    { value: "Europe/Paris", label: "Paris (CET/CEST)" },
-    { value: "Europe/Berlin", label: "Berlin (CET/CEST)" },
-    { value: "Asia/Tokyo", label: "Tokyo (JST)" },
-    { value: "Asia/Shanghai", label: "Shanghai (CST)" },
-    { value: "Asia/Singapore", label: "Singapore (SGT)" },
-    { value: "Asia/Dubai", label: "Dubai (GST)" },
-    { value: "Australia/Sydney", label: "Sydney (AEST/AEDT)" },
-    { value: "Pacific/Auckland", label: "Auckland (NZST/NZDT)" },
+    { value: 'America/New_York', label: 'New York (EST/EDT)' },
+    { value: 'America/Chicago', label: 'Chicago (CST/CDT)' },
+    { value: 'America/Denver', label: 'Denver (MST/MDT)' },
+    { value: 'America/Los_Angeles', label: 'Los Angeles (PST/PDT)' },
+    { value: 'Europe/London', label: 'London (GMT/BST)' },
+    { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+    { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+    { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+    { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+    { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+    { value: 'Pacific/Auckland', label: 'Auckland (NZST/NZDT)' },
   ];
 
   // Kill zone times in EST
   const killZones = [
-    { name: "London Kill Zone", start: "3:00", end: "5:00" },
-    { name: "NYSE Kill Zone", start: "9:30", end: "11:30" },
-    { name: "London Close", start: "11:00", end: "12:00" },
-    { name: "Asian Session", start: "20:00", end: "0:00" },
+    { name: 'London Kill Zone', start: '3:00', end: '5:00' },
+    { name: 'NYSE Kill Zone', start: '9:30', end: '11:30' },
+    { name: 'London Close', start: '11:00', end: '12:00' },
+    { name: 'Asian Session', start: '20:00', end: '0:00' },
   ];
 
   return (
@@ -220,7 +226,7 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
         {/* Kill Zone Times */}
         <div className="space-y-3 pt-3 border-t border-border-subtle">
           <p className="text-xs text-text-tertiary uppercase tracking-wider">
-            Kill Zone Times ({useLocalTimezone ? "Local" : "EST"})
+            Kill Zone Times ({useLocalTimezone ? 'Local' : 'EST'})
           </p>
 
           <div className="space-y-2">

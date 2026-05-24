@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useStore } from "@/lib/store";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { MiniSignal } from "@/types";
-import { 
-  FileText, 
-  TrendingUp, 
-  TrendingDown, 
+import { useStore } from '@/lib/store';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import type { MiniSignal } from '@/types';
+import {
+  FileText,
+  TrendingUp,
+  TrendingDown,
   Minus,
   Target,
   Zap,
   BarChart3,
-  Activity
-} from "lucide-react";
+  Activity,
+} from 'lucide-react';
 
 interface TimeframeRationale {
   timeframe: string;
@@ -23,26 +23,28 @@ interface TimeframeRationale {
 }
 
 const RATIONALE_ICONS: Record<string, React.ReactNode> = {
-  "breaker": <Target className="h-4 w-4 text-accent-primary" />,
-  "fvg": <Zap className="h-4 w-4 text-accent-primary" />,
-  "bos": <BarChart3 className="h-4 w-4 text-accent-primary" />,
-  "mss": <Activity className="h-4 w-4 text-accent-primary" />,
+  breaker: <Target className="h-4 w-4 text-accent-primary" />,
+  fvg: <Zap className="h-4 w-4 text-accent-primary" />,
+  bos: <BarChart3 className="h-4 w-4 text-accent-primary" />,
+  mss: <Activity className="h-4 w-4 text-accent-primary" />,
 };
 
 function getRationaleIcon(text: string) {
   const lowerText = text.toLowerCase();
-  if (lowerText.includes("breaker")) return RATIONALE_ICONS["breaker"];
-  if (lowerText.includes("fair value") || lowerText.includes("fvg")) return RATIONALE_ICONS["fvg"];
-  if (lowerText.includes("bos") || lowerText.includes("break of structure")) return RATIONALE_ICONS["bos"];
-  if (lowerText.includes("mss") || lowerText.includes("market structure")) return RATIONALE_ICONS["mss"];
+  if (lowerText.includes('breaker')) return RATIONALE_ICONS['breaker'];
+  if (lowerText.includes('fair value') || lowerText.includes('fvg')) return RATIONALE_ICONS['fvg'];
+  if (lowerText.includes('bos') || lowerText.includes('break of structure'))
+    return RATIONALE_ICONS['bos'];
+  if (lowerText.includes('mss') || lowerText.includes('market structure'))
+    return RATIONALE_ICONS['mss'];
   return null;
 }
 
 function getRationaleColor(text: string) {
   const lowerText = text.toLowerCase();
-  if (lowerText.includes("bullish") || lowerText.includes("buy")) return "text-accent-bullish";
-  if (lowerText.includes("bearish") || lowerText.includes("sell")) return "text-accent-bearish";
-  return "text-text-secondary";
+  if (lowerText.includes('bullish') || lowerText.includes('buy')) return 'text-accent-bullish';
+  if (lowerText.includes('bearish') || lowerText.includes('sell')) return 'text-accent-bearish';
+  return 'text-text-secondary';
 }
 
 export function RationaleList() {
@@ -68,35 +70,35 @@ export function RationaleList() {
   // Build timeframe breakdown from signal
   const timeframeData: TimeframeRationale[] = [
     {
-      timeframe: "1D",
-      signal: signal.breakdown?.d1 || "Neutral",
-      rationale: signal.rationale?.filter(r => 
-        r.toLowerCase().includes("daily") || 
-        r.toLowerCase().includes("trend")
-      ) || [],
+      timeframe: '1D',
+      signal: signal.breakdown?.d1 || 'Neutral',
+      rationale:
+        signal.rationale?.filter(
+          (r) => r.toLowerCase().includes('daily') || r.toLowerCase().includes('trend')
+        ) || [],
     },
     {
-      timeframe: "1H",
-      signal: signal.breakdown?.h1 || "Neutral",
-      rationale: signal.rationale?.filter(r => 
-        r.toLowerCase().includes("hour") || 
-        r.toLowerCase().includes("momentum")
-      ) || [],
+      timeframe: '1H',
+      signal: signal.breakdown?.h1 || 'Neutral',
+      rationale:
+        signal.rationale?.filter(
+          (r) => r.toLowerCase().includes('hour') || r.toLowerCase().includes('momentum')
+        ) || [],
     },
     {
-      timeframe: "15M",
-      signal: signal.breakdown?.m15 || "Neutral",
-      rationale: signal.rationale?.filter(r => 
-        r.toLowerCase().includes("15") || 
-        r.toLowerCase().includes("short")
-      ) || [],
+      timeframe: '15M',
+      signal: signal.breakdown?.m15 || 'Neutral',
+      rationale:
+        signal.rationale?.filter(
+          (r) => r.toLowerCase().includes('15') || r.toLowerCase().includes('short')
+        ) || [],
     },
-  ].filter(item => item.rationale.length > 0);
+  ].filter((item) => item.rationale.length > 0);
 
   // Distribute remaining rationale across timeframes
-  const usedRationale = timeframeData.flatMap(item => item.rationale);
-  const remainingRationale = signal.rationale?.filter(r => !usedRationale.includes(r)) || [];
-  
+  const usedRationale = timeframeData.flatMap((item) => item.rationale);
+  const remainingRationale = signal.rationale?.filter((r) => !usedRationale.includes(r)) || [];
+
   // Evenly distribute remaining rationale
   remainingRationale.forEach((r, index) => {
     const targetIndex = index % Math.max(timeframeData.length, 1);
@@ -107,23 +109,23 @@ export function RationaleList() {
 
   const getSignalStyles = (signalVal: MiniSignal) => {
     switch (signalVal) {
-      case "Bullish":
+      case 'Bullish':
         return {
-          badge: "bg-accent-bullish/10 text-accent-bullish border-accent-bullish/30",
+          badge: 'bg-accent-bullish/10 text-accent-bullish border-accent-bullish/30',
           icon: TrendingUp,
-          iconColor: "text-accent-bullish",
+          iconColor: 'text-accent-bullish',
         };
-      case "Bearish":
+      case 'Bearish':
         return {
-          badge: "bg-accent-bearish/10 text-accent-bearish border-accent-bearish/30",
+          badge: 'bg-accent-bearish/10 text-accent-bearish border-accent-bearish/30',
           icon: TrendingDown,
-          iconColor: "text-accent-bearish",
+          iconColor: 'text-accent-bearish',
         };
       default:
         return {
-          badge: "bg-text-secondary/10 text-text-secondary border-text-secondary/30",
+          badge: 'bg-text-secondary/10 text-text-secondary border-text-secondary/30',
           icon: Minus,
-          iconColor: "text-text-secondary",
+          iconColor: 'text-text-secondary',
         };
     }
   };
@@ -133,13 +135,13 @@ export function RationaleList() {
       <CardHeader className="pb-3">
         <h3 className="text-h3 font-semibold text-text-primary">Signal Rationale</h3>
       </CardHeader>
-      
+
       <CardContent>
         <div className="space-y-4">
           {timeframeData.map((item) => {
             const styles = getSignalStyles(item.signal);
             const Icon = styles.icon;
-            
+
             return (
               <div
                 key={item.timeframe}
@@ -148,13 +150,13 @@ export function RationaleList() {
                 {/* Timeframe Header */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <Icon className={cn("h-5 w-5", styles.iconColor)} />
+                    <Icon className={cn('h-5 w-5', styles.iconColor)} />
                     <span className="text-text-primary font-medium">{item.timeframe}</span>
                   </div>
-                  
-                  <Badge 
+
+                  <Badge
                     variant="outline"
-                    className={cn("text-xs font-medium px-2 py-1 border", styles.badge)}
+                    className={cn('text-xs font-medium px-2 py-1 border', styles.badge)}
                   >
                     {item.signal}
                   </Badge>
@@ -163,14 +165,11 @@ export function RationaleList() {
                 {/* Rationale Items */}
                 <ul className="space-y-2">
                   {item.rationale.map((reason, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-2 text-sm"
-                    >
+                    <li key={idx} className="flex items-start gap-2 text-sm">
                       {getRationaleIcon(reason) || (
                         <span className="w-1.5 h-1.5 rounded-full bg-border-strong mt-2 flex-shrink-0" />
                       )}
-                      <span className={cn("leading-relaxed", getRationaleColor(reason))}>
+                      <span className={cn('leading-relaxed', getRationaleColor(reason))}>
                         {reason}
                       </span>
                     </li>
@@ -188,12 +187,12 @@ export function RationaleList() {
               ICT Signals Detected
             </h4>
             <div className="flex flex-wrap gap-2">
-              {signal.ict_analysis.breaker_blocks?.length > 0 && (
+              {(signal.ict_analysis.breaker_blocks?.length ?? 0) > 0 && (
                 <span className="px-2 py-1 bg-accent-primary/10 text-accent-primary text-xs rounded-sm border border-accent-primary/20">
                   Breaker Block
                 </span>
               )}
-              {signal.ict_analysis.fair_value_gaps?.length > 0 && (
+              {(signal.ict_analysis.fair_value_gaps?.length ?? 0) > 0 && (
                 <span className="px-2 py-1 bg-accent-primary/10 text-accent-primary text-xs rounded-sm border border-accent-primary/20">
                   Fair Value Gap
                 </span>

@@ -3,7 +3,7 @@
  * Handles playing different alert sounds
  */
 
-import type { SoundName } from '@/lib/store';
+import type { SoundName } from '@/types';
 
 // =============================================================================
 // Audio Cache
@@ -98,12 +98,12 @@ export async function preloadSounds(): Promise<void> {
         const soundPath = getSoundPath(soundName);
         const audio = new Audio(soundPath);
         audio.preload = 'auto';
-        
+
         // Wait for audio to load
         await new Promise<void>((resolve, reject) => {
           audio.addEventListener('canplaythrough', () => resolve(), { once: true });
           audio.addEventListener('error', () => reject(), { once: true });
-          
+
           // Timeout after 5 seconds
           setTimeout(() => reject(new Error('Preload timeout')), 5000);
         });

@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Target, 
-  Clock, 
-  Award, 
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import {
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Clock,
+  Award,
   AlertCircle,
-  Activity
-} from "lucide-react";
+  Activity,
+} from 'lucide-react';
 
 interface ZoneStats {
   total_trades: number;
@@ -55,21 +55,21 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
 
   useEffect(() => {
     if (!symbol) return;
-    
+
     const fetchPerformance = async () => {
       try {
         setLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         const response = await fetch(`${apiUrl}/killzone/performance/${symbol}`);
-        
+
         if (!response.ok) {
-          throw new Error("Failed to fetch performance data");
+          throw new Error('Failed to fetch performance data');
         }
-        
+
         const result = await response.json();
         setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
       }
@@ -79,42 +79,40 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
   }, [symbol]);
 
   const formatZoneName = (zoneType: string) => {
-    return zoneType
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (l) => l.toUpperCase());
+    return zoneType.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
-      case "strong_buy":
-        return "text-accent-bullish";
-      case "favorable":
-        return "text-green-400";
-      case "neutral":
-        return "text-yellow-500";
-      case "avoid":
-        return "text-accent-bearish";
+      case 'strong_buy':
+        return 'text-accent-bullish';
+      case 'favorable':
+        return 'text-green-400';
+      case 'neutral':
+        return 'text-yellow-500';
+      case 'avoid':
+        return 'text-accent-bearish';
       default:
-        return "text-text-secondary";
+        return 'text-text-secondary';
     }
   };
 
   const getRecommendationBadge = (recommendation: string) => {
     const styles = {
-      strong_buy: "bg-accent-bullish/20 text-accent-bullish border-accent-bullish/50",
-      favorable: "bg-green-500/20 text-green-400 border-green-500/50",
-      neutral: "bg-yellow-500/20 text-yellow-500 border-yellow-500/50",
-      avoid: "bg-accent-bearish/20 text-accent-bearish border-accent-bearish/50",
-      insufficient_data: "bg-text-secondary/20 text-text-secondary",
-      limited_data: "bg-text-secondary/20 text-text-secondary",
+      strong_buy: 'bg-accent-bullish/20 text-accent-bullish border-accent-bullish/50',
+      favorable: 'bg-green-500/20 text-green-400 border-green-500/50',
+      neutral: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50',
+      avoid: 'bg-accent-bearish/20 text-accent-bearish border-accent-bearish/50',
+      insufficient_data: 'bg-text-secondary/20 text-text-secondary',
+      limited_data: 'bg-text-secondary/20 text-text-secondary',
     };
-    
+
     return styles[recommendation as keyof typeof styles] || styles.insufficient_data;
   };
 
   if (loading) {
     return (
-      <Card className={cn("opacity-60", className)}>
+      <Card className={cn('opacity-60', className)}>
         <CardContent className="p-6 text-center">
           <Activity className="h-6 w-6 animate-pulse text-text-tertiary mx-auto" />
           <p className="text-text-secondary text-sm mt-2">Loading performance data...</p>
@@ -125,7 +123,7 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
 
   if (error) {
     return (
-      <Card className={cn("border-accent-bearish/50", className)}>
+      <Card className={cn('border-accent-bearish/50', className)}>
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-6 w-6 text-accent-bearish mx-auto" />
           <p className="text-accent-bearish text-sm mt-2">Failed to load performance data</p>
@@ -152,9 +150,7 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5 text-accent-primary" />
-            <h3 className="text-h3 font-semibold text-text-primary">
-              Kill Zone Performance
-            </h3>
+            <h3 className="text-h3 font-semibold text-text-primary">Kill Zone Performance</h3>
           </div>
           <Badge variant="outline" className="font-mono text-xs">
             {symbol}
@@ -171,7 +167,7 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
               {data.optimal_session && formatZoneName(data.optimal_session)}
             </span>
           </div>
-          
+
           {data.overall_best_zone && (
             <div className="flex items-center justify-between">
               <span className="text-text-secondary text-sm">Best Zone</span>
@@ -181,7 +177,7 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
               </Badge>
             </div>
           )}
-          
+
           {data.overall_worst_zone && (
             <div className="flex items-center justify-between">
               <span className="text-text-secondary text-sm">Worst Zone</span>
@@ -198,7 +194,7 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
           <TabsList className="grid grid-cols-2 lg:grid-cols-4">
             {zones.map(([zoneType]) => (
               <TabsTrigger key={zoneType} value={zoneType} className="text-xs">
-                {formatZoneName(zoneType).split(" ")[0]}
+                {formatZoneName(zoneType).split(' ')[0]}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -210,11 +206,11 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
                 <div className="flex items-center justify-between p-3 bg-bg-elevated rounded">
                   <span className="text-text-secondary text-sm">Recommendation</span>
                   <Badge className={getRecommendationBadge(zoneData.recommendation)}>
-                    {zoneData.recommendation.replace(/_/g, " ").toUpperCase()}
+                    {zoneData.recommendation.replace(/_/g, ' ').toUpperCase()}
                   </Badge>
                 </div>
 
-                <p className={cn("text-sm", getRecommendationColor(zoneData.recommendation))}>
+                <p className={cn('text-sm', getRecommendationColor(zoneData.recommendation))}>
                   {zoneData.message}
                 </p>
 
@@ -225,23 +221,29 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-text-secondary">Win Rate</span>
-                        <span className={cn(
-                          "font-mono font-medium",
-                          zoneData.statistics.win_rate >= 60 ? "text-accent-bullish" :
-                          zoneData.statistics.win_rate >= 50 ? "text-yellow-500" :
-                          "text-accent-bearish"
-                        )}>
+                        <span
+                          className={cn(
+                            'font-mono font-medium',
+                            zoneData.statistics.win_rate >= 60
+                              ? 'text-accent-bullish'
+                              : zoneData.statistics.win_rate >= 50
+                                ? 'text-yellow-500'
+                                : 'text-accent-bearish'
+                          )}
+                        >
                           {zoneData.statistics.win_rate}%
                         </span>
                       </div>
-                      <Progress 
-                        value={zoneData.statistics.win_rate} 
+                      <Progress
+                        value={zoneData.statistics.win_rate}
                         max={100}
                         className={cn(
-                          "h-1.5",
-                          zoneData.statistics.win_rate >= 60 ? "bg-accent-bullish" :
-                          zoneData.statistics.win_rate >= 50 ? "bg-yellow-500" :
-                          "bg-accent-bearish"
+                          'h-1.5',
+                          zoneData.statistics.win_rate >= 60
+                            ? 'bg-accent-bullish'
+                            : zoneData.statistics.win_rate >= 50
+                              ? 'bg-yellow-500'
+                              : 'bg-accent-bearish'
                         )}
                       />
                     </div>
@@ -263,11 +265,15 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
                           <TrendingDown className="h-3 w-3" />
                           Avg Return
                         </div>
-                        <span className={cn(
-                          "font-mono text-lg",
-                          zoneData.statistics.avg_return_percent >= 0 ? "text-accent-bullish" : "text-accent-bearish"
-                        )}>
-                          {zoneData.statistics.avg_return_percent >= 0 ? "+" : ""}
+                        <span
+                          className={cn(
+                            'font-mono text-lg',
+                            zoneData.statistics.avg_return_percent >= 0
+                              ? 'text-accent-bullish'
+                              : 'text-accent-bearish'
+                          )}
+                        >
+                          {zoneData.statistics.avg_return_percent >= 0 ? '+' : ''}
                           {zoneData.statistics.avg_return_percent}%
                         </span>
                       </div>
@@ -288,7 +294,7 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
                           Best Pattern
                         </div>
                         <span className="font-mono text-sm truncate">
-                          {zoneData.statistics.best_pattern || "N/A"}
+                          {zoneData.statistics.best_pattern || 'N/A'}
                         </span>
                       </div>
                     </div>

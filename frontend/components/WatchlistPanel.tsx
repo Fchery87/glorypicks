@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
@@ -11,7 +11,7 @@ import { WatchlistItem } from './WatchlistItem';
 
 /**
  * WatchlistPanel - Main watchlist management component
- * 
+ *
  * Features:
  * - List all user watchlists
  * - Create new watchlists
@@ -27,34 +27,34 @@ export function WatchlistPanel() {
     addWatchlist,
     deleteWatchlist,
     setSelectedWatchlist,
-    addToast
+    addToast,
   } = useStore();
-  
+
   const [isCreating, setIsCreating] = useState(false);
   const [newWatchlistName, setNewWatchlistName] = useState('');
   const [isCreatingLoading, setIsCreatingLoading] = useState(false);
-  
+
   const handleCreate = async () => {
     if (!newWatchlistName.trim()) {
       addToast('Please enter a watchlist name', 'error');
       return;
     }
-    
+
     setIsCreatingLoading(true);
-    
+
     try {
       const response = await fetch('http://localhost:8000/watchlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Session-ID': getSessionId()
+          'X-Session-ID': getSessionId(),
         },
         body: JSON.stringify({
           name: newWatchlistName,
-          symbols: []
-        })
+          symbols: [],
+        }),
       });
-      
+
       if (response.ok) {
         const watchlist = await response.json();
         addWatchlist(watchlist);
@@ -72,20 +72,20 @@ export function WatchlistPanel() {
       setIsCreatingLoading(false);
     }
   };
-  
+
   const handleDelete = async (watchlistId: string, watchlistName: string) => {
     if (!confirm(`Delete watchlist "${watchlistName}"?`)) {
       return;
     }
-    
+
     try {
       const response = await fetch(`http://localhost:8000/watchlist/${watchlistId}`, {
         method: 'DELETE',
         headers: {
-          'X-Session-ID': getSessionId()
-        }
+          'X-Session-ID': getSessionId(),
+        },
       });
-      
+
       if (response.ok) {
         deleteWatchlist(watchlistId);
         addToast('Watchlist deleted', 'success');
@@ -97,7 +97,7 @@ export function WatchlistPanel() {
       addToast('Network error. Please try again.', 'error');
     }
   };
-  
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleCreate();
@@ -106,7 +106,7 @@ export function WatchlistPanel() {
       setNewWatchlistName('');
     }
   };
-  
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-3">
@@ -122,7 +122,7 @@ export function WatchlistPanel() {
           </Button>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="flex-1 overflow-y-auto">
         {/* Create Watchlist Form */}
         {isCreating && (
@@ -165,7 +165,7 @@ export function WatchlistPanel() {
             </div>
           </div>
         )}
-        
+
         {/* Watchlist Items */}
         {isLoadingWatchlists ? (
           <div className="flex items-center justify-center py-8 text-muted-foreground">
@@ -185,18 +185,21 @@ export function WatchlistPanel() {
               <div key={watchlist.id}>
                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
                   <button
-                    onClick={() => setSelectedWatchlist(
-                      selectedWatchlistId === watchlist.id ? null : watchlist.id
-                    )}
+                    onClick={() =>
+                      setSelectedWatchlist(
+                        selectedWatchlistId === watchlist.id ? null : watchlist.id
+                      )
+                    }
                     className="flex-1 text-left"
                     title="Click to expand/collapse"
                   >
                     <div className="font-medium text-sm">{watchlist.name}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {watchlist.symbols.length} {watchlist.symbols.length === 1 ? 'symbol' : 'symbols'}
+                      {watchlist.symbols.length}{' '}
+                      {watchlist.symbols.length === 1 ? 'symbol' : 'symbols'}
                     </div>
                   </button>
-                  
+
                   <div className="flex items-center gap-1 ml-2">
                     <Button
                       size="sm"
@@ -209,7 +212,7 @@ export function WatchlistPanel() {
                     </Button>
                   </div>
                 </div>
-                
+
                 {/* Expanded Watchlist Content */}
                 {selectedWatchlistId === watchlist.id && (
                   <div className="ml-2 mt-1 pl-3 border-l-2 border-muted">

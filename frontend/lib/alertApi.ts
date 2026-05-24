@@ -3,8 +3,8 @@
  * Handles all alert-related API calls to the backend
  */
 
-import type { Alert, AlertTriggered, AlertStats, AlertType, SoundName } from '@/lib/store';
-import { getSessionId, getAuthHeaders } from '@/lib/session';
+import type { Alert, AlertTriggered, AlertStats, AlertType, SoundName } from '@/types';
+import { getAuthHeaders } from '@/lib/session';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
@@ -62,7 +62,7 @@ export async function createAlert(data: CreateAlertData): Promise<Alert> {
  * Get all alerts for the current user
  */
 export async function getAlerts(symbol?: string): Promise<Alert[]> {
-  const url = symbol 
+  const url = symbol
     ? `${API_BASE}/alerts?symbol=${encodeURIComponent(symbol)}`
     : `${API_BASE}/alerts`;
 

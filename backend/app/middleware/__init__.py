@@ -1,8 +1,9 @@
 """Security middleware for HTTP headers and security policies."""
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.base import RequestResponseEndpoint
+
 import logging
+
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
-        
+
         # Security headers
         headers = {
             "X-Content-Type-Options": "nosniff",
@@ -22,10 +23,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "Referrer-Policy": "strict-origin-when-cross-origin",
             "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
         }
-        
+
         for header, value in headers.items():
             response.headers[header] = value
-        
+
         return response
 
 
@@ -38,13 +39,13 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         content_length = request.headers.get("content-length")
-        
+
         if content_length and int(content_length) > self.max_size:
             logger.warning(f"Request size limit exceeded: {content_length} bytes")
             return Response(
                 status_code=413,
                 content='{"error": "Request entity too large"}',
-                media_type="application/json"
+                media_type="application/json",
             )
-        
+
         return await call_next(request)

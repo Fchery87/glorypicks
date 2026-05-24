@@ -1,53 +1,50 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { TradeEntry, TradeFormData, UserTierLimits, ICTPatternType, EmotionalState } from "@/types/journal";
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import {
+  TradeEntry,
+  TradeFormData,
+  UserTierLimits,
+  ICTPatternType,
+  EmotionalState,
+} from '@/types/journal';
 import {
   getTrades,
   createTrade,
-  updateTrade,
   closeTrade,
   deleteTrade,
   getTierLimits,
   createSampleTrades,
   getPatternOptions,
-} from "@/lib/journalApi";
+} from '@/lib/journalApi';
 import {
   Plus,
   TrendingUp,
   TrendingDown,
   Trash2,
-  Edit3,
-  X,
   BookOpen,
   Lock,
   Sparkles,
   Loader2,
-} from "lucide-react";
-import { JournalAnalyticsPanel } from "@/components/JournalAnalyticsPanel";
+} from 'lucide-react';
+import { JournalAnalyticsPanel } from '@/components/JournalAnalyticsPanel';
 
 export default function JournalPage() {
   const [trades, setTrades] = useState<TradeEntry[]>([]);
@@ -59,23 +56,22 @@ export default function JournalPage() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingTrade, setEditingTrade] = useState<TradeEntry | null>(null);
   const [isClosingTrade, setIsClosingTrade] = useState<TradeEntry | null>(null);
 
   const [formData, setFormData] = useState<TradeFormData>({
-    symbol: "",
-    direction: "long",
-    entry_price: "",
-    position_size: "",
-    stop_loss: "",
-    take_profit: "",
+    symbol: '',
+    direction: 'long',
+    entry_price: '',
+    position_size: '',
+    stop_loss: '',
+    take_profit: '',
     ict_pattern: undefined,
-    timeframe: "1h",
+    timeframe: '1h',
     signal_strength: 70,
     emotional_state: undefined,
-    pre_trade_notes: "",
+    pre_trade_notes: '',
     tags: [],
   });
 
@@ -95,7 +91,7 @@ export default function JournalPage() {
       setTierLimits(limitsData);
       setPatternOptions(patternsData);
     } catch (error) {
-      console.error("Error loading journal data:", error);
+      console.error('Error loading journal data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -118,8 +114,8 @@ export default function JournalPage() {
       resetForm();
       await loadData();
     } catch (error) {
-      console.error("Error creating trade:", error);
-      alert(error instanceof Error ? error.message : "Failed to create trade");
+      console.error('Error creating trade:', error);
+      alert(error instanceof Error ? error.message : 'Failed to create trade');
     } finally {
       setIsSubmitting(false);
     }
@@ -132,8 +128,10 @@ export default function JournalPage() {
     setIsSubmitting(true);
     try {
       const form = e.target as HTMLFormElement;
-      const exitPrice = parseFloat((form.elements.namedItem("exit_price") as HTMLInputElement).value);
-      const notes = (form.elements.namedItem("post_trade_notes") as HTMLTextAreaElement)?.value;
+      const exitPrice = parseFloat(
+        (form.elements.namedItem('exit_price') as HTMLInputElement).value
+      );
+      const notes = (form.elements.namedItem('post_trade_notes') as HTMLTextAreaElement)?.value;
 
       await closeTrade(isClosingTrade.id, {
         exit_price: exitPrice,
@@ -143,21 +141,21 @@ export default function JournalPage() {
       setIsClosingTrade(null);
       await loadData();
     } catch (error) {
-      console.error("Error closing trade:", error);
-      alert(error instanceof Error ? error.message : "Failed to close trade");
+      console.error('Error closing trade:', error);
+      alert(error instanceof Error ? error.message : 'Failed to close trade');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteTrade = async (tradeId: string) => {
-    if (!confirm("Are you sure you want to delete this trade?")) return;
+    if (!confirm('Are you sure you want to delete this trade?')) return;
 
     try {
       await deleteTrade(tradeId);
       await loadData();
     } catch (error) {
-      console.error("Error deleting trade:", error);
+      console.error('Error deleting trade:', error);
     }
   };
 
@@ -166,47 +164,38 @@ export default function JournalPage() {
       await createSampleTrades();
       await loadData();
     } catch (error) {
-      console.error("Error creating sample trades:", error);
+      console.error('Error creating sample trades:', error);
     }
   };
 
   const resetForm = () => {
     setFormData({
-      symbol: "",
-      direction: "long",
-      entry_price: "",
-      position_size: "",
-      stop_loss: "",
-      take_profit: "",
+      symbol: '',
+      direction: 'long',
+      entry_price: '',
+      position_size: '',
+      stop_loss: '',
+      take_profit: '',
       ict_pattern: undefined,
-      timeframe: "1h",
+      timeframe: '1h',
       signal_strength: 70,
       emotional_state: undefined,
-      pre_trade_notes: "",
+      pre_trade_notes: '',
       tags: [],
     });
   };
 
   const filteredTrades = trades.filter((trade) => {
-    if (activeTab === "open") return trade.status === "open";
-    if (activeTab === "closed") return trade.status === "closed";
+    if (activeTab === 'open') return trade.status === 'open';
+    if (activeTab === 'closed') return trade.status === 'closed';
     return true;
   });
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
     }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   if (isLoading) {
@@ -230,9 +219,7 @@ export default function JournalPage() {
               <BookOpen className="h-8 w-8 text-accent-primary" />
               Trade Journal
             </h1>
-            <p className="text-text-secondary mt-1">
-              Track your ICT trades and improve your edge
-            </p>
+            <p className="text-text-secondary mt-1">Track your ICT trades and improve your edge</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -272,14 +259,12 @@ export default function JournalPage() {
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
-            <TabsTrigger value="all">
-              All Trades ({trades.length})
-            </TabsTrigger>
+            <TabsTrigger value="all">All Trades ({trades.length})</TabsTrigger>
             <TabsTrigger value="open">
-              Open ({trades.filter((t) => t.status === "open").length})
+              Open ({trades.filter((t) => t.status === 'open').length})
             </TabsTrigger>
             <TabsTrigger value="closed">
-              Closed ({trades.filter((t) => t.status === "closed").length})
+              Closed ({trades.filter((t) => t.status === 'closed').length})
             </TabsTrigger>
           </TabsList>
 
@@ -288,11 +273,10 @@ export default function JournalPage() {
               <Card className="py-12">
                 <CardContent className="flex flex-col items-center justify-center text-center">
                   <BookOpen className="h-12 w-12 text-text-tertiary mb-4" />
-                  <h3 className="text-h3 font-semibold text-text-primary mb-2">
-                    No trades yet
-                  </h3>
+                  <h3 className="text-h3 font-semibold text-text-primary mb-2">No trades yet</h3>
                   <p className="text-text-secondary mb-6 max-w-md">
-                    Start tracking your ICT trades to analyze your performance and improve your edge.
+                    Start tracking your ICT trades to analyze your performance and improve your
+                    edge.
                   </p>
                   <div className="flex gap-3">
                     <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -315,8 +299,8 @@ export default function JournalPage() {
                   <Card
                     key={trade.id}
                     className={cn(
-                      "hover:bg-bg-tertiary/50 transition-colors",
-                      trade.status === "open" && "border-l-4 border-l-accent-bullish"
+                      'hover:bg-bg-tertiary/50 transition-colors',
+                      trade.status === 'open' && 'border-l-4 border-l-accent-bullish'
                     )}
                   >
                     <CardContent className="p-4">
@@ -327,17 +311,15 @@ export default function JournalPage() {
                             <span className="text-h3 font-mono font-bold text-text-primary">
                               {trade.symbol}
                             </span>
-                            <Badge
-                              variant={trade.direction === "long" ? "bullish" : "bearish"}
-                            >
-                              {trade.direction === "long" ? (
+                            <Badge variant={trade.direction === 'long' ? 'bullish' : 'bearish'}>
+                              {trade.direction === 'long' ? (
                                 <TrendingUp className="h-3 w-3 mr-1" />
                               ) : (
                                 <TrendingDown className="h-3 w-3 mr-1" />
                               )}
                               {trade.direction.toUpperCase()}
                             </Badge>
-                            <Badge variant={trade.status === "open" ? "default" : "secondary"}>
+                            <Badge variant={trade.status === 'open' ? 'default' : 'secondary'}>
                               {trade.status}
                             </Badge>
                           </div>
@@ -350,7 +332,7 @@ export default function JournalPage() {
                             <span>Size: {trade.position_size} shares</span>
                             {trade.ict_pattern && (
                               <Badge variant="outline" className="text-xs">
-                                {trade.ict_pattern.replace(/_/g, " ")}
+                                {trade.ict_pattern.replace(/_/g, ' ')}
                               </Badge>
                             )}
                           </div>
@@ -369,27 +351,29 @@ export default function JournalPage() {
                             <div className="text-right">
                               <div
                                 className={cn(
-                                  "text-data-lg font-mono font-bold",
-                                  trade.pnl_dollar >= 0 ? "text-accent-bullish" : "text-accent-bearish"
+                                  'text-data-lg font-mono font-bold',
+                                  trade.pnl_dollar >= 0
+                                    ? 'text-accent-bullish'
+                                    : 'text-accent-bearish'
                                 )}
                               >
-                                {trade.pnl_dollar >= 0 ? "+" : ""}
+                                {trade.pnl_dollar >= 0 ? '+' : ''}
                                 {formatCurrency(trade.pnl_dollar)}
                               </div>
                               <div
                                 className={cn(
-                                  "text-sm font-mono",
+                                  'text-sm font-mono',
                                   trade.pnl_percent && trade.pnl_percent >= 0
-                                    ? "text-accent-bullish"
-                                    : "text-accent-bearish"
+                                    ? 'text-accent-bullish'
+                                    : 'text-accent-bearish'
                                 )}
                               >
-                                {trade.pnl_percent && trade.pnl_percent >= 0 ? "+" : ""}
+                                {trade.pnl_percent && trade.pnl_percent >= 0 ? '+' : ''}
                                 {trade.pnl_percent?.toFixed(2)}%
                               </div>
                               {trade.r_multiple !== undefined && (
                                 <div className="text-xs text-text-tertiary">
-                                  {trade.r_multiple >= 0 ? "+" : ""}
+                                  {trade.r_multiple >= 0 ? '+' : ''}
                                   {trade.r_multiple.toFixed(2)}R
                                 </div>
                               )}
@@ -398,7 +382,7 @@ export default function JournalPage() {
 
                           {/* Actions */}
                           <div className="flex items-center gap-2">
-                            {trade.status === "open" && (
+                            {trade.status === 'open' && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -428,9 +412,7 @@ export default function JournalPage() {
         {/* Analytics Section */}
         {trades.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-h2 font-semibold text-text-primary mb-6">
-              Performance Analytics
-            </h2>
+            <h2 className="text-h2 font-semibold text-text-primary mb-6">Performance Analytics</h2>
             <JournalAnalyticsPanel isPremium={tierLimits?.is_premium || false} />
           </div>
         )}
@@ -463,7 +445,7 @@ export default function JournalPage() {
                 <Label htmlFor="direction">Direction *</Label>
                 <Select
                   value={formData.direction}
-                  onValueChange={(value: "long" | "short") =>
+                  onValueChange={(value: 'long' | 'short') =>
                     setFormData({ ...formData, direction: value })
                   }
                 >
@@ -487,9 +469,7 @@ export default function JournalPage() {
                   type="number"
                   step="0.01"
                   value={formData.entry_price}
-                  onChange={(e) =>
-                    setFormData({ ...formData, entry_price: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, entry_price: e.target.value })}
                   placeholder="150.00"
                   required
                 />
@@ -501,9 +481,7 @@ export default function JournalPage() {
                   id="position_size"
                   type="number"
                   value={formData.position_size}
-                  onChange={(e) =>
-                    setFormData({ ...formData, position_size: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, position_size: e.target.value })}
                   placeholder="100"
                   required
                 />
@@ -519,9 +497,7 @@ export default function JournalPage() {
                   type="number"
                   step="0.01"
                   value={formData.stop_loss}
-                  onChange={(e) =>
-                    setFormData({ ...formData, stop_loss: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, stop_loss: e.target.value })}
                   placeholder="145.00"
                 />
               </div>
@@ -533,9 +509,7 @@ export default function JournalPage() {
                   type="number"
                   step="0.01"
                   value={formData.take_profit}
-                  onChange={(e) =>
-                    setFormData({ ...formData, take_profit: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, take_profit: e.target.value })}
                   placeholder="160.00"
                 />
               </div>
@@ -568,9 +542,7 @@ export default function JournalPage() {
                 <Label htmlFor="timeframe">Timeframe</Label>
                 <Select
                   value={formData.timeframe}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, timeframe: value })
-                  }
+                  onValueChange={(value) => setFormData({ ...formData, timeframe: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -587,9 +559,7 @@ export default function JournalPage() {
 
             {/* Signal Strength */}
             <div className="space-y-2">
-              <Label htmlFor="signal_strength">
-                Signal Strength: {formData.signal_strength}%
-              </Label>
+              <Label htmlFor="signal_strength">Signal Strength: {formData.signal_strength}%</Label>
               <Input
                 id="signal_strength"
                 type="range"
@@ -640,9 +610,7 @@ export default function JournalPage() {
               <Textarea
                 id="pre_trade_notes"
                 value={formData.pre_trade_notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, pre_trade_notes: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, pre_trade_notes: e.target.value })}
                 placeholder="Why are you taking this trade? What's your plan?"
                 rows={3}
               />
@@ -650,11 +618,7 @@ export default function JournalPage() {
 
             {/* Submit */}
             <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsCreateDialogOpen(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
@@ -664,7 +628,7 @@ export default function JournalPage() {
                     Creating...
                   </>
                 ) : (
-                  "Create Trade"
+                  'Create Trade'
                 )}
               </Button>
             </div>
@@ -713,7 +677,7 @@ export default function JournalPage() {
                     Closing...
                   </>
                 ) : (
-                  "Close Trade"
+                  'Close Trade'
                 )}
               </Button>
             </div>

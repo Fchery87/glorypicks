@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { createChart, IChartApi, ISeriesApi, CandlestickData } from "lightweight-charts";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import type { Interval } from "@/types";
+import { useEffect, useRef } from 'react';
+import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
+import { cn } from '@/lib/utils';
+import type { Interval } from '@/types';
 
 interface LightweightChartProps {
   symbol: string;
@@ -25,38 +24,36 @@ export function LightweightChart({
 }: LightweightChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
+  const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   // Initialize chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
-        background: { color: "transparent" },
-        textColor: "#A1A1AA",
+        background: { color: 'transparent' },
+        textColor: '#A8B0B8',
       },
       grid: {
-        vertLines: { color: "#2A2A2E" },
-        horzLines: { color: "#2A2A2E" },
+        vertLines: { color: 'rgba(83, 96, 109, 0.18)' },
+        horzLines: { color: 'rgba(83, 96, 109, 0.18)' },
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: "#4A4A52",
-          labelBackgroundColor: "#4A4A52",
+          color: '#D6B56D',
+          labelBackgroundColor: '#18202A',
         },
         horzLine: {
-          color: "#4A4A52",
-          labelBackgroundColor: "#4A4A52",
+          color: '#D6B56D',
+          labelBackgroundColor: '#18202A',
         },
       },
       rightPriceScale: {
-        borderColor: "#2A2A2E",
+        borderColor: '#1D242E',
       },
       timeScale: {
-        borderColor: "#2A2A2E",
+        borderColor: '#1D242E',
         timeVisible: true,
         secondsVisible: false,
       },
@@ -69,12 +66,12 @@ export function LightweightChart({
     });
 
     const candlestickSeries = chart.addCandlestickSeries({
-      upColor: "#4ADE80",
-      downColor: "#FB7185",
-      borderUpColor: "#4ADE80",
-      borderDownColor: "#FB7185",
-      wickUpColor: "#4ADE80",
-      wickDownColor: "#FB7185",
+      upColor: '#2BD576',
+      downColor: '#FF5D73',
+      borderUpColor: '#2BD576',
+      borderDownColor: '#FF5D73',
+      wickUpColor: '#2BD576',
+      wickDownColor: '#FF5D73',
     });
 
     chartRef.current = chart;
@@ -85,7 +82,6 @@ export function LightweightChart({
       if (chartContainerRef.current && chartRef.current) {
         const { width, height } = chartContainerRef.current.getBoundingClientRect();
         chartRef.current.applyOptions({ width, height });
-        setDimensions({ width, height });
       }
     };
 
@@ -108,7 +104,7 @@ export function LightweightChart({
     if (!candlestickSeriesRef.current || !candles || candles.length === 0) return;
 
     const formattedData: CandlestickData[] = candles.map((candle) => ({
-      time: candle.t as number,
+      time: candle.t as any,
       open: candle.o,
       high: candle.h,
       low: candle.l,
@@ -116,7 +112,7 @@ export function LightweightChart({
     }));
 
     candlestickSeriesRef.current.setData(formattedData);
-    
+
     // Fit content
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();
@@ -126,9 +122,16 @@ export function LightweightChart({
   return (
     <div
       ref={chartContainerRef}
-      className={cn("w-full h-full cursor-pointer", className)}
+      className={cn(
+        'relative h-full w-full cursor-pointer',
+        isActive && 'ring-1 ring-accent-primary/50',
+        className
+      )}
       onClick={onClick}
     >
+      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border-subtle bg-bg-primary/70 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-tertiary">
+        {symbol} · {interval}
+      </div>
       {candles.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-text-secondary">
           <span className="text-sm">No data</span>

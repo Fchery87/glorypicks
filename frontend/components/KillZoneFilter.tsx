@@ -1,13 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Filter, Clock, Shield, AlertTriangle } from "lucide-react";
-import { useStore } from "@/lib/store";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { Filter, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { useStore } from '@/lib/store';
 
 interface KillZoneFilterProps {
   className?: string;
@@ -15,9 +14,15 @@ interface KillZoneFilterProps {
 
 export function KillZoneFilter({ className }: KillZoneFilterProps) {
   const [filterEnabled, setFilterEnabled] = useState(false);
-  const [currentZone, setCurrentZone] = useState<any>(null);
+  const [currentZone, setCurrentZone] = useState<{
+    zone_name?: string;
+    is_active?: boolean;
+    optimal_for_entries?: boolean;
+    time_until_next?: number;
+    time_remaining?: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
-  const { signal, setSignalError } = useStore();
+  const { setSignalError } = useStore();
 
   useEffect(() => {
     fetchKillZoneStatus();
@@ -27,14 +32,14 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
 
   const fetchKillZoneStatus = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/killzone`);
       if (response.ok) {
         const data = await response.json();
         setCurrentZone(data);
       }
     } catch (err) {
-      console.error("Failed to fetch kill zone:", err);
+      console.error('Failed to fetch kill zone:', err);
     } finally {
       setLoading(false);
     }
@@ -42,14 +47,14 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
 
   const handleFilterToggle = (checked: boolean) => {
     setFilterEnabled(checked);
-    
+
     if (checked && currentZone) {
       // Check if currently outside optimal kill zone
       if (!currentZone.is_active || !currentZone.optimal_for_entries) {
         setSignalError?.(
           `⚠️ Kill Zone Filter Active: Currently in ${currentZone.zone_name}. ` +
-          `Signals may be suppressed outside optimal trading windows. ` +
-          `Next optimal window: ${formatTime(currentZone.time_until_next)}`
+            `Signals may be suppressed outside optimal trading windows. ` +
+            `Next optimal window: ${formatTime(currentZone.time_until_next)}`
         );
       }
     } else {
@@ -58,22 +63,22 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
   };
 
   const formatTime = (minutes: number | undefined) => {
-    if (!minutes) return "Unknown";
+    if (!minutes) return 'Unknown';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   const getZoneStatusColor = () => {
-    if (!currentZone) return "text-text-tertiary";
-    if (currentZone.optimal_for_entries) return "text-accent-bullish";
-    if (currentZone.is_active) return "text-yellow-500";
-    return "text-text-tertiary";
+    if (!currentZone) return 'text-text-tertiary';
+    if (currentZone.optimal_for_entries) return 'text-accent-bullish';
+    if (currentZone.is_active) return 'text-yellow-500';
+    return 'text-text-tertiary';
   };
 
   if (loading) {
     return (
-      <Card className={cn("opacity-60", className)}>
+      <Card className={cn('opacity-60', className)}>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-text-tertiary">
             <Clock className="h-4 w-4 animate-pulse" />
@@ -85,33 +90,30 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
   }
 
   return (
-    <Card className={cn(
-      filterEnabled && currentZone && !currentZone.optimal_for_entries 
-        ? "border-yellow-500/50 bg-yellow-500/5" 
-        : "",
-      className
-    )}>
+    <Card
+      className={cn(
+        filterEnabled && currentZone && !currentZone.optimal_for_entries
+          ? 'border-yellow-500/50 bg-yellow-500/5'
+          : '',
+        className
+      )}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-accent-primary" />
-            <h3 className="text-sm font-semibold text-text-primary">
-              Kill Zone Filter
-            </h3>
+            <h3 className="text-sm font-semibold text-text-primary">Kill Zone Filter</h3>
           </div>
-          <Switch
-            checked={filterEnabled}
-            onCheckedChange={handleFilterToggle}
-          />
-        </div㻡0
+          <Switch checked={filterEnabled} onCheckedChange={handleFilterToggle} />
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-3">
         {/* Current Status */}
         <div className="flex items-center justify-between p-2 bg-bg-elevated rounded">
           <span className="text-xs text-text-secondary">Current Zone</span>
-          <span className={cn("text-xs font-medium", getZoneStatusColor())}>
-            {currentZone?.zone_name?.replace(/_/g, " ") || "Unknown"}
+          <span className={cn('text-xs font-medium', getZoneStatusColor())}>
+            {currentZone?.zone_name?.replace(/_/g, ' ') || 'Unknown'}
           </span>
         </div>
 

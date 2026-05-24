@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import {
   Dialog,
@@ -21,9 +21,7 @@ export function AboutModal() {
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>About GloryPicks</DialogTitle>
-          <DialogDescription>
-            Real-Time Multi-Asset Trading Signals Dashboard
-          </DialogDescription>
+          <DialogDescription>Real-Time Multi-Asset Trading Signals Dashboard</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
@@ -81,9 +79,9 @@ export function AboutModal() {
                 money you cannot afford to lose.
               </p>
               <p className="text-muted-foreground">
-                <strong>Your Responsibility:</strong> All investment and trading decisions are
-                your own responsibility. Always conduct your own research and consult with
-                qualified financial professionals before making any trading decisions.
+                <strong>Your Responsibility:</strong> All investment and trading decisions are your
+                own responsibility. Always conduct your own research and consult with qualified
+                financial professionals before making any trading decisions.
               </p>
               <p className="text-muted-foreground">
                 <strong>No Liability:</strong> The creators and operators of GloryPicks accept no

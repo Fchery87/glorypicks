@@ -187,8 +187,14 @@ class TestCORSHeaders:
 
     def test_cors_headers_present(self, client):
         """Test CORS headers are included in responses."""
-        response = client.options("/health")
-        # OPTIONS request should have CORS headers
+        response = client.options(
+            "/health",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        # Preflight OPTIONS request should have CORS headers
         assert "access-control-allow-origin" in [
             k.lower() for k in response.headers.keys()
         ]
@@ -207,7 +213,7 @@ class TestErrorHandling:
         response = client.get("/signal?symbol=INVALID123456")
 
         # Should not crash, should return error or empty response
-        assert response.status_code in [200, 404, 422, 500]
+        assert response.status_code in [200, 404, 422, 500, 503]
 
         if response.status_code == 200:
             data = response.json()

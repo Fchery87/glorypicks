@@ -1,12 +1,15 @@
 """Pydantic models for API contracts."""
-from pydantic import BaseModel, Field
-from typing import List, Optional, Literal, Dict, Any
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Literal, Optional
+
+from pydantic import BaseModel, Field
 
 
 class AssetClass(str, Enum):
     """Asset class enum."""
+
     STOCK = "stock"
     CRYPTO = "crypto"
     FOREX = "forex"
@@ -15,6 +18,7 @@ class AssetClass(str, Enum):
 
 class Interval(str, Enum):
     """Timeframe interval enum."""
+
     M1 = "1m"
     M5 = "5m"
     M15 = "15m"
@@ -29,6 +33,7 @@ class Interval(str, Enum):
 
 class Recommendation(str, Enum):
     """Signal recommendation enum."""
+
     BUY = "Buy"
     SELL = "Sell"
     NEUTRAL = "Neutral"
@@ -36,6 +41,7 @@ class Recommendation(str, Enum):
 
 class MiniSignal(str, Enum):
     """Per-timeframe signal enum."""
+
     BULLISH = "Bullish"
     BEARISH = "Bearish"
     NEUTRAL = "Neutral"
@@ -44,6 +50,7 @@ class MiniSignal(str, Enum):
 # ICT Strategy Models
 class ICTSignalType(str, Enum):
     """ICT signal types."""
+
     BULLISH_BREAKER = "bullish_breaker"
     BEARISH_BREAKER = "bearish_breaker"
     FVG_BULLISH = "fvg_bullish"
@@ -59,6 +66,7 @@ class ICTSignalType(str, Enum):
 
 class OrderBlock(BaseModel):
     """ICT Order Block representation."""
+
     high: float
     low: float
     timestamp: int
@@ -70,30 +78,33 @@ class OrderBlock(BaseModel):
 
 class FairValueGap(BaseModel):
     """ICT Fair Value Gap representation."""
+
     high: float
     low: float
     start_timestamp: int
     end_timestamp: int
     direction: Literal["bullish", "bearish"]
     filled: bool = False
-    fill_price: Optional[float] = None
+    fill_price: float | None = None
 
 
 class MarketStructure(BaseModel):
     """ICT Market Structure state."""
+
     trend: Literal["bullish", "bearish", "neutral"]
     last_swing_high: float
     last_swing_low: float
     swing_high_timestamp: int
     swing_low_timestamp: int
     bos_confirmed: bool = False
-    bos_direction: Optional[str] = None
+    bos_direction: str | None = None
     mss_confirmed: bool = False
-    mss_direction: Optional[str] = None
+    mss_direction: str | None = None
 
 
 class ICTSignalResult(BaseModel):
     """ICT Strategy Signal Result."""
+
     signal_type: ICTSignalType
     strength: float = Field(ge=0, le=100)
     confidence: float = Field(ge=0, le=100)
@@ -102,24 +113,26 @@ class ICTSignalResult(BaseModel):
     entry_zone_high: float
     stop_loss: float
     take_profit: float
-    rationale: List[str]
-    market_phase: Optional[str] = None
-    liquidity_pool: Optional[float] = None
+    rationale: list[str]
+    market_phase: str | None = None
+    liquidity_pool: float | None = None
 
 
 class ICTAnalysis(BaseModel):
     """ICT Strategy Analysis Results."""
-    signals: List[ICTSignalResult] = []
-    market_structure: Optional[MarketStructure] = None
-    order_blocks: List[OrderBlock] = []
-    fair_value_gaps: List[FairValueGap] = []
-    liquidity_pools: Dict[str, Dict[str, float]] = {}
-    timeframe_bias: Optional[Dict[str, str]] = None
-    analysis_summary: Optional[str] = None
+
+    signals: list[ICTSignalResult] = []
+    market_structure: MarketStructure | None = None
+    order_blocks: list[OrderBlock] = []
+    fair_value_gaps: list[FairValueGap] = []
+    liquidity_pools: dict[str, dict[str, float]] = {}
+    timeframe_bias: dict[str, str] | None = None
+    analysis_summary: str | None = None
 
 
 class Candle(BaseModel):
     """OHLCV candle data."""
+
     t: int = Field(..., description="Unix timestamp (seconds)")
     o: float = Field(..., description="Open price")
     h: float = Field(..., description="High price")
@@ -155,13 +168,15 @@ class Candle(BaseModel):
 
 class HistoricalDataResponse(BaseModel):
     """Response model for GET /data endpoint."""
+
     symbol: str
     interval: Interval
-    candles: List[Candle]
+    candles: list[Candle]
 
 
 class SignalBreakdown(BaseModel):
     """Per-timeframe signal breakdown."""
+
     d1: MiniSignal = Field(..., description="Daily timeframe signal")
     h1: MiniSignal = Field(..., description="1-hour timeframe signal")
     m15: MiniSignal = Field(..., description="15-minute timeframe signal")
@@ -169,44 +184,55 @@ class SignalBreakdown(BaseModel):
 
 class SignalResponse(BaseModel):
     """Response model for GET /signal endpoint."""
+
     symbol: str
     recommendation: Recommendation
     strength: int = Field(..., ge=0, le=100, description="Signal strength 0-100")
     breakdown: SignalBreakdown
-    rationale: List[str] = Field(..., description="Human-readable rationale bullets")
+    rationale: list[str] = Field(..., description="Human-readable rationale bullets")
     updated_at: str = Field(..., description="ISO-8601 timestamp")
-    ict_analysis: Optional[ICTAnalysis] = Field(default=None, description="ICT strategy analysis")
-    confidence_score: Optional[float] = Field(default=None, ge=0, le=100, description="Overall confidence 0-100")
-    market_phase: Optional[str] = Field(default=None, description="Current market phase")
-    key_levels: Optional[Dict[str, float]] = Field(default=None, description="Key price levels (support/resistance)")
+    ict_analysis: ICTAnalysis | None = Field(default=None, description="ICT strategy analysis")
+    confidence_score: float | None = Field(
+        default=None, ge=0, le=100, description="Overall confidence 0-100"
+    )
+    market_phase: str | None = Field(default=None, description="Current market phase")
+    key_levels: dict[str, float] | None = Field(
+        default=None, description="Key price levels (support/resistance)"
+    )
 
 
 class ProviderStatus(BaseModel):
     """Provider health status."""
+
     name: str
     available: bool
-    latency_ms: Optional[float] = None
-    error: Optional[str] = None
+    latency_ms: float | None = None
+    error: str | None = None
 
 
 class HealthResponse(BaseModel):
     """Response model for GET /health endpoint."""
+
     status: Literal["healthy", "degraded", "unhealthy"]
     uptime_seconds: float
-    providers: List[ProviderStatus]
+    providers: dict[str, ProviderStatus]
     timestamp: str
 
 
 class WebSocketMessage(BaseModel):
     """WebSocket message envelope."""
-    type: Literal["price", "candle", "signal", "error", "heartbeat"]
-    symbol: Optional[str] = None
-    timestamp: Optional[int] = None
-    payload: Optional[dict] = None
+
+    type: Literal[
+        "price", "candle", "signal", "error", "heartbeat", "connected", "pong", "alert_triggered"
+    ]
+    symbol: str | None = None
+    timestamp: int | None = None
+    payload: dict | None = None
 
 
 class PriceUpdate(BaseModel):
     """Real-time price update."""
+
     type: Literal["price"] = "price"
     symbol: str
     ts: int = Field(..., description="Unix timestamp (milliseconds)")
@@ -215,6 +241,7 @@ class PriceUpdate(BaseModel):
 
 class CandleUpdate(BaseModel):
     """Real-time candle update."""
+
     type: Literal["candle"] = "candle"
     symbol: str
     interval: Interval
@@ -223,6 +250,7 @@ class CandleUpdate(BaseModel):
 
 class SignalUpdate(BaseModel):
     """Real-time signal update."""
+
     type: Literal["signal"] = "signal"
     symbol: str
     payload: SignalResponse
@@ -230,17 +258,26 @@ class SignalUpdate(BaseModel):
 
 class Signal(BaseModel):
     """Signal model for alert checking - includes all fields needed by alert service."""
+
     symbol: str
     recommendation: Recommendation
     strength: int = Field(..., ge=0, le=100)
-    price: Optional[float] = None
-    patterns: Optional[Dict[str, Any]] = None
-    structure: Optional[Dict[str, Any]] = None
+    price: float | None = None
+    patterns: dict[str, Any] | None = None
+    structure: dict[str, Any] | None = None
 
 
 # Import journal models for export
 from .journal import (
-    TradeEntry, TradeDirection, TradeStatus, EmotionalState, ICTPatternType,
-    TradeStatistics, TradeCreateRequest, TradeUpdateRequest, TradeCloseRequest,
-    JournalAnalyticsResponse, UserTierLimits
+    EmotionalState,
+    ICTPatternType,
+    JournalAnalyticsResponse,
+    TradeCloseRequest,
+    TradeCreateRequest,
+    TradeDirection,
+    TradeEntry,
+    TradeStatistics,
+    TradeStatus,
+    TradeUpdateRequest,
+    UserTierLimits,
 )

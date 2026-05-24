@@ -4,8 +4,8 @@ export interface TradeEntry {
   id: string;
   user_id: string;
   symbol: string;
-  direction: "long" | "short";
-  status: "open" | "closed";
+  direction: 'long' | 'short';
+  status: 'open' | 'closed';
   entry_price: number;
   entry_time: string;
   position_size: number;
@@ -30,25 +30,25 @@ export interface TradeEntry {
 }
 
 export type ICTPatternType =
-  | "breaker_block_bullish"
-  | "breaker_block_bearish"
-  | "fvg_bullish"
-  | "fvg_bearish"
-  | "mm_buy_model"
-  | "mm_sell_model"
-  | "bos_bullish"
-  | "bos_bearish"
-  | "mss_bullish"
-  | "mss_bearish"
-  | "other";
+  | 'breaker_block_bullish'
+  | 'breaker_block_bearish'
+  | 'fvg_bullish'
+  | 'fvg_bearish'
+  | 'mm_buy_model'
+  | 'mm_sell_model'
+  | 'bos_bullish'
+  | 'bos_bearish'
+  | 'mss_bullish'
+  | 'mss_bearish'
+  | 'other';
 
 export type EmotionalState =
-  | "confident"
-  | "neutral"
-  | "fearful"
-  | "greedy"
-  | "impatient"
-  | "revengeful";
+  | 'confident'
+  | 'neutral'
+  | 'fearful'
+  | 'greedy'
+  | 'impatient'
+  | 'revengeful';
 
 export interface TradeStatistics {
   total_trades: number;
@@ -92,7 +92,7 @@ export interface UserTierLimits {
 
 export interface TradeFormData {
   symbol: string;
-  direction: "long" | "short";
+  direction: 'long' | 'short';
   entry_price: string;
   position_size: string;
   stop_loss?: string;

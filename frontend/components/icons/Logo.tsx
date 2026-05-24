@@ -1,9 +1,8 @@
-import React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 interface LogoProps {
   className?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
 }
 
@@ -14,11 +13,11 @@ const sizeMap = {
   xl: { container: 64, stroke: 4 },
 };
 
-export function Logo({ className, size = "md", showText = true }: LogoProps) {
+export function Logo({ className, size = 'md', showText = true }: LogoProps) {
   const { container, stroke } = sizeMap[size];
 
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn('flex items-center gap-3', className)}>
       {/* Logo Mark - Precision Crosshair Design */}
       <svg
         width={container}
@@ -37,7 +36,7 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
           strokeWidth={stroke * 0.5}
           className="text-border-default"
         />
-        
+
         {/* Crosshair lines */}
         <line
           x1="24"
@@ -79,14 +78,9 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
           className="text-text-primary"
           strokeLinecap="round"
         />
-        
+
         {/* Center dot */}
-        <circle
-          cx="24"
-          cy="24"
-          r={stroke * 1.5}
-          className="fill-accent-primary"
-        />
+        <circle cx="24" cy="24" r={stroke * 1.5} className="fill-accent-primary" />
       </svg>
 
       {/* Logo Text */}
@@ -163,12 +157,7 @@ export function LogoIcon({ className, size = 24 }: { className?: string; size?: 
         className="text-text-primary"
         strokeLinecap="round"
       />
-      <circle
-        cx="24"
-        cy="24"
-        r="4"
-        className="fill-accent-primary"
-      />
+      <circle cx="24" cy="24" r="4" className="fill-accent-primary" />
     </svg>
   );
 }

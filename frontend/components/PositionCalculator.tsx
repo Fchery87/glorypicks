@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Calculator, TrendingUp, Target, AlertCircle, DollarSign, Percent } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { Calculator, TrendingUp, Target, AlertCircle, DollarSign, Percent } from 'lucide-react';
 
 interface PositionCalculatorProps {
   signal?: {
@@ -46,24 +46,23 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
     const entryPrice = signal.entry_price;
     const stopLoss = signal.stop_loss;
     const takeProfit = signal.take_profit || entryPrice * 1.02;
-    
+
     // Calculate stop distance
     const stopDistance = Math.abs(entryPrice - stopLoss);
-    const stopDistancePercent = (stopDistance / entryPrice) * 100;
-    
+
     // Risk amount
     const riskAmount = accountBalance * (riskPercent / 100);
-    
+
     // Position size based on risk
     const positionSize = riskAmount / stopDistance;
-    
+
     // Risk/Reward
     const rewardDistance = Math.abs(takeProfit - entryPrice);
     const riskRewardRatio = rewardDistance / stopDistance;
-    
+
     // R-Multiple (how many R's of profit potential)
     const rMultiple = riskRewardRatio;
-    
+
     // Potential outcomes
     const potentialProfit = positionSize * rewardDistance;
     const maxLoss = riskAmount;
@@ -75,7 +74,7 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
       risk_reward_ratio: riskRewardRatio,
       r_multiple: rMultiple,
       potential_profit: potentialProfit,
-      max_loss: maxLoss
+      max_loss: maxLoss,
     });
   };
 
@@ -84,44 +83,42 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     }).format(value);
   };
 
   const formatNumber = (value: number, decimals: number = 2) => {
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
+      maximumFractionDigits: decimals,
     }).format(value);
   };
 
   const getRiskColor = (riskPercent: number) => {
-    if (riskPercent <= 1) return "text-accent-bullish";
-    if (riskPercent <= 2) return "text-yellow-500";
-    return "text-accent-bearish";
+    if (riskPercent <= 1) return 'text-accent-bullish';
+    if (riskPercent <= 2) return 'text-yellow-500';
+    return 'text-accent-bearish';
   };
 
   const getRatioColor = (ratio: number) => {
-    if (ratio >= 3) return "text-accent-bullish";
-    if (ratio >= 2) return "text-yellow-500";
-    return "text-accent-bearish";
+    if (ratio >= 3) return 'text-accent-bullish';
+    if (ratio >= 2) return 'text-yellow-500';
+    return 'text-accent-bearish';
   };
 
   if (!signal) {
     return (
-      <Card className={cn("opacity-60", className)}>
+      <Card className={cn('opacity-60', className)}>
         <CardContent className="p-6 text-center">
           <Calculator className="h-8 w-8 text-text-tertiary mx-auto mb-2" />
-          <p className="text-text-secondary text-sm">
-            Select a symbol to calculate position size
-          </p>
+          <p className="text-text-secondary text-sm">Select a symbol to calculate position size</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={cn("bg-gradient-to-br from-bg-tertiary to-bg-secondary", className)}>
+    <Card className={cn('bg-gradient-to-br from-bg-tertiary to-bg-secondary', className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center gap-2">
           <Calculator className="h-5 w-5 text-accent-primary" />
@@ -157,7 +154,7 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
               type="number"
               value={riskPercent}
               onChange={(e) => setRiskPercent(Number(e.target.value))}
-              className={cn("font-mono", getRiskColor(riskPercent))}
+              className={cn('font-mono', getRiskColor(riskPercent))}
               min={0.1}
               max={5}
               step={0.1}
@@ -170,10 +167,10 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
                 key={risk}
                 onClick={() => setRiskPercent(risk)}
                 className={cn(
-                  "px-2 py-1 text-xs rounded transition-colors",
+                  'px-2 py-1 text-xs rounded transition-colors',
                   riskPercent === risk
-                    ? "bg-accent-primary text-bg-primary"
-                    : "bg-bg-elevated text-text-secondary hover:bg-bg-tertiary"
+                    ? 'bg-accent-primary text-bg-primary'
+                    : 'bg-bg-elevated text-text-secondary hover:bg-bg-tertiary'
                 )}
               >
                 {risk}%
@@ -220,7 +217,7 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
             {/* Risk Amount */}
             <div className="flex items-center justify-between">
               <span className="text-text-secondary text-sm">Risk Amount</span>
-              <span className={cn("font-mono", getRiskColor(metrics.risk_percentage))}>
+              <span className={cn('font-mono', getRiskColor(metrics.risk_percentage))}>
                 {formatCurrency(metrics.risk_amount)} ({metrics.risk_percentage}%)
               </span>
             </div>
@@ -231,9 +228,9 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
                 <TrendingUp className="h-3 w-3" />
                 R:R Ratio
               </span>
-              <Badge 
-                variant="outline" 
-                className={cn("font-mono", getRatioColor(metrics.risk_reward_ratio))}
+              <Badge
+                variant="outline"
+                className={cn('font-mono', getRatioColor(metrics.risk_reward_ratio))}
               >
                 1:{formatNumber(metrics.risk_reward_ratio, 1)}
               </Badge>
@@ -245,7 +242,7 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
                 <Target className="h-3 w-3" />
                 R-Multiple
               </span>
-              <span className={cn("font-mono", getRatioColor(metrics.r_multiple))}>
+              <span className={cn('font-mono', getRatioColor(metrics.r_multiple))}>
                 {formatNumber(metrics.r_multiple, 1)}R
               </span>
             </div>
@@ -277,7 +274,8 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
               <div className="flex items-start gap-2 p-2 bg-accent-bearish/10 rounded-sm">
                 <AlertCircle className="h-4 w-4 text-accent-bearish flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-accent-bearish">
-                  Risk exceeds 2%. Consider reducing position size to maintain proper risk management.
+                  Risk exceeds 2%. Consider reducing position size to maintain proper risk
+                  management.
                 </p>
               </div>
             )}

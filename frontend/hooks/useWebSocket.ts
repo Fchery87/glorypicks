@@ -1,25 +1,23 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useCallback } from "react";
-import { useStore } from "@/lib/store";
-import type { WebSocketMessage, Candle, Signal } from "@/types";
+import { useEffect, useRef, useCallback } from 'react';
+import { useStore } from '@/lib/store';
+import type { WebSocketMessage, Candle, Signal } from '@/types';
 
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 
 export function useWebSocket(symbol: string) {
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPingTimeRef = useRef<number>(Date.now());
 
   const {
     setWsConnected,
     setWsLatency,
-    setCandles,
     addCandle,
     setSignal,
     setCurrentPrice,
-    setHealth,
     setLastUpdate,
     addToast,
   } = useStore();
@@ -41,7 +39,7 @@ export function useWebSocket(symbol: string) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("WebSocket connected");
+        console.log('WebSocket connected');
         setWsConnected(true);
         setWsLatency(null);
 
@@ -52,7 +50,7 @@ export function useWebSocket(symbol: string) {
         heartbeatIntervalRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             lastPingTimeRef.current = Date.now();
-            ws.send(JSON.stringify({ type: "ping" }));
+            ws.send(JSON.stringify({ type: 'ping' }));
           }
         }, 30000); // Send ping every 30 seconds
       };
@@ -62,22 +60,22 @@ export function useWebSocket(symbol: string) {
           const message: WebSocketMessage = JSON.parse(event.data);
 
           switch (message.type) {
-            case "connected":
-              console.log("WebSocket connection confirmed:", message.message);
+            case 'connected':
+              console.log('WebSocket connection confirmed:', message.message);
               break;
 
-            case "pong":
+            case 'pong':
               // Calculate latency based on ping time
               const latency = calculateLatency();
               setWsLatency(latency);
               break;
 
-            case "heartbeat":
+            case 'heartbeat':
               // Update last update time
               setLastUpdate(Date.now());
               break;
 
-            case "price":
+            case 'price':
               // Handle price update
               if (message.price !== undefined) {
                 setCurrentPrice(message.price);
@@ -85,7 +83,7 @@ export function useWebSocket(symbol: string) {
               }
               break;
 
-            case "candle":
+            case 'candle':
               // Handle candle update
               if (message.candle && message.interval) {
                 const candle: Candle = message.candle;
@@ -94,7 +92,7 @@ export function useWebSocket(symbol: string) {
               }
               break;
 
-            case "signal":
+            case 'signal':
               // Handle signal update
               if (message.payload) {
                 const signal = message.payload as Signal;
@@ -103,55 +101,57 @@ export function useWebSocket(symbol: string) {
               }
               break;
 
-            case "alert_triggered":
+            case 'alert_triggered':
               // Handle alert triggered event
               if (message.payload) {
-                console.log("Alert triggered via WebSocket:", message.payload);
-                
+                console.log('Alert triggered via WebSocket:', message.payload);
+
                 // Dispatch custom event for the page component to handle
-                window.dispatchEvent(new CustomEvent('alert_triggered', {
-                  detail: message
-                }));
+                window.dispatchEvent(
+                  new CustomEvent('alert_triggered', {
+                    detail: message,
+                  })
+                );
               }
               break;
 
-            case "error":
-              console.error("WebSocket error:", message.message);
-              addToast(message.message || "WebSocket error", "error");
+            case 'error':
+              console.error('WebSocket error:', message.message);
+              addToast(message.message || 'WebSocket error', 'error');
               break;
 
             default:
-              console.warn("Unknown WebSocket message type:", message.type);
+              console.warn('Unknown WebSocket message type:', message.type);
           }
         } catch (error) {
-          console.error("Error parsing WebSocket message:", error);
+          console.error('Error parsing WebSocket message:', error);
         }
       };
 
       ws.onerror = (error) => {
-        console.error("WebSocket error:", {
+        console.error('WebSocket error:', {
           type: error.type,
           timestamp: new Date().toISOString(),
           url: ws.url,
           readyState: ws.readyState,
         });
         setWsConnected(false);
-        addToast(`WebSocket connection failed to ${WS_URL}`, "error");
+        addToast(`WebSocket connection failed to ${WS_URL}`, 'error');
       };
 
       ws.onclose = (event) => {
-        console.log("WebSocket disconnected:", {
+        console.log('WebSocket disconnected:', {
           code: event.code,
-          reason: event.reason || "No reason provided",
+          reason: event.reason || 'No reason provided',
           wasClean: event.wasClean,
           timestamp: new Date().toISOString(),
         });
         setWsConnected(false);
-        
+
         // Clear heartbeat interval
         if (heartbeatIntervalRef.current) {
           clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = undefined;
+          heartbeatIntervalRef.current = null;
         }
 
         // Attempt to reconnect after 5 seconds (only if not intentionally closed)
@@ -160,26 +160,36 @@ export function useWebSocket(symbol: string) {
             clearTimeout(reconnectTimeoutRef.current);
           }
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log("Attempting to reconnect...");
+            console.log('Attempting to reconnect...');
             connect();
           }, 5000);
         }
       };
     } catch (error) {
-      console.error("Error creating WebSocket connection:", error);
+      console.error('Error creating WebSocket connection:', error);
       setWsConnected(false);
     }
-  }, [symbol, setWsConnected, setWsLatency, addCandle, setCurrentPrice, setSignal, setLastUpdate, addToast, calculateLatency]);
+  }, [
+    symbol,
+    setWsConnected,
+    setWsLatency,
+    addCandle,
+    setCurrentPrice,
+    setSignal,
+    setLastUpdate,
+    addToast,
+    calculateLatency,
+  ]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = undefined;
+      reconnectTimeoutRef.current = null;
     }
 
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = undefined;
+      heartbeatIntervalRef.current = null;
     }
 
     if (wsRef.current) {

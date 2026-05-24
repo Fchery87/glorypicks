@@ -1,25 +1,18 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { useStore } from "@/lib/store";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { Interval } from "@/types";
-import { TrendingUp, TrendingDown, Activity, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';
+import { useStore } from '@/lib/store';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { Interval } from '@/types';
+import { TrendingUp, TrendingDown, Activity, Loader2 } from 'lucide-react';
 
 export function ChartPanel() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
-  const { 
-    symbol, 
-    timeframe, 
-    candles, 
-    setTimeframe, 
-    currentPrice, 
-    isLoadingData, 
-    dataError 
-  } = useStore();
+  const { symbol, timeframe, candles, setTimeframe, currentPrice, isLoadingData, dataError } =
+    useStore();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -31,44 +24,44 @@ export function ChartPanel() {
     if (!chartContainerRef.current) return;
 
     const initChart = async () => {
-      const { createChart } = await import("lightweight-charts");
-      
+      const { createChart } = await import('lightweight-charts');
+
       const width = chartContainerRef.current?.clientWidth || 800;
       const height = chartContainerRef.current?.clientHeight || 400;
-      
+
       const chart = createChart(chartContainerRef.current!, {
         width,
         height,
         layout: {
-          background: { color: "transparent" },
-          textColor: "#71717A",
+          background: { color: 'transparent' },
+          textColor: '#71717A',
         },
         grid: {
-          vertLines: { color: "#2A2A2E" },
-          horzLines: { color: "#2A2A2E" },
+          vertLines: { color: '#2A2A2E' },
+          horzLines: { color: '#2A2A2E' },
         },
         crosshair: {
           mode: 1,
           vertLine: {
-            color: "#4A4A52",
+            color: '#4A4A52',
             width: 1,
             style: 2,
           },
           horzLine: {
-            color: "#4A4A52",
+            color: '#4A4A52',
             width: 1,
             style: 2,
           },
         },
         rightPriceScale: {
-          borderColor: "#3A3A40",
+          borderColor: '#3A3A40',
           scaleMargins: {
             top: 0.1,
             bottom: 0.1,
           },
         },
         timeScale: {
-          borderColor: "#3A3A40",
+          borderColor: '#3A3A40',
           timeVisible: true,
           secondsVisible: false,
         },
@@ -85,10 +78,10 @@ export function ChartPanel() {
         }
       };
 
-      window.addEventListener("resize", handleResize);
+      window.addEventListener('resize', handleResize);
 
       return () => {
-        window.removeEventListener("resize", handleResize);
+        window.removeEventListener('resize', handleResize);
         chart.remove();
       };
     };
@@ -104,18 +97,18 @@ export function ChartPanel() {
 
     const updateChart = async () => {
       const currentCandles = candles[timeframe] || [];
-      
+
       if (chartRef.current.series) {
         chartRef.current.removeSeries(chartRef.current.series);
       }
 
       const candlestickSeries = chartRef.current.addCandlestickSeries({
-        upColor: "#4ADE80",
-        downColor: "#FB7185",
-        borderDownColor: "#FB7185",
-        borderUpColor: "#4ADE80",
-        wickDownColor: "#FB7185",
-        wickUpColor: "#4ADE80",
+        upColor: '#4ADE80',
+        downColor: '#FB7185',
+        borderDownColor: '#FB7185',
+        borderUpColor: '#4ADE80',
+        wickDownColor: '#FB7185',
+        wickUpColor: '#4ADE80',
       });
 
       chartRef.current.series = candlestickSeries;
@@ -139,12 +132,12 @@ export function ChartPanel() {
   const getPriceChange = () => {
     const currentCandles = candles[timeframe] || [];
     if (currentCandles.length < 2) return null;
-    
+
     const lastCandle = currentCandles[currentCandles.length - 1];
     const prevCandle = currentCandles[currentCandles.length - 2];
     const change = lastCandle.c - prevCandle.c;
     const changePercent = (change / prevCandle.c) * 100;
-    
+
     return { change, changePercent };
   };
 
@@ -163,17 +156,19 @@ export function ChartPanel() {
                   ${currentPrice.toFixed(2)}
                 </span>
                 {priceChange && (
-                  <span className={cn(
-                    "flex items-center gap-1 text-sm font-mono",
-                    priceChange.change >= 0 ? "text-accent-bullish" : "text-accent-bearish"
-                  )}>
+                  <span
+                    className={cn(
+                      'flex items-center gap-1 text-sm font-mono',
+                      priceChange.change >= 0 ? 'text-accent-bullish' : 'text-accent-bearish'
+                    )}
+                  >
                     {priceChange.change >= 0 ? (
                       <TrendingUp className="h-4 w-4" />
                     ) : (
                       <TrendingDown className="h-4 w-4" />
                     )}
-                    {priceChange.change >= 0 ? "+" : ""}
-                    {priceChange.change.toFixed(2)} ({priceChange.changePercent >= 0 ? "+" : ""}
+                    {priceChange.change >= 0 ? '+' : ''}
+                    {priceChange.change.toFixed(2)} ({priceChange.changePercent >= 0 ? '+' : ''}
                     {priceChange.changePercent.toFixed(2)}%)
                   </span>
                 )}
@@ -185,7 +180,7 @@ export function ChartPanel() {
         {/* Timeframe Selector */}
         <Tabs value={timeframe} onValueChange={(v) => setTimeframe(v as Interval)}>
           <TabsList>
-            {(["15m", "1h", "1d"] as Interval[]).map((tf) => (
+            {(['15m', '1h', '1d'] as Interval[]).map((tf) => (
               <TabsTrigger key={tf} value={tf}>
                 {tf}
               </TabsTrigger>
@@ -196,11 +191,7 @@ export function ChartPanel() {
 
       {/* Chart Container */}
       <div className="relative">
-        <div
-          ref={chartContainerRef}
-          className="w-full"
-          style={{ height: "420px" }}
-        />
+        <div ref={chartContainerRef} className="w-full" style={{ height: '420px' }} />
 
         {/* Loading Overlay */}
         {isLoadingData && (

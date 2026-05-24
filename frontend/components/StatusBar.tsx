@@ -1,30 +1,24 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useStore } from "@/lib/store";
-import { Wifi, WifiOff, Activity, Clock, Server } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useStore } from '@/lib/store';
+import { Wifi, WifiOff, Activity, Clock, Server } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function StatusBar() {
-  const {
-    wsConnected,
-    wsLatency,
-    health,
-    lastUpdate,
-  } = useStore();
+  const { wsConnected, wsLatency, health, lastUpdate } = useStore();
 
   const formatLatency = (latency: number | null) => {
-    if (latency === null) return "N/A";
+    if (latency === null) return 'N/A';
     return `${latency.toFixed(0)}ms`;
   };
 
   const formatLastUpdate = (timestamp: number | null) => {
-    if (timestamp === null) return "Never";
+    if (timestamp === null) return 'Never';
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const seconds = Math.floor(diff / 1000);
-    
+
     if (seconds < 60) return `${seconds}s ago`;
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
@@ -74,13 +68,11 @@ export function StatusBar() {
             <Server className="h-4 w-4 text-blue-400" />
             <div
               className={cn(
-                "w-2 h-2 rounded-full",
-                provider.available ? "bg-green-400 animate-pulse" : "bg-red-400"
+                'w-2 h-2 rounded-full',
+                provider.available ? 'bg-green-400 animate-pulse' : 'bg-red-400'
               )}
             />
-            <span className="text-white font-semibold capitalize">
-              {provider.name}
-            </span>
+            <span className="text-white font-semibold capitalize">{provider.name}</span>
             {provider.latency && (
               <span className="text-slate-500 text-xs tabular-nums font-medium">
                 {provider.latency.toFixed(0)}ms

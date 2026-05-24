@@ -1,10 +1,10 @@
 """Demo data provider adapter for testing without real API keys."""
+
 import random
 import time
-from typing import List, Optional
-from datetime import datetime, timedelta
-from app.models import Candle, Interval, AssetClass
+
 from app.adapters.base import ProviderAdapter
+from app.models import AssetClass, Candle, Interval
 
 
 class DemoAdapter(ProviderAdapter):
@@ -23,7 +23,7 @@ class DemoAdapter(ProviderAdapter):
             "AMZN": 150.0,
         }
 
-    async def check_health(self) -> tuple[bool, Optional[str]]:
+    async def check_health(self) -> tuple[bool, str | None]:
         """Demo adapter is always healthy."""
         return (True, None)
 
@@ -40,10 +40,7 @@ class DemoAdapter(ProviderAdapter):
         return random.uniform(50, 500)
 
     def _generate_candle(
-        self,
-        timestamp: int,
-        prev_close: float,
-        volatility: float = 0.02
+        self, timestamp: int, prev_close: float, volatility: float = 0.02
     ) -> Candle:
         """Generate a single realistic candle."""
         # Random walk with some volatility
@@ -70,15 +67,12 @@ class DemoAdapter(ProviderAdapter):
             h=round(high, 2),
             l=round(low, 2),
             c=round(close, 2),
-            v=volume
+            v=volume,
         )
 
     async def get_historical_data(
-        self,
-        symbol: str,
-        interval: Interval,
-        limit: int = 200
-    ) -> List[Candle]:
+        self, symbol: str, interval: Interval, limit: int = 200
+    ) -> list[Candle]:
         """
         Generate realistic historical candle data.
 

@@ -1,35 +1,20 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { 
-  Wifi, 
-  WifiOff, 
-  Activity, 
-  Clock,
-  Server,
-  AlertCircle,
-  Sparkles,
-  User
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useStore } from '@/lib/store';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Wifi, WifiOff, Activity, Clock, Server, Sparkles, User } from 'lucide-react';
 
 export function StatusBar() {
-  const { 
-    wsConnected, 
-    wsLatency, 
-    health, 
-    lastUpdate,
-    isLoadingData 
-  } = useStore();
+  const { wsConnected, wsLatency, health, lastUpdate, isLoadingData } = useStore();
 
   // Demo mode toggle
   const [isPremium, setIsPremium] = useState(false);
-  
+
   useEffect(() => {
-    const sessionId = localStorage.getItem("glorypicks_session_id");
-    if (sessionId && sessionId.startsWith("premium_")) {
+    const sessionId = localStorage.getItem('glorypicks_session_id');
+    if (sessionId && sessionId.startsWith('premium_')) {
       setIsPremium(true);
     }
   }, []);
@@ -37,24 +22,24 @@ export function StatusBar() {
   const toggleDemoMode = () => {
     const newMode = !isPremium;
     setIsPremium(newMode);
-    
+
     if (newMode) {
-      localStorage.setItem("glorypicks_session_id", `premium_${Date.now()}`);
+      localStorage.setItem('glorypicks_session_id', `premium_${Date.now()}`);
     } else {
-      localStorage.setItem("glorypicks_session_id", `free_${Date.now()}`);
+      localStorage.setItem('glorypicks_session_id', `free_${Date.now()}`);
     }
-    
+
     // Reload page to apply changes
     window.location.reload();
   };
 
   const formatLatency = (latency: number | null) => {
-    if (latency === null) return "--";
+    if (latency === null) return '--';
     return `${latency.toFixed(0)}ms`;
   };
 
   const formatLastUpdate = (timestamp: number | null) => {
-    if (!timestamp) return "Never";
+    if (!timestamp) return 'Never';
     const diff = Date.now() - timestamp;
     if (diff < 60000) return `${Math.floor(diff / 1000)}s ago`;
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
@@ -71,27 +56,29 @@ export function StatusBar() {
   };
 
   const providerStatus = getProviderStatus();
-  const hasErrors = !wsConnected || providerStatus.some(p => !p.available);
+  const hasErrors = !wsConnected || providerStatus.some((p) => !p.available);
 
   return (
-    <div className={cn(
-      "fixed bottom-0 left-0 right-0 h-10 border-t z-50 flex items-center px-4 text-xs",
-      hasErrors 
-        ? "bg-error/10 border-error/30" 
-        : "bg-bg-secondary border-border-subtle"
-    )}>
-      <div className="flex items-center gap-6 flex-1">
+    <div
+      className={cn(
+        'fixed bottom-0 left-0 right-0 z-50 flex h-11 items-center border-t px-4 text-xs backdrop-blur-xl',
+        hasErrors ? 'border-error/30 bg-error/10' : 'border-border-subtle bg-bg-primary/85'
+      )}
+    >
+      <div className="flex flex-1 items-center gap-6">
         {/* Connection Status */}
         <div className="flex items-center gap-2">
           {wsConnected ? (
             <>
               <Wifi className="h-3.5 w-3.5 text-accent-bullish" />
-              <span className="text-text-secondary">Connected</span>
+              <span className="font-mono uppercase tracking-[0.12em] text-text-secondary">
+                Connected
+              </span>
             </>
           ) : (
             <>
               <WifiOff className="h-3.5 w-3.5 text-error" />
-              <span className="text-error">Disconnected</span>
+              <span className="font-mono uppercase tracking-[0.12em] text-error">Disconnected</span>
             </>
           )}
         </div>
@@ -100,22 +87,18 @@ export function StatusBar() {
         {providerStatus.map((provider) => (
           <div
             key={provider.name}
-            className="hidden sm:flex items-center gap-2"
+            className="hidden items-center gap-2 rounded-full border border-border-subtle bg-bg-secondary/60 px-2.5 py-1 sm:flex"
           >
             <Server className="h-3.5 w-3.5 text-text-tertiary" />
             <div
               className={cn(
-                "w-1.5 h-1.5 rounded-full",
-                provider.available ? "bg-accent-bullish" : "bg-error"
+                'w-1.5 h-1.5 rounded-full',
+                provider.available ? 'bg-accent-bullish' : 'bg-error'
               )}
             />
-            <span className="text-text-secondary capitalize">
-              {provider.name}
-            </span>
+            <span className="text-text-secondary capitalize">{provider.name}</span>
             {provider.latency && (
-              <span className="text-text-tertiary font-mono">
-                {provider.latency.toFixed(0)}ms
-              </span>
+              <span className="text-text-tertiary font-mono">{provider.latency.toFixed(0)}ms</span>
             )}
           </div>
         ))}
@@ -129,23 +112,19 @@ export function StatusBar() {
         )}
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4">
         {/* WebSocket Latency */}
         {wsConnected && (
           <div className="hidden sm:flex items-center gap-2">
             <Activity className="h-3.5 w-3.5 text-text-tertiary" />
-            <span className="text-text-secondary font-mono">
-              {formatLatency(wsLatency)}
-            </span>
+            <span className="text-text-secondary font-mono">{formatLatency(wsLatency)}</span>
           </div>
         )}
 
         {/* Last Update */}
         <div className="flex items-center gap-2">
           <Clock className="h-3.5 w-3.5 text-text-tertiary" />
-          <span className="text-text-secondary">
-            {formatLastUpdate(lastUpdate)}
-          </span>
+          <span className="text-text-secondary">{formatLastUpdate(lastUpdate)}</span>
         </div>
 
         {/* Demo Mode Toggle */}
@@ -154,8 +133,8 @@ export function StatusBar() {
           size="sm"
           onClick={toggleDemoMode}
           className={cn(
-            "hidden md:flex items-center gap-1.5 text-xs",
-            isPremium ? "text-accent-bullish" : "text-text-tertiary"
+            'hidden md:flex items-center gap-1.5 text-xs',
+            isPremium ? 'text-accent-bullish' : 'text-text-tertiary'
           )}
         >
           {isPremium ? (
@@ -172,8 +151,8 @@ export function StatusBar() {
         </Button>
 
         {/* Version */}
-        <div className="hidden md:block text-text-tertiary">
-          GloryPicks Pro
+        <div className="hidden font-mono uppercase tracking-[0.16em] text-accent-primary/80 md:block">
+          GloryPicks Signal OS
         </div>
       </div>
     </div>

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { Clock, Sun, Moon, Sunrise, Sunset, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { Clock, Sun, Moon, Sunrise, Sunset, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface KillZoneData {
   zone_type: string;
@@ -29,31 +29,31 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
   useEffect(() => {
     const fetchKillZone = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
         const response = await fetch(`${apiUrl}/killzone`);
-        
+
         if (!response.ok) {
-          throw new Error("Failed to fetch kill zone data");
+          throw new Error('Failed to fetch kill zone data');
         }
-        
+
         const data = await response.json();
         setKillZone(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
       }
     };
 
     fetchKillZone();
-    
+
     // Refresh every minute
     const interval = setInterval(fetchKillZone, 60000);
     return () => clearInterval(interval);
   }, []);
 
   const formatTime = (minutes: number | undefined) => {
-    if (minutes === undefined) return "--";
+    if (minutes === undefined) return '--';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
@@ -64,13 +64,13 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
 
   const getZoneIcon = (zoneType: string) => {
     switch (zoneType) {
-      case "london_kill_zone":
+      case 'london_kill_zone':
         return <Sunrise className="h-5 w-5 text-yellow-500" />;
-      case "ny_kill_zone":
+      case 'ny_kill_zone':
         return <Sun className="h-5 w-5 text-orange-500" />;
-      case "london_close":
+      case 'london_close':
         return <Sunset className="h-5 w-5 text-blue-500" />;
-      case "asian_session":
+      case 'asian_session':
         return <Moon className="h-5 w-5 text-purple-500" />;
       default:
         return <Clock className="h-5 w-5 text-text-tertiary" />;
@@ -78,27 +78,27 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
   };
 
   const getZoneColor = (isActive: boolean, optimal: boolean) => {
-    if (!isActive) return "bg-bg-tertiary border-border-subtle";
-    if (optimal) return "bg-accent-bullish/10 border-accent-bullish/50";
-    return "bg-yellow-500/10 border-yellow-500/50";
+    if (!isActive) return 'bg-bg-tertiary border-border-subtle';
+    if (optimal) return 'bg-accent-bullish/10 border-accent-bullish/50';
+    return 'bg-yellow-500/10 border-yellow-500/50';
   };
 
   const getVolatilityColor = (volatility: string) => {
     switch (volatility) {
-      case "high":
-        return "text-accent-bullish";
-      case "medium":
-        return "text-yellow-500";
-      case "low":
-        return "text-text-tertiary";
+      case 'high':
+        return 'text-accent-bullish';
+      case 'medium':
+        return 'text-yellow-500';
+      case 'low':
+        return 'text-text-tertiary';
       default:
-        return "text-text-tertiary";
+        return 'text-text-tertiary';
     }
   };
 
   if (loading) {
     return (
-      <Card className={cn("opacity-60", className)}>
+      <Card className={cn('opacity-60', className)}>
         <CardContent className="p-4 text-center">
           <Clock className="h-6 w-6 animate-pulse text-text-tertiary mx-auto" />
         </CardContent>
@@ -108,7 +108,7 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
 
   if (error || !killZone) {
     return (
-      <Card className={cn("border-accent-bearish/50", className)}>
+      <Card className={cn('border-accent-bearish/50', className)}>
         <CardContent className="p-4 text-center text-accent-bearish text-sm">
           <AlertTriangle className="h-5 w-5 mx-auto mb-1" />
           Kill zone data unavailable
@@ -117,19 +117,15 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
     );
   }
 
-  const zoneName = killZone.zone_type
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (l) => l.toUpperCase());
+  const zoneName = killZone.zone_type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn('overflow-hidden', className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-accent-primary" />
-            <h3 className="text-sm font-semibold text-text-primary">
-              Kill Zone Status
-            </h3>
+            <h3 className="text-sm font-semibold text-text-primary">Kill Zone Status</h3>
           </div>
           {killZone.is_active && killZone.optimal_for_entries && (
             <Badge className="bg-accent-bullish/20 text-accent-bullish border-accent-bullish/50 text-xs">
@@ -144,7 +140,7 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
         {/* Main Kill Zone Display */}
         <div
           className={cn(
-            "p-4 rounded-lg border-2 transition-all",
+            'p-4 rounded-lg border-2 transition-all',
             getZoneColor(killZone.is_active, killZone.optimal_for_entries)
           )}
         >
@@ -161,13 +157,13 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-xs",
+                      'text-xs',
                       killZone.optimal_for_entries
-                        ? "border-accent-bullish text-accent-bullish"
-                        : "border-yellow-500 text-yellow-500"
+                        ? 'border-accent-bullish text-accent-bullish'
+                        : 'border-yellow-500 text-yellow-500'
                     )}
                   >
-                    {killZone.optimal_for_entries ? "Active - Optimal" : "Active"}
+                    {killZone.optimal_for_entries ? 'Active - Optimal' : 'Active'}
                   </Badge>
                 </div>
 
@@ -184,7 +180,7 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
                   <span className="text-text-secondary">Expected Volatility</span>
                   <span
                     className={cn(
-                      "font-medium capitalize",
+                      'font-medium capitalize',
                       getVolatilityColor(killZone.volatility_expected)
                     )}
                   >
@@ -215,9 +211,7 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
         </div>
 
         {/* Rationale */}
-        <p className="text-xs text-text-secondary leading-relaxed">
-          {killZone.rationale}
-        </p>
+        <p className="text-xs text-text-secondary leading-relaxed">{killZone.rationale}</p>
 
         {/* Kill Zone Legend */}
         <div className="pt-3 border-t border-border-subtle">

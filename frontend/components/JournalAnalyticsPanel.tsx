@@ -1,21 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { TradeStatistics, JournalAnalytics } from "@/types/journal";
-import { getStatistics, getAnalytics } from "@/lib/journalApi";
-import {
-  TrendingUp,
-  TrendingDown,
-  Target,
-  Award,
-  Activity,
-  Lock,
-  Loader2,
-} from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { TradeStatistics, JournalAnalytics } from '@/types/journal';
+import { getStatistics, getAnalytics } from '@/lib/journalApi';
+import { TrendingUp, TrendingDown, Target, Award, Activity, Lock, Loader2 } from 'lucide-react';
 
 interface JournalAnalyticsPanelProps {
   isPremium: boolean;
@@ -36,14 +28,11 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
   const loadAnalytics = async () => {
     try {
       setIsLoading(true);
-      const [statsData, analyticsData] = await Promise.all([
-        getStatistics(),
-        getAnalytics(),
-      ]);
+      const [statsData, analyticsData] = await Promise.all([getStatistics(), getAnalytics()]);
       setStatistics(statsData);
       setAnalytics(analyticsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load analytics");
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setIsLoading(false);
     }
@@ -54,12 +43,10 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
       <Card className="bg-gradient-to-br from-bg-tertiary to-bg-secondary border-border-subtle">
         <CardContent className="p-8 text-center">
           <Lock className="h-12 w-12 text-accent-primary mx-auto mb-4" />
-          <h3 className="text-h3 font-semibold text-text-primary mb-2">
-            Premium Analytics
-          </h3>
+          <h3 className="text-h3 font-semibold text-text-primary mb-2">Premium Analytics</h3>
           <p className="text-text-secondary mb-4 max-w-sm mx-auto">
-            Upgrade to Premium to unlock detailed trade analytics, performance insights,
-            and psychology tracking.
+            Upgrade to Premium to unlock detailed trade analytics, performance insights, and
+            psychology tracking.
           </p>
           <div className="space-y-3 text-left max-w-sm mx-auto">
             <div className="flex items-center gap-3 text-sm text-text-secondary">
@@ -96,9 +83,7 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
   if (error) {
     return (
       <Card>
-        <CardContent className="p-6 text-center text-accent-bearish">
-          {error}
-        </CardContent>
+        <CardContent className="p-6 text-center text-accent-bearish">{error}</CardContent>
       </Card>
     );
   }
@@ -142,11 +127,11 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
             </div>
             <div
               className={cn(
-                "text-h2 font-bold",
-                statistics.total_pnl >= 0 ? "text-accent-bullish" : "text-accent-bearish"
+                'text-h2 font-bold',
+                statistics.total_pnl >= 0 ? 'text-accent-bullish' : 'text-accent-bearish'
               )}
             >
-              {statistics.total_pnl >= 0 ? "+" : ""}
+              {statistics.total_pnl >= 0 ? '+' : ''}
               {formatCurrency(statistics.total_pnl)}
             </div>
           </CardContent>
@@ -160,22 +145,22 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
             </div>
             <div
               className={cn(
-                "text-h2 font-bold",
+                'text-h2 font-bold',
                 statistics.profit_factor >= 1.5
-                  ? "text-accent-bullish"
+                  ? 'text-accent-bullish'
                   : statistics.profit_factor >= 1
-                  ? "text-accent-neutral"
-                  : "text-accent-bearish"
+                    ? 'text-accent-neutral'
+                    : 'text-accent-bearish'
               )}
             >
               {statistics.profit_factor.toFixed(2)}
             </div>
             <p className="text-xs text-text-tertiary mt-1">
               {statistics.profit_factor >= 1.5
-                ? "Excellent"
+                ? 'Excellent'
                 : statistics.profit_factor >= 1
-                ? "Break-even"
-                : "Needs improvement"}
+                  ? 'Break-even'
+                  : 'Needs improvement'}
             </p>
           </CardContent>
         </Card>
@@ -188,15 +173,15 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
             </div>
             <div
               className={cn(
-                "text-h2 font-bold",
+                'text-h2 font-bold',
                 statistics.avg_r_multiple >= 1
-                  ? "text-accent-bullish"
+                  ? 'text-accent-bullish'
                   : statistics.avg_r_multiple >= 0
-                  ? "text-accent-neutral"
-                  : "text-accent-bearish"
+                    ? 'text-accent-neutral'
+                    : 'text-accent-bearish'
               )}
             >
-              {statistics.avg_r_multiple >= 0 ? "+" : ""}
+              {statistics.avg_r_multiple >= 0 ? '+' : ''}
               {statistics.avg_r_multiple.toFixed(2)}R
             </div>
           </CardContent>
@@ -204,44 +189,41 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
       </div>
 
       {/* Pattern Performance */}
-      {statistics.win_rate_by_pattern &&
-        Object.keys(statistics.win_rate_by_pattern).length > 0 && (
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="text-h3 font-semibold text-text-primary">
-                Performance by ICT Pattern
-              </h3>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(statistics.win_rate_by_pattern)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([pattern, winRate]) => (
-                    <div key={pattern} className="flex items-center gap-4">
-                      <span className="text-text-secondary text-sm w-40 truncate">
-                        {pattern.replace(/_/g, " ")}
-                      </span>
-                      <div className="flex-1">
-                        <Progress
-                          value={winRate}
-                          max={100}
-                          variant={winRate >= 60 ? "bullish" : "neutral"}
-                        />
-                      </div>
-                      <span
-                        className={cn(
-                          "text-sm font-mono w-16 text-right",
-                          winRate >= 60 ? "text-accent-bullish" : "text-text-secondary"
-                        )}
-                      >
-                        {winRate.toFixed(1)}%
-                      </span>
+      {statistics.win_rate_by_pattern && Object.keys(statistics.win_rate_by_pattern).length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <h3 className="text-h3 font-semibold text-text-primary">Performance by ICT Pattern</h3>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Object.entries(statistics.win_rate_by_pattern)
+                .sort(([, a], [, b]) => b - a)
+                .map(([pattern, winRate]) => (
+                  <div key={pattern} className="flex items-center gap-4">
+                    <span className="text-text-secondary text-sm w-40 truncate">
+                      {pattern.replace(/_/g, ' ')}
+                    </span>
+                    <div className="flex-1">
+                      <Progress
+                        value={winRate}
+                        max={100}
+                        variant={winRate >= 60 ? 'bullish' : 'neutral'}
+                      />
                     </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    <span
+                      className={cn(
+                        'text-sm font-mono w-16 text-right',
+                        winRate >= 60 ? 'text-accent-bullish' : 'text-text-secondary'
+                      )}
+                    >
+                      {winRate.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Streaks */}
       {analytics?.streaks && (
@@ -303,9 +285,9 @@ export function JournalAnalyticsPanel({ isPremium }: JournalAnalyticsPanelProps)
 }
 
 function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);

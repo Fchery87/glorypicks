@@ -1,23 +1,23 @@
 /** Trade Journal API Client */
 
-import { TradeEntry, TradeStatistics, JournalAnalytics, UserTierLimits } from "@/types/journal";
+import { TradeEntry, TradeStatistics, JournalAnalytics, UserTierLimits } from '@/types/journal';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 // Get session ID from localStorage or create new one
 const getSessionId = (): string => {
-  if (typeof window === "undefined") return "";
-  let sessionId = localStorage.getItem("glorypicks_session_id");
+  if (typeof window === 'undefined') return '';
+  let sessionId = localStorage.getItem('glorypicks_session_id');
   if (!sessionId) {
     sessionId = `free_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem("glorypicks_session_id", sessionId);
+    localStorage.setItem('glorypicks_session_id', sessionId);
   }
   return sessionId;
 };
 
 const getHeaders = (): HeadersInit => ({
-  "Content-Type": "application/json",
-  "X-Session-ID": getSessionId(),
+  'Content-Type': 'application/json',
+  'X-Session-ID': getSessionId(),
 });
 
 /** Get all trades for the current user */
@@ -28,10 +28,10 @@ export async function getTrades(params?: {
   limit?: number;
 }): Promise<TradeEntry[]> {
   const searchParams = new URLSearchParams();
-  if (params?.status) searchParams.set("status", params.status);
-  if (params?.symbol) searchParams.set("symbol", params.symbol);
-  if (params?.ict_pattern) searchParams.set("ict_pattern", params.ict_pattern);
-  if (params?.limit) searchParams.set("limit", params.limit.toString());
+  if (params?.status) searchParams.set('status', params.status);
+  if (params?.symbol) searchParams.set('symbol', params.symbol);
+  if (params?.ict_pattern) searchParams.set('ict_pattern', params.ict_pattern);
+  if (params?.limit) searchParams.set('limit', params.limit.toString());
 
   const response = await fetch(`${API_URL}/journal/trades?${searchParams}`, {
     headers: getHeaders(),
@@ -39,7 +39,7 @@ export async function getTrades(params?: {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to fetch trades");
+    throw new Error(error.detail || 'Failed to fetch trades');
   }
 
   return response.json();
@@ -53,7 +53,7 @@ export async function getOpenTrades(): Promise<TradeEntry[]> {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to fetch open trades");
+    throw new Error(error.detail || 'Failed to fetch open trades');
   }
 
   return response.json();
@@ -62,14 +62,14 @@ export async function getOpenTrades(): Promise<TradeEntry[]> {
 /** Create a new trade */
 export async function createTrade(tradeData: Partial<TradeEntry>): Promise<TradeEntry> {
   const response = await fetch(`${API_URL}/journal/trades`, {
-    method: "POST",
+    method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(tradeData),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to create trade");
+    throw new Error(error.detail || 'Failed to create trade');
   }
 
   return response.json();
@@ -81,14 +81,14 @@ export async function updateTrade(
   updates: Partial<TradeEntry>
 ): Promise<TradeEntry> {
   const response = await fetch(`${API_URL}/journal/trades/${tradeId}`, {
-    method: "PATCH",
+    method: 'PATCH',
     headers: getHeaders(),
     body: JSON.stringify(updates),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to update trade");
+    throw new Error(error.detail || 'Failed to update trade');
   }
 
   return response.json();
@@ -100,7 +100,7 @@ export async function closeTrade(
   exitData: { exit_price: number; post_trade_notes?: string; emotional_state?: string }
 ): Promise<TradeEntry> {
   const response = await fetch(`${API_URL}/journal/trades/${tradeId}/close`, {
-    method: "POST",
+    method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({
       ...exitData,
@@ -110,7 +110,7 @@ export async function closeTrade(
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to close trade");
+    throw new Error(error.detail || 'Failed to close trade');
   }
 
   return response.json();
@@ -119,20 +119,20 @@ export async function closeTrade(
 /** Delete a trade */
 export async function deleteTrade(tradeId: string): Promise<void> {
   const response = await fetch(`${API_URL}/journal/trades/${tradeId}`, {
-    method: "DELETE",
+    method: 'DELETE',
     headers: getHeaders(),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to delete trade");
+    throw new Error(error.detail || 'Failed to delete trade');
   }
 }
 
 /** Get trade statistics (Premium feature) */
 export async function getStatistics(days?: number): Promise<TradeStatistics> {
   const searchParams = new URLSearchParams();
-  if (days) searchParams.set("days", days.toString());
+  if (days) searchParams.set('days', days.toString());
 
   const response = await fetch(`${API_URL}/journal/statistics?${searchParams}`, {
     headers: getHeaders(),
@@ -140,7 +140,7 @@ export async function getStatistics(days?: number): Promise<TradeStatistics> {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to fetch statistics");
+    throw new Error(error.detail || 'Failed to fetch statistics');
   }
 
   return response.json();
@@ -154,7 +154,7 @@ export async function getAnalytics(): Promise<JournalAnalytics> {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to fetch analytics");
+    throw new Error(error.detail || 'Failed to fetch analytics');
   }
 
   return response.json();
@@ -168,7 +168,7 @@ export async function getTierLimits(): Promise<UserTierLimits> {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to fetch tier limits");
+    throw new Error(error.detail || 'Failed to fetch tier limits');
   }
 
   return response.json();
@@ -177,13 +177,13 @@ export async function getTierLimits(): Promise<UserTierLimits> {
 /** Create sample trades (for demo) */
 export async function createSampleTrades(): Promise<TradeEntry[]> {
   const response = await fetch(`${API_URL}/journal/trades/sample`, {
-    method: "POST",
+    method: 'POST',
     headers: getHeaders(),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to create sample trades");
+    throw new Error(error.detail || 'Failed to create sample trades');
   }
 
   return response.json();
@@ -201,7 +201,7 @@ export async function getPatternOptions(): Promise<{
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.detail || "Failed to fetch pattern options");
+    throw new Error(error.detail || 'Failed to fetch pattern options');
   }
 
   return response.json();

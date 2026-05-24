@@ -1,72 +1,73 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useStore } from "@/lib/store";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Search, X, Command, TrendingUp, Star } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useStore } from '@/lib/store';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { Search, X, Command, TrendingUp, Star } from 'lucide-react';
 
 const POPULAR_SYMBOLS = {
   stocks: [
-    { symbol: "AAPL", name: "Apple Inc.", sector: "Technology" },
-    { symbol: "MSFT", name: "Microsoft Corp.", sector: "Technology" },
-    { symbol: "GOOGL", name: "Alphabet Inc.", sector: "Technology" },
-    { symbol: "AMZN", name: "Amazon.com Inc.", sector: "Consumer" },
-    { symbol: "TSLA", name: "Tesla Inc.", sector: "Automotive" },
-    { symbol: "NVDA", name: "NVIDIA Corp.", sector: "Technology" },
-    { symbol: "META", name: "Meta Platforms", sector: "Technology" },
-    { symbol: "NFLX", name: "Netflix Inc.", sector: "Entertainment" },
+    { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology' },
+    { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Technology' },
+    { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Technology' },
+    { symbol: 'AMZN', name: 'Amazon.com Inc.', sector: 'Consumer' },
+    { symbol: 'TSLA', name: 'Tesla Inc.', sector: 'Automotive' },
+    { symbol: 'NVDA', name: 'NVIDIA Corp.', sector: 'Technology' },
+    { symbol: 'META', name: 'Meta Platforms', sector: 'Technology' },
+    { symbol: 'NFLX', name: 'Netflix Inc.', sector: 'Entertainment' },
   ],
   crypto: [
-    { symbol: "BTC-USD", name: "Bitcoin", sector: "Cryptocurrency" },
-    { symbol: "ETH-USD", name: "Ethereum", sector: "Cryptocurrency" },
-    { symbol: "SOL-USD", name: "Solana", sector: "Cryptocurrency" },
-    { symbol: "ADA-USD", name: "Cardano", sector: "Cryptocurrency" },
-    { symbol: "DOT-USD", name: "Polkadot", sector: "Cryptocurrency" },
-    { symbol: "XRP-USD", name: "XRP", sector: "Cryptocurrency" },
+    { symbol: 'BTC-USD', name: 'Bitcoin', sector: 'Cryptocurrency' },
+    { symbol: 'ETH-USD', name: 'Ethereum', sector: 'Cryptocurrency' },
+    { symbol: 'SOL-USD', name: 'Solana', sector: 'Cryptocurrency' },
+    { symbol: 'ADA-USD', name: 'Cardano', sector: 'Cryptocurrency' },
+    { symbol: 'DOT-USD', name: 'Polkadot', sector: 'Cryptocurrency' },
+    { symbol: 'XRP-USD', name: 'XRP', sector: 'Cryptocurrency' },
   ],
   forex: [
-    { symbol: "EURUSD", name: "EUR/USD", sector: "Forex" },
-    { symbol: "GBPUSD", name: "GBP/USD", sector: "Forex" },
-    { symbol: "USDJPY", name: "USD/JPY", sector: "Forex" },
-    { symbol: "AUDUSD", name: "AUD/USD", sector: "Forex" },
-    { symbol: "USDCAD", name: "USD/CAD", sector: "Forex" },
+    { symbol: 'EURUSD', name: 'EUR/USD', sector: 'Forex' },
+    { symbol: 'GBPUSD', name: 'GBP/USD', sector: 'Forex' },
+    { symbol: 'USDJPY', name: 'USD/JPY', sector: 'Forex' },
+    { symbol: 'AUDUSD', name: 'AUD/USD', sector: 'Forex' },
+    { symbol: 'USDCAD', name: 'USD/CAD', sector: 'Forex' },
   ],
   indices: [
-    { symbol: "SPY", name: "S&P 500 ETF", sector: "Index" },
-    { symbol: "QQQ", name: "NASDAQ 100 ETF", sector: "Index" },
-    { symbol: "DIA", name: "Dow Jones ETF", sector: "Index" },
-    { symbol: "IWM", name: "Russell 2000 ETF", sector: "Index" },
-    { symbol: "VTI", name: "Total Market ETF", sector: "Index" },
+    { symbol: 'SPY', name: 'S&P 500 ETF', sector: 'Index' },
+    { symbol: 'QQQ', name: 'NASDAQ 100 ETF', sector: 'Index' },
+    { symbol: 'DIA', name: 'Dow Jones ETF', sector: 'Index' },
+    { symbol: 'IWM', name: 'Russell 2000 ETF', sector: 'Index' },
+    { symbol: 'VTI', name: 'Total Market ETF', sector: 'Index' },
   ],
 };
 
-type AssetClass = "stocks" | "crypto" | "forex" | "indices" | "all";
+type AssetClass = 'stocks' | 'crypto' | 'forex' | 'indices' | 'all';
+
+export { POPULAR_SYMBOLS };
 
 export function TickerSearch() {
   const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [activeClass, setActiveClass] = useState<AssetClass>("all");
-  const { symbol, setSymbol, addToWatchlist, watchlist } = useStore();
+  const [query, setQuery] = useState('');
+  const [activeClass, setActiveClass] = useState<AssetClass>('all');
+  const { symbol, setSymbol, watchlist } = useStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsOpen(true);
         setTimeout(() => inputRef.current?.focus(), 0);
       }
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
   // Click outside to close
@@ -78,15 +79,15 @@ export function TickerSearch() {
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const handleSelect = (newSymbol: string) => {
     setSymbol(newSymbol);
     setIsOpen(false);
-    setQuery("");
+    setQuery('');
   };
 
   const getFilteredSymbols = useCallback(() => {
@@ -96,7 +97,7 @@ export function TickerSearch() {
 
     let filtered = allSymbols;
 
-    if (activeClass !== "all") {
+    if (activeClass !== 'all') {
       filtered = allSymbols.filter((s) => s.category === activeClass);
     }
 
@@ -104,8 +105,7 @@ export function TickerSearch() {
       const lowerQuery = query.toLowerCase();
       filtered = filtered.filter(
         (s) =>
-          s.symbol.toLowerCase().includes(lowerQuery) ||
-          s.name.toLowerCase().includes(lowerQuery)
+          s.symbol.toLowerCase().includes(lowerQuery) || s.name.toLowerCase().includes(lowerQuery)
       );
     }
 
@@ -124,16 +124,14 @@ export function TickerSearch() {
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-2 rounded-sm border text-left transition-colors",
+          'w-full flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all',
           isOpen
-            ? "bg-bg-tertiary border-border-strong"
-            : "bg-bg-secondary border-border-default hover:border-border-strong"
+            ? 'bg-bg-tertiary border-accent-primary/50 shadow-[0_0_0_1px_rgba(214,181,109,0.16)]'
+            : 'bg-bg-secondary/80 border-border-default hover:border-accent-primary/40 hover:bg-bg-tertiary/80'
         )}
       >
         <Search className="h-4 w-4 text-text-tertiary" />
-        <span className="flex-1 text-text-secondary text-sm">
-          {symbol}
-        </span>
+        <span className="flex-1 text-text-secondary text-sm">{symbol}</span>
         <div className="flex items-center gap-1 text-text-tertiary">
           <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm text-[10px]">
             <Command className="h-3 w-3" />
@@ -144,7 +142,7 @@ export function TickerSearch() {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-bg-secondary border border-border-default rounded-md shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border-default bg-bg-secondary shadow-[0_24px_80px_rgba(0,0,0,0.46)]">
           {/* Search Input */}
           <div className="p-3 border-b border-border-subtle">
             <div className="relative">
@@ -159,7 +157,7 @@ export function TickerSearch() {
               />
               {query && (
                 <button
-                  onClick={() => setQuery("")}
+                  onClick={() => setQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
                 >
                   <X className="h-4 w-4" />
@@ -170,22 +168,20 @@ export function TickerSearch() {
 
           {/* Category Filters */}
           <div className="flex items-center gap-1 p-2 border-b border-border-subtle overflow-x-auto">
-            {(["all", "stocks", "crypto", "forex", "indices"] as AssetClass[]).map(
-              (category) => (
-                <button
-                  key={category}
-                  onClick={() => setActiveClass(category)}
-                  className={cn(
-                    "px-3 py-1.5 text-xs font-medium rounded-sm whitespace-nowrap transition-colors",
-                    activeClass === category
-                      ? "bg-bg-tertiary text-text-primary"
-                      : "text-text-secondary hover:text-text-primary hover:bg-bg-tertiary"
-                  )}
-                >
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </button>
-              )
-            )}
+            {(['all', 'stocks', 'crypto', 'forex', 'indices'] as AssetClass[]).map((category) => (
+              <button
+                key={category}
+                onClick={() => setActiveClass(category)}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium rounded-sm whitespace-nowrap transition-colors',
+                  activeClass === category
+                    ? 'bg-bg-tertiary text-text-primary'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
+                )}
+              >
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </button>
+            ))}
           </div>
 
           {/* Results */}
@@ -194,9 +190,7 @@ export function TickerSearch() {
               <div className="p-8 text-center">
                 <Search className="h-8 w-8 text-text-tertiary mx-auto mb-3" />
                 <p className="text-text-secondary text-sm">No symbols found</p>
-                <p className="text-text-tertiary text-xs mt-1">
-                  Try a different search term
-                </p>
+                <p className="text-text-tertiary text-xs mt-1">Try a different search term</p>
               </div>
             ) : (
               <div className="p-2">
@@ -204,10 +198,10 @@ export function TickerSearch() {
                   <div
                     key={item.symbol}
                     className={cn(
-                      "group flex items-center justify-between p-3 rounded-sm cursor-pointer transition-colors",
+                      'group flex cursor-pointer items-center justify-between rounded-xl p-3 transition-colors',
                       symbol === item.symbol
-                        ? "bg-bg-tertiary border border-border-default"
-                        : "hover:bg-bg-tertiary border border-transparent"
+                        ? 'bg-bg-tertiary border border-border-default'
+                        : 'hover:bg-bg-tertiary border border-transparent'
                     )}
                     onClick={() => handleSelect(item.symbol)}
                   >
@@ -230,9 +224,7 @@ export function TickerSearch() {
                         <p className="text-text-tertiary text-xs">{item.name}</p>
                       </div>
                     </div>
-                    <span className="text-text-tertiary text-xs uppercase">
-                      {item.category}
-                    </span>
+                    <span className="text-text-tertiary text-xs uppercase">{item.category}</span>
                   </div>
                 ))}
               </div>
@@ -242,7 +234,11 @@ export function TickerSearch() {
           {/* Footer */}
           <div className="p-2 border-t border-border-subtle bg-bg-tertiary/50">
             <p className="text-text-tertiary text-xs text-center">
-              Press <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm mx-1">Esc</kbd> to close
+              Press{' '}
+              <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm mx-1">
+                Esc
+              </kbd>{' '}
+              to close
             </p>
           </div>
         </div>
