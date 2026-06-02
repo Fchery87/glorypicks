@@ -25,35 +25,41 @@ export function LightweightChart({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-  // Initialize chart
+
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       layout: {
         background: { color: 'transparent' },
-        textColor: '#A8B0B8',
+        textColor: '#6a727c',
+        fontFamily: 'var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace',
+        fontSize: 11,
       },
       grid: {
-        vertLines: { color: 'rgba(83, 96, 109, 0.18)' },
-        horzLines: { color: 'rgba(83, 96, 109, 0.18)' },
+        vertLines: { color: 'rgba(106, 114, 124, 0.06)' },
+        horzLines: { color: 'rgba(106, 114, 124, 0.06)' },
       },
       crosshair: {
         mode: 1,
         vertLine: {
-          color: '#D6B56D',
-          labelBackgroundColor: '#18202A',
+          color: '#d9b86c',
+          width: 1,
+          style: 2,
+          labelBackgroundColor: '#161b22',
         },
         horzLine: {
-          color: '#D6B56D',
-          labelBackgroundColor: '#18202A',
+          color: '#d9b86c',
+          width: 1,
+          style: 2,
+          labelBackgroundColor: '#161b22',
         },
       },
       rightPriceScale: {
-        borderColor: '#1D242E',
+        borderColor: 'rgba(27, 33, 43, 0.5)',
       },
       timeScale: {
-        borderColor: '#1D242E',
+        borderColor: 'rgba(27, 33, 43, 0.5)',
         timeVisible: true,
         secondsVisible: false,
       },
@@ -66,18 +72,17 @@ export function LightweightChart({
     });
 
     const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#2BD576',
-      downColor: '#FF5D73',
-      borderUpColor: '#2BD576',
-      borderDownColor: '#FF5D73',
-      wickUpColor: '#2BD576',
-      wickDownColor: '#FF5D73',
+      upColor: '#2dd474',
+      downColor: '#ff5f73',
+      borderUpColor: '#2dd474',
+      borderDownColor: '#ff5f73',
+      wickUpColor: '#2dd474',
+      wickDownColor: '#ff5f73',
     });
 
     chartRef.current = chart;
     candlestickSeriesRef.current = candlestickSeries;
 
-    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         const { width, height } = chartContainerRef.current.getBoundingClientRect();
@@ -90,7 +95,6 @@ export function LightweightChart({
       resizeObserver.observe(chartContainerRef.current);
     }
 
-    // Initial sizing
     handleResize();
 
     return () => {
@@ -99,7 +103,6 @@ export function LightweightChart({
     };
   }, []);
 
-  // Update data when candles change
   useEffect(() => {
     if (!candlestickSeriesRef.current || !candles || candles.length === 0) return;
 
@@ -113,7 +116,6 @@ export function LightweightChart({
 
     candlestickSeriesRef.current.setData(formattedData);
 
-    // Fit content
     if (chartRef.current) {
       chartRef.current.timeScale().fitContent();
     }
@@ -129,12 +131,12 @@ export function LightweightChart({
       )}
       onClick={onClick}
     >
-      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border-subtle bg-bg-primary/70 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-tertiary">
+      <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-border-subtle/70 bg-bg-primary/70 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary backdrop-blur-sm">
         {symbol} · {interval}
       </div>
       {candles.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-text-secondary">
-          <span className="text-sm">No data</span>
+          <span className="text-[11px] font-mono uppercase tracking-[0.14em]">No data</span>
         </div>
       )}
     </div>

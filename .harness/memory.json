@@ -34,5 +34,32 @@
     "capability": "",
     "pattern": "",
     "correction": "Task: [Read from: E:\\Dev\\GloryPicks\\glorypicks\\plan.md, E:\\Dev\\GloryPicks\\glorypicks\\progress.md]\n\nPerform a codebase health review for the current GloryPicks repo. Focus on existing errors surfaced by tests/build, API contract mismatches, type issues, and safe fixes. Do not modify files; return con"
+  },
+  {
+    "id": "25fc84f0-c0bb-4114-be59-edaa283058f0",
+    "timestamp": 1779664050640,
+    "project": "E:\\Dev\\GloryPicks\\glorypicks",
+    "spec_tier": "ambient",
+    "capability": "",
+    "pattern": "",
+    "correction": "<skill name=\"grill-with-docs\" location=\"C:\\Users\\Frant\\.pi\\agent\\skills\\grill-with-docs\\SKILL.md\">\nReferences are relative to C:\\Users\\Frant\\.pi\\agent\\skills\\grill-with-docs.\n\n<what-to-do>\n\nInterview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down eac"
+  },
+  {
+    "id": "b3aefea7-928f-4155-85a4-552ae6cf5eea",
+    "timestamp": 1779664403766,
+    "project": "E:\\Dev\\GloryPicks\\glorypicks",
+    "spec_tier": "ambient",
+    "capability": "",
+    "pattern": "",
+    "correction": "Task: [Read from: E:\\Dev\\GloryPicks\\glorypicks\\plan.md, E:\\Dev\\GloryPicks\\glorypicks\\progress.md]\n\nReview the GloryPicks repository for frontend Next.js/React codebase health. Do not modify files. Focus on build/type/lint status, API contract mismatches, environment/config issues, state management,"
+  },
+  {
+    "id": "72efccef-6a03-4907-ab12-91cbbbea42d4",
+    "timestamp": 1779664403854,
+    "project": "E:\\Dev\\GloryPicks\\glorypicks",
+    "spec_tier": "ambient",
+    "capability": "",
+    "pattern": "",
+    "correction": "Task: [Read from: E:\\Dev\\GloryPicks\\glorypicks\\plan.md, E:\\Dev\\GloryPicks\\glorypicks\\progress.md]\n\nReview the GloryPicks repository for backend FastAPI codebase health. Do not modify files. Focus on test/lint/type status, API contract mismatches, security/auth/persistence, data provider reliability,"
   }
 ]

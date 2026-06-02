@@ -18,7 +18,6 @@ export function Logo({ className, size = 'md', showText = true }: LogoProps) {
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      {/* Logo Mark - Precision Crosshair Design */}
       <svg
         width={container}
         height={container}
@@ -26,71 +25,39 @@ export function Logo({ className, size = 'md', showText = true }: LogoProps) {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="flex-shrink-0"
+        aria-label="GloryPicks logo"
       >
-        {/* Outer circle - subtle */}
-        <circle
-          cx="24"
-          cy="24"
-          r="22"
-          stroke="currentColor"
-          strokeWidth={stroke * 0.5}
-          className="text-border-default"
-        />
+        <defs>
+          <linearGradient id="gp-mark-stroke" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stopColor="#e6cd92" />
+            <stop offset="1" stopColor="#b08a3c" />
+          </linearGradient>
+          <radialGradient id="gp-mark-core" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stopColor="#f6e0a3" />
+            <stop offset="0.6" stopColor="#d9b86c" />
+            <stop offset="1" stopColor="#d9b86c" stopOpacity="0" />
+          </radialGradient>
+        </defs>
 
-        {/* Crosshair lines */}
-        <line
-          x1="24"
-          y1="4"
-          x2="24"
-          y2="18"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          className="text-text-primary"
-          strokeLinecap="round"
-        />
-        <line
-          x1="24"
-          y1="30"
-          x2="24"
-          y2="44"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          className="text-text-primary"
-          strokeLinecap="round"
-        />
-        <line
-          x1="4"
-          y1="24"
-          x2="18"
-          y2="24"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          className="text-text-primary"
-          strokeLinecap="round"
-        />
-        <line
-          x1="30"
-          y1="24"
-          x2="44"
-          y2="24"
-          stroke="currentColor"
-          strokeWidth={stroke}
-          className="text-text-primary"
-          strokeLinecap="round"
-        />
+        <circle cx="24" cy="24" r="22" stroke="url(#gp-mark-stroke)" strokeWidth={stroke * 0.6} opacity="0.55" />
+        <circle cx="24" cy="24" r="15" stroke="rgba(217, 184, 108, 0.18)" strokeWidth={stroke * 0.4} />
 
-        {/* Center dot */}
-        <circle cx="24" cy="24" r={stroke * 1.5} className="fill-accent-primary" />
+        <line x1="24" y1="3" x2="24" y2="18" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
+        <line x1="24" y1="30" x2="24" y2="45" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
+        <line x1="3" y1="24" x2="18" y2="24" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
+        <line x1="30" y1="24" x2="45" y2="24" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
+
+        <circle cx="24" cy="24" r={stroke * 2.2} fill="url(#gp-mark-core)" />
+        <circle cx="24" cy="24" r={stroke * 1.1} fill="#f6e0a3" />
       </svg>
 
-      {/* Logo Text */}
       {showText && (
-        <div className="flex flex-col">
-          <span className="text-text-primary font-bold text-lg tracking-tight leading-none">
+        <div className="flex flex-col leading-none">
+          <span className="text-text-primary font-semibold text-[15px] tracking-[-0.02em] leading-none">
             GloryPicks
           </span>
-          <span className="text-text-tertiary text-[10px] uppercase tracking-wider font-medium leading-none mt-1">
-            Professional Signals
+          <span className="text-accent-primary/85 text-[10px] uppercase tracking-[0.24em] font-mono leading-none mt-1.5">
+            ICT Signal OS
           </span>
         </div>
       )}
@@ -98,7 +65,6 @@ export function Logo({ className, size = 'md', showText = true }: LogoProps) {
   );
 }
 
-// Simplified icon-only version for favicon/small spaces
 export function LogoIcon({ className, size = 24 }: { className?: string; size?: number }) {
   return (
     <svg
@@ -108,56 +74,26 @@ export function LogoIcon({ className, size = 24 }: { className?: string; size?: 
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      aria-hidden
     >
-      <circle
-        cx="24"
-        cy="24"
-        r="22"
-        stroke="currentColor"
-        strokeWidth="2"
-        className="text-border-default"
-      />
-      <line
-        x1="24"
-        y1="4"
-        x2="24"
-        y2="18"
-        stroke="currentColor"
-        strokeWidth="3"
-        className="text-text-primary"
-        strokeLinecap="round"
-      />
-      <line
-        x1="24"
-        y1="30"
-        x2="24"
-        y2="44"
-        stroke="currentColor"
-        strokeWidth="3"
-        className="text-text-primary"
-        strokeLinecap="round"
-      />
-      <line
-        x1="4"
-        y1="24"
-        x2="18"
-        y2="24"
-        stroke="currentColor"
-        strokeWidth="3"
-        className="text-text-primary"
-        strokeLinecap="round"
-      />
-      <line
-        x1="30"
-        y1="24"
-        x2="44"
-        y2="24"
-        stroke="currentColor"
-        strokeWidth="3"
-        className="text-text-primary"
-        strokeLinecap="round"
-      />
-      <circle cx="24" cy="24" r="4" className="fill-accent-primary" />
+      <defs>
+        <linearGradient id="gp-mark-stroke-icon" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#e6cd92" />
+          <stop offset="1" stopColor="#b08a3c" />
+        </linearGradient>
+        <radialGradient id="gp-mark-core-icon" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#f6e0a3" />
+          <stop offset="0.6" stopColor="#d9b86c" />
+          <stop offset="1" stopColor="#d9b86c" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="24" cy="24" r="22" stroke="url(#gp-mark-stroke-icon)" strokeWidth="2.4" opacity="0.7" />
+      <line x1="24" y1="3" x2="24" y2="18" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
+      <line x1="24" y1="30" x2="24" y2="45" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
+      <line x1="3" y1="24" x2="18" y2="24" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
+      <line x1="30" y1="24" x2="45" y2="24" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="24" cy="24" r="6" fill="url(#gp-mark-core-icon)" />
+      <circle cx="24" cy="24" r="2.4" fill="#f6e0a3" />
     </svg>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '@/lib/store';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Search, X, Command, TrendingUp, Star } from 'lucide-react';
+import { Search, X, Command, TrendingUp, Star, Sparkles } from 'lucide-react';
 
 const POPULAR_SYMBOLS = {
   stocks: [
@@ -53,7 +53,6 @@ export function TickerSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -70,7 +69,6 @@ export function TickerSearch() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Click outside to close
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -117,74 +115,83 @@ export function TickerSearch() {
 
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
-      {/* Search Trigger */}
       <button
         onClick={() => {
           setIsOpen(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
         className={cn(
-          'w-full flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all',
+          'group relative w-full flex items-center gap-3 rounded-lg border px-3.5 py-2 text-left transition-all duration-200',
           isOpen
-            ? 'bg-bg-tertiary border-accent-primary/50 shadow-[0_0_0_1px_rgba(214,181,109,0.16)]'
-            : 'bg-bg-secondary/80 border-border-default hover:border-accent-primary/40 hover:bg-bg-tertiary/80'
+            ? 'bg-bg-tertiary border-accent-primary/55 shadow-[0_0_0_3px_color-mix(in_oklch,var(--color-accent-primary)_15%,transparent)]'
+            : 'bg-bg-secondary/70 border-border-default hover:border-accent-primary/40 hover:bg-bg-tertiary/70'
         )}
       >
-        <Search className="h-4 w-4 text-text-tertiary" />
-        <span className="flex-1 text-text-secondary text-sm">{symbol}</span>
-        <div className="flex items-center gap-1 text-text-tertiary">
-          <kbd className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm text-[10px]">
+        <Search
+          className={cn(
+            'h-4 w-4 transition-colors',
+            isOpen ? 'text-accent-primary' : 'text-text-tertiary'
+          )}
+        />
+        <span className="flex-1 text-text-secondary text-sm font-mono">{symbol}</span>
+        <span className="hidden sm:inline-flex items-center gap-1 text-text-tertiary">
+          <kbd className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm text-[10px] font-mono">
             <Command className="h-3 w-3" />
             <span>K</span>
           </kbd>
-        </div>
+        </span>
       </button>
 
-      {/* Dropdown */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-border-default bg-bg-secondary shadow-[0_24px_80px_rgba(0,0,0,0.46)]">
-          {/* Search Input */}
+        <div
+          className={cn(
+            'absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-border-default bg-bg-secondary/95 backdrop-blur-xl',
+            'shadow-[0_24px_80px_-12px_rgba(0,0,0,0.7)]',
+            'origin-top'
+          )}
+          style={{
+            animation: 'dropdownIn 180ms cubic-bezier(0.23, 1, 0.32, 1) both',
+          }}
+        >
           <div className="p-3 border-b border-border-subtle">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
               <Input
                 ref={inputRef}
                 type="text"
-                placeholder="Search symbols..."
+                placeholder="Search tickers…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="pl-9 pr-9"
+                className="pl-9 pr-9 h-9 font-mono text-sm"
               />
               {query && (
                 <button
                   onClick={() => setQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Category Filters */}
-          <div className="flex items-center gap-1 p-2 border-b border-border-subtle overflow-x-auto">
+          <div className="flex items-center gap-1 p-2 border-b border-border-subtle overflow-x-auto scrollbar-hide">
             {(['all', 'stocks', 'crypto', 'forex', 'indices'] as AssetClass[]).map((category) => (
               <button
                 key={category}
                 onClick={() => setActiveClass(category)}
                 className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-sm whitespace-nowrap transition-colors',
+                  'px-2.5 py-1.5 text-[11px] font-medium font-mono uppercase tracking-[0.12em] rounded-md whitespace-nowrap transition-all',
                   activeClass === category
-                    ? 'bg-bg-tertiary text-text-primary'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary'
+                    ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30'
+                    : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-tertiary border border-transparent'
                 )}
               >
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+                {category === 'all' ? 'All' : category}
               </button>
             ))}
           </div>
 
-          {/* Results */}
           <div className="max-h-80 overflow-y-auto">
             {filteredSymbols.length === 0 ? (
               <div className="p-8 text-center">
@@ -193,56 +200,77 @@ export function TickerSearch() {
                 <p className="text-text-tertiary text-xs mt-1">Try a different search term</p>
               </div>
             ) : (
-              <div className="p-2">
-                {filteredSymbols.map((item) => (
-                  <div
-                    key={item.symbol}
-                    className={cn(
-                      'group flex cursor-pointer items-center justify-between rounded-xl p-3 transition-colors',
-                      symbol === item.symbol
-                        ? 'bg-bg-tertiary border border-border-default'
-                        : 'hover:bg-bg-tertiary border border-transparent'
-                    )}
-                    onClick={() => handleSelect(item.symbol)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="h-4 w-4 text-text-tertiary" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-text-primary font-medium text-sm">
-                            {item.symbol}
-                          </span>
-                          {symbol === item.symbol && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-accent-primary/10 text-accent-primary rounded-sm">
-                              Current
-                            </span>
+              <div className="p-1.5">
+                {filteredSymbols.map((item) => {
+                  const isActive = symbol === item.symbol;
+                  return (
+                    <div
+                      key={item.symbol}
+                      className={cn(
+                        'group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150',
+                        isActive
+                          ? 'bg-accent-primary/8 border border-accent-primary/20'
+                          : 'border border-transparent hover:bg-bg-tertiary'
+                      )}
+                      onClick={() => handleSelect(item.symbol)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className={cn(
+                            'flex h-7 w-7 items-center justify-center rounded-md border',
+                            isActive
+                              ? 'border-accent-primary/40 bg-accent-primary/10 text-accent-primary'
+                              : 'border-border-subtle bg-bg-tertiary text-text-tertiary'
                           )}
-                          {isInWatchlist(item.symbol) && (
-                            <Star className="h-3 w-3 text-accent-primary fill-accent-primary" />
-                          )}
+                        >
+                          <TrendingUp className="h-3.5 w-3.5" />
                         </div>
-                        <p className="text-text-tertiary text-xs">{item.name}</p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={cn(
+                                'font-mono text-sm font-semibold tracking-[0.04em]',
+                                isActive ? 'text-accent-primary' : 'text-text-primary'
+                              )}
+                            >
+                              {item.symbol}
+                            </span>
+                            {isActive && (
+                              <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-accent-primary/15 text-accent-primary rounded font-mono uppercase tracking-[0.14em]">
+                                <Sparkles className="h-2.5 w-2.5" />
+                                Active
+                              </span>
+                            )}
+                            {isInWatchlist(item.symbol) && (
+                              <Star className="h-3 w-3 text-accent-primary fill-accent-primary" />
+                            )}
+                          </div>
+                          <p className="text-text-tertiary text-xs truncate">{item.name}</p>
+                        </div>
                       </div>
+                      <span className="text-text-tertiary text-[10px] uppercase tracking-[0.14em] font-mono">
+                        {item.category}
+                      </span>
                     </div>
-                    <span className="text-text-tertiary text-xs uppercase">{item.category}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="p-2 border-t border-border-subtle bg-bg-tertiary/50">
-            <p className="text-text-tertiary text-xs text-center">
+          <div className="px-3 py-2 border-t border-border-subtle bg-bg-tertiary/40 flex items-center justify-between text-[10px] text-text-tertiary font-mono uppercase tracking-[0.14em]">
+            <span>{filteredSymbols.length} result{filteredSymbols.length === 1 ? '' : 's'}</span>
+            <span className="flex items-center gap-1">
               Press{' '}
-              <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm mx-1">
+              <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm">
                 Esc
               </kbd>{' '}
               to close
-            </p>
+            </span>
           </div>
         </div>
       )}
+
     </div>
   );
 }

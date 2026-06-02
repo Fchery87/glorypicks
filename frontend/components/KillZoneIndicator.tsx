@@ -4,7 +4,16 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Clock, Sun, Moon, Sunrise, Sunset, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import {
+  Clock,
+  Sun,
+  Moon,
+  Sunrise,
+  Sunset,
+  AlertTriangle,
+  CheckCircle2,
+  Activity,
+} from 'lucide-react';
 
 interface KillZoneData {
   zone_type: string;
@@ -47,7 +56,6 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
 
     fetchKillZone();
 
-    // Refresh every minute
     const interval = setInterval(fetchKillZone, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -65,34 +73,55 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
   const getZoneIcon = (zoneType: string) => {
     switch (zoneType) {
       case 'london_kill_zone':
-        return <Sunrise className="h-5 w-5 text-yellow-500" />;
+        return <Sunrise className="h-4 w-4" />;
       case 'ny_kill_zone':
-        return <Sun className="h-5 w-5 text-orange-500" />;
+        return <Sun className="h-4 w-4" />;
       case 'london_close':
-        return <Sunset className="h-5 w-5 text-blue-500" />;
+        return <Sunset className="h-4 w-4" />;
       case 'asian_session':
-        return <Moon className="h-5 w-5 text-purple-500" />;
+        return <Moon className="h-4 w-4" />;
       default:
-        return <Clock className="h-5 w-5 text-text-tertiary" />;
+        return <Clock className="h-4 w-4" />;
     }
   };
 
-  const getZoneColor = (isActive: boolean, optimal: boolean) => {
-    if (!isActive) return 'bg-bg-tertiary border-border-subtle';
-    if (optimal) return 'bg-accent-bullish/10 border-accent-bullish/50';
-    return 'bg-yellow-500/10 border-yellow-500/50';
-  };
-
-  const getVolatilityColor = (volatility: string) => {
-    switch (volatility) {
-      case 'high':
-        return 'text-accent-bullish';
-      case 'medium':
-        return 'text-yellow-500';
-      case 'low':
-        return 'text-text-tertiary';
+  const getZoneTone = (zoneType: string) => {
+    switch (zoneType) {
+      case 'london_kill_zone':
+        return {
+          border: 'border-yellow-500/40',
+          bg: 'bg-yellow-500/10',
+          text: 'text-yellow-500',
+          label: 'London',
+        };
+      case 'ny_kill_zone':
+        return {
+          border: 'border-orange-500/40',
+          bg: 'bg-orange-500/10',
+          text: 'text-orange-500',
+          label: 'NYSE',
+        };
+      case 'london_close':
+        return {
+          border: 'border-blue-500/40',
+          bg: 'bg-blue-500/10',
+          text: 'text-blue-500',
+          label: 'London Close',
+        };
+      case 'asian_session':
+        return {
+          border: 'border-accent-violet/40',
+          bg: 'bg-accent-violet/10',
+          text: 'text-accent-violet',
+          label: 'Asian',
+        };
       default:
-        return 'text-text-tertiary';
+        return {
+          border: 'border-border-default',
+          bg: 'bg-bg-tertiary',
+          text: 'text-text-tertiary',
+          label: 'Session',
+        };
     }
   };
 
@@ -117,71 +146,111 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
     );
   }
 
+  const tone = getZoneTone(killZone.zone_type);
   const zoneName = killZone.zone_type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
   return (
-    <Card className={cn('overflow-hidden', className)}>
-      <CardHeader className="pb-3">
+    <Card className="relative overflow-hidden">
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute -top-20 -right-20 h-44 w-44 rounded-full opacity-40 blur-3xl',
+          killZone.is_active && killZone.optimal_for_entries
+            ? 'bg-accent-bullish/15'
+            : killZone.is_active
+              ? 'bg-accent-amber/15'
+              : 'bg-bg-elevated'
+        )}
+      />
+      <CardHeader className="relative z-10 pb-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-accent-primary" />
-            <h3 className="text-sm font-semibold text-text-primary">Kill Zone Status</h3>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md border border-accent-amber/30 bg-accent-amber/10 text-accent-amber">
+              <Activity className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="section-eyebrow">Timing</p>
+              <h3 className="text-[15px] font-semibold text-text-primary tracking-[-0.015em]">
+                Kill Zone
+              </h3>
+            </div>
           </div>
           {killZone.is_active && killZone.optimal_for_entries && (
-            <Badge className="bg-accent-bullish/20 text-accent-bullish border-accent-bullish/50 text-xs">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+            <Badge className="bg-accent-bullish/15 text-accent-bullish border-accent-bullish/40 text-[10px] gap-1 font-mono uppercase tracking-[0.14em]">
+              <CheckCircle2 className="h-3 w-3" />
               Optimal
             </Badge>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Main Kill Zone Display */}
+      <CardContent className="relative z-10 space-y-4">
         <div
           className={cn(
-            'p-4 rounded-lg border-2 transition-all',
-            getZoneColor(killZone.is_active, killZone.optimal_for_entries)
+            'rounded-xl border-2 p-4 transition-colors duration-300',
+            killZone.is_active && killZone.optimal_for_entries
+              ? 'bg-accent-bullish/8 border-accent-bullish/40'
+              : killZone.is_active
+                ? 'bg-accent-amber/8 border-accent-amber/40'
+                : 'bg-bg-tertiary/60 border-border-subtle'
           )}
         >
-          <div className="flex items-center gap-3 mb-2">
-            {getZoneIcon(killZone.zone_type)}
-            <span className="font-semibold text-text-primary">{zoneName}</span>
+          <div className="flex items-center gap-3 mb-3">
+            <div
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg border',
+                tone.bg,
+                tone.border,
+                tone.text
+              )}
+            >
+              {getZoneIcon(killZone.zone_type)}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-text-primary tracking-[-0.01em]">{zoneName}</p>
+              <p className="text-[11px] text-text-tertiary font-mono uppercase tracking-[0.14em]">
+                {tone.label}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-2 text-sm">
             {killZone.is_active ? (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary">Status</span>
+                  <span className="text-text-secondary text-xs">Status</span>
                   <Badge
                     variant="outline"
                     className={cn(
-                      'text-xs',
+                      'text-[10px] font-mono uppercase tracking-[0.14em]',
                       killZone.optimal_for_entries
-                        ? 'border-accent-bullish text-accent-bullish'
-                        : 'border-yellow-500 text-yellow-500'
+                        ? 'border-accent-bullish/50 text-accent-bullish bg-accent-bullish/10'
+                        : 'border-accent-amber/50 text-accent-amber bg-accent-amber/10'
                     )}
                   >
-                    {killZone.optimal_for_entries ? 'Active - Optimal' : 'Active'}
+                    {killZone.optimal_for_entries ? 'Optimal' : 'Active'}
                   </Badge>
                 </div>
 
                 {killZone.time_remaining !== undefined && (
                   <div className="flex items-center justify-between">
-                    <span className="text-text-secondary">Time Remaining</span>
-                    <span className="font-mono font-medium">
+                    <span className="text-text-secondary text-xs">Time remaining</span>
+                    <span className="font-mono font-medium text-text-primary tabular-nums">
                       {formatTime(killZone.time_remaining)}
                     </span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary">Expected Volatility</span>
+                  <span className="text-text-secondary text-xs">Volatility</span>
                   <span
                     className={cn(
-                      'font-medium capitalize',
-                      getVolatilityColor(killZone.volatility_expected)
+                      'font-mono text-xs uppercase tracking-[0.14em]',
+                      killZone.volatility_expected === 'high'
+                        ? 'text-accent-bullish'
+                        : killZone.volatility_expected === 'medium'
+                          ? 'text-accent-amber'
+                          : 'text-text-tertiary'
                     )}
                   >
                     {killZone.volatility_expected}
@@ -191,16 +260,19 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
             ) : (
               <>
                 <div className="flex items-center justify-between">
-                  <span className="text-text-secondary">Status</span>
-                  <Badge variant="outline" className="text-xs text-text-tertiary">
+                  <span className="text-text-secondary text-xs">Status</span>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] font-mono uppercase tracking-[0.14em] text-text-tertiary border-border-default"
+                  >
                     Inactive
                   </Badge>
                 </div>
 
                 {killZone.time_until_next !== undefined && (
                   <div className="flex items-center justify-between">
-                    <span className="text-text-secondary">Next Kill Zone</span>
-                    <span className="font-mono font-medium">
+                    <span className="text-text-secondary text-xs">Next zone</span>
+                    <span className="font-mono font-medium text-text-primary tabular-nums">
                       {formatTime(killZone.time_until_next)}
                     </span>
                   </div>
@@ -210,28 +282,28 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
           </div>
         </div>
 
-        {/* Rationale */}
-        <p className="text-xs text-text-secondary leading-relaxed">{killZone.rationale}</p>
+        <p className="text-[12px] text-text-secondary leading-relaxed">{killZone.rationale}</p>
 
-        {/* Kill Zone Legend */}
         <div className="pt-3 border-t border-border-subtle">
-          <p className="text-xs text-text-tertiary mb-2">Kill Zone Schedule (EST)</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <p className="text-[10px] text-text-tertiary mb-2.5 font-mono uppercase tracking-[0.16em]">
+            Schedule (EST)
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-yellow-500" />
-              <span className="text-text-secondary">London 3:00-5:00 AM</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+              <span className="text-text-secondary">London 3:00–5:00</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500" />
-              <span className="text-text-secondary">NYSE 9:30-11:30 AM</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+              <span className="text-text-secondary">NYSE 9:30–11:30</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-text-secondary">London Close 11:00-12:00 PM</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span className="text-text-secondary">London Close 11–12</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-purple-500" />
-              <span className="text-text-secondary">Asian 8:00 PM-12:00 AM</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-accent-violet" />
+              <span className="text-text-secondary">Asian 20:00–24:00</span>
             </div>
           </div>
         </div>

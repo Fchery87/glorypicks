@@ -9,7 +9,6 @@ import { Wifi, WifiOff, Activity, Clock, Server, Sparkles, User } from 'lucide-r
 export function StatusBar() {
   const { wsConnected, wsLatency, health, lastUpdate, isLoadingData } = useStore();
 
-  // Demo mode toggle
   const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
@@ -29,7 +28,6 @@ export function StatusBar() {
       localStorage.setItem('glorypicks_session_id', `free_${Date.now()}`);
     }
 
-    // Reload page to apply changes
     window.location.reload();
   };
 
@@ -61,29 +59,29 @@ export function StatusBar() {
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 flex h-11 items-center border-t px-4 text-xs backdrop-blur-xl',
-        hasErrors ? 'border-error/30 bg-error/10' : 'border-border-subtle bg-bg-primary/85'
+        'fixed bottom-0 left-0 right-0 z-50 flex h-11 items-center border-t px-4 text-xs backdrop-blur-xl transition-colors duration-300',
+        hasErrors
+          ? 'border-error/30 bg-error/[0.07]'
+          : 'border-border-subtle bg-bg-primary/85'
       )}
     >
-      <div className="flex flex-1 items-center gap-6">
-        {/* Connection Status */}
+      <div className="flex flex-1 items-center gap-5 min-w-0">
         <div className="flex items-center gap-2">
           {wsConnected ? (
             <>
               <Wifi className="h-3.5 w-3.5 text-accent-bullish" />
-              <span className="font-mono uppercase tracking-[0.12em] text-text-secondary">
+              <span className="font-mono uppercase tracking-[0.14em] text-text-secondary">
                 Connected
               </span>
             </>
           ) : (
             <>
               <WifiOff className="h-3.5 w-3.5 text-error" />
-              <span className="font-mono uppercase tracking-[0.12em] text-error">Disconnected</span>
+              <span className="font-mono uppercase tracking-[0.14em] text-error">Disconnected</span>
             </>
           )}
         </div>
 
-        {/* Provider Status */}
         {providerStatus.map((provider) => (
           <div
             key={provider.name}
@@ -103,37 +101,37 @@ export function StatusBar() {
           </div>
         ))}
 
-        {/* Loading Indicator */}
         {isLoadingData && (
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 animate-spin rounded-full border-2 border-border-strong border-t-transparent" />
-            <span className="text-text-tertiary">Loading...</span>
+            <span className="text-text-tertiary font-mono uppercase tracking-[0.12em]">
+              Syncing
+            </span>
           </div>
         )}
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* WebSocket Latency */}
+      <div className="flex items-center gap-4 shrink-0">
         {wsConnected && (
           <div className="hidden sm:flex items-center gap-2">
             <Activity className="h-3.5 w-3.5 text-text-tertiary" />
-            <span className="text-text-secondary font-mono">{formatLatency(wsLatency)}</span>
+            <span className="text-text-secondary font-mono tabular-nums">
+              {formatLatency(wsLatency)}
+            </span>
           </div>
         )}
 
-        {/* Last Update */}
         <div className="flex items-center gap-2">
           <Clock className="h-3.5 w-3.5 text-text-tertiary" />
-          <span className="text-text-secondary">{formatLastUpdate(lastUpdate)}</span>
+          <span className="text-text-secondary tabular-nums">{formatLastUpdate(lastUpdate)}</span>
         </div>
 
-        {/* Demo Mode Toggle */}
         <Button
           variant="ghost"
           size="sm"
           onClick={toggleDemoMode}
           className={cn(
-            'hidden md:flex items-center gap-1.5 text-xs',
+            'hidden md:flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.14em]',
             isPremium ? 'text-accent-bullish' : 'text-text-tertiary'
           )}
         >
@@ -150,9 +148,8 @@ export function StatusBar() {
           )}
         </Button>
 
-        {/* Version */}
-        <div className="hidden font-mono uppercase tracking-[0.16em] text-accent-primary/80 md:block">
-          GloryPicks Signal OS
+        <div className="hidden font-mono uppercase tracking-[0.18em] text-accent-primary/85 md:block">
+          GloryPicks · v3
         </div>
       </div>
     </div>

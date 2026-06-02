@@ -1,105 +1,196 @@
-# GloryPicks Design System v2 — Institutional Signal Cockpit
+# GloryPicks Design System v3 — Eye-Catching Signal Cockpit
 
-> Updated: 2026-05-24
+> Updated: 2026-06-02
 > Scope: dashboard shell, chart workspace, signal analysis, watchlist/search, risk and session modules.
 
-## Research inputs
+## Research inputs (v3)
 
-The redesign was informed by current trading workstation patterns found in comparable products:
+The v3 redesign consolidates insights from modern trading workstation patterns, then pushes past them with deliberate, captivating typography and motion:
 
-- **TradingView / TrendSpider**: customizable chart workspaces, multi-timeframe layouts, automation-assisted pattern detection, and widget-based dashboards.
-- **Order-flow terminals such as Cryexc / Flowsurface**: dense dark interfaces, heatmap/orderflow language, liquidity-first surfaces, and minimal ornamentation.
-- **Institutional terminal case studies / Bloomberg-inspired dashboards**: three-pane cockpit patterns, keyboard-first workflows, real-time status, portfolio/risk modules, and high information density without decorative clutter.
+- **Bloomberg Terminal / Berg theme**: dark surfaces, monospace data, status chips, "live" dots, and dense information architecture.
+- **CrypTrade / Nixtio-style crypto dashboards**: deep dark backgrounds, neon-tinted accents, modular cards, signal cards with strong directional identity.
+- **Modern fintech UI trends (2025-26)**: staggered entry, directional glows, blur transitions, refined easing curves, micro-interactions on every pressable surface.
+- **Emil Kowalski's design engineering philosophy** (skill-driven): every animation has a purpose, easing curves are deliberate, transitions are interruptible, and details that nobody notices individually compound into something that *feels right*.
 
 ## Product positioning
 
-GloryPicks is not a casual investing app. It should feel like an **ICT signal operating system**: precise, live, risk-aware, multi-asset, and sophisticated. The UI should help a trader answer four questions quickly:
+GloryPicks is an **ICT signal operating system** for serious traders. The UI must help a trader answer four questions in under a second:
 
 1. What instrument is active?
 2. What is the current signal and confidence?
 3. Which timeframe/session confirms or rejects the setup?
 4. What is the correct risk expression?
 
-## Visual direction: Obsidian Quant
+## Visual direction v3: Eye-catching by intention
 
-A black graphite command center with warm metallic highlights and crisp liquidity colors.
+A near-black graphite command center, sharper gold signature, and rich directional glows.
 
 ### Palette
 
-| Token                    | Value     | Usage                                           |
-| ------------------------ | --------- | ----------------------------------------------- |
-| `--color-bg-primary`     | `#050608` | page, app shell                                 |
-| `--color-bg-secondary`   | `#0B0D10` | sidebar, header, deep panels                    |
-| `--color-bg-tertiary`    | `#11151A` | cards, controls                                 |
-| `--color-bg-elevated`    | `#18202A` | hover/elevated controls                         |
-| `--color-text-primary`   | `#F4EFE5` | primary text, instrument labels                 |
-| `--color-text-secondary` | `#A8B0B8` | descriptions, labels                            |
-| `--color-text-tertiary`  | `#626C76` | timestamps, metadata                            |
-| `--color-accent-primary` | `#D6B56D` | brand signature, focus, premium/risk highlights |
-| `--color-accent-cyan`    | `#5EEAD4` | live feed, data sync, market pulse              |
-| `--color-accent-bullish` | `#2BD576` | buy/up/positive                                 |
-| `--color-accent-bearish` | `#FF5D73` | sell/down/risk                                  |
-| `--color-accent-amber`   | `#F4C95D` | sessions, caution, timing                       |
+| Token                         | Value      | Usage                                            |
+| ----------------------------- | ---------- | ------------------------------------------------ |
+| `--color-bg-primary`          | `#050608`  | page, app shell                                  |
+| `--color-bg-secondary`        | `#0A0D11`  | sidebar, ticker tape, deep panels                |
+| `--color-bg-tertiary`         | `#10141A`  | cards, controls                                  |
+| `--color-bg-elevated`         | `#161B22`  | hover/elevated controls                          |
+| `--color-text-primary`        | `#F6F1E6`  | primary text, instrument labels                  |
+| `--color-text-secondary`      | `#AAB1BA`  | descriptions, labels                             |
+| `--color-text-tertiary`       | `#6A727C`  | timestamps, metadata                             |
+| `--color-accent-primary`      | `#D9B86C`  | brand signature, focus, premium/risk highlights  |
+| `--color-accent-primary-soft` | `#E6CD92`  | gradient highlight, logo highlight               |
+| `--color-accent-cyan`         | `#5EEAD4`  | live feed, data sync, ICT marker                 |
+| `--color-accent-bullish`      | `#2DD474`  | buy/up/positive                                  |
+| `--color-accent-bearish`      | `#FF5F73`  | sell/down/risk                                   |
+| `--color-accent-amber`        | `#F4C95D`  | sessions, caution, timing                        |
+| `--color-accent-violet`       | `#A78BFA`  | asian session, secondary chips                   |
 
-## Components updated
+## Motion language (v3)
 
-### App shell
+Custom easings replace Tailwind's defaults for every interactive surface:
 
-- Added a subtle fixed market-grid background and ambient radial highlights.
-- Expanded max width to `1600px` so the dashboard behaves more like a professional workstation.
-- Introduced `command-surface`, `metric-tile`, `section-eyebrow`, `live-dot`, and other primitives in `globals.css`.
+```css
+--ease-out:     cubic-bezier(0.23, 1, 0.32, 1);   /* UI entrances, hover lifts */
+--ease-in-out:  cubic-bezier(0.77, 0, 0.175, 1);  /* on-screen state changes  */
+--ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1); /* playful accents          */
+--ease-drawer:  cubic-bezier(0.32, 0.72, 0, 1);   /* iOS-like drawer feel     */
+--duration-fast: 140ms;
+--duration-base: 200ms;
+--duration-slow: 320ms;
+```
+
+**Animation rules** (per Emil's framework):
+
+- Specify exact properties on transitions — never `transition: all`.
+- Use `ease-out` for entrances (feels responsive).
+- Never animate keyboard actions (Cmd+K search, etc.).
+- Skip animation delay on subsequent hovers / repeated actions.
+- Honor `prefers-reduced-motion` (we strip movement but keep opacity).
+
+### Stagger reveal
+
+Hero tiles, signal cards, and metric rows use a 40ms-stepped `rise-in` animation so the page composes itself in front of the user rather than appearing all at once.
+
+### Directional glows
+
+The hero panel uses a soft 270px blur glow that shifts color based on the live signal direction (bullish → green, bearish → red, neutral → gold). The signal card has a smaller version in its top-right.
+
+### Live dot
+
+The `live-dot` utility includes a 2.2s `livePulse` keyframe — a single ring scales 0.9 → 1.7 and fades out, drawing the eye without distracting.
+
+## Component changes (v3)
+
+### Logo
+
+- Gradient-stroked outer ring (gold → bronze).
+- Soft radial-gradient core for a "light source" feel.
+- Sharper crosshair lines (heavier stroke).
+- "ICT Signal OS" wordmark retains the wide tracking but loses the generic subline.
 
 ### Header
 
-- Reframed the product as **GloryPicks · ICT Signal OS**.
-- Added live feed and risk-first status chips.
-- Retained keyboard search affordance without overexplaining it.
+- Logo block refined with subtle hover state.
+- Status chips consolidated into one terminal-style pill (`Live market feed`).
+- Keyboard hint stays visible but reduced visual weight.
+- `Risk-first` chip remains the brand pillar.
 
-### Cockpit hero
+### Ticker tape (NEW)
 
-- New top command panel summarizes active symbol, live state, recommendation, confidence, latency, armed alerts, watchlists, and last update.
-- This gives traders immediate situational awareness before entering the chart grid.
+- A horizontally scrolling marquee of 12 popular tickers sits between the header and the workspace.
+- Up/down arrows + percentage change in `tabular-nums` for live precision.
+- Edges fade via `mask-image` to avoid hard cuts.
+- A "Reconnecting" pill appears at the right edge when the WebSocket drops.
 
-### Chart workspace
+### Cockpit hero (REBUILT)
 
-- Renamed framing to **Market structure matrix**.
-- Added professional layout controls and instrument chips.
-- Updated chart colors to graphite gridlines, warm crosshair, mint bullish candles, and rose bearish candles.
+- **Massive price display** that scales from 2.75rem to 5.5rem (`clamp()`) — the dominant element.
+- Price color tracks direction (bullish green, bearish red) with a subtle text glow.
+- Status row uses a unified `status-chip` primitive.
+- Symbol gets a small `ICT` chip next to it.
+- Four metric tiles (Confluence / Latency / Alerts / Updated) replace the previous spread.
+- Directional ambient glow behind the panel shifts color with the signal.
+- Stagger entry: 40ms between each tile.
 
-### Signal card
+### Signal card (REFINED)
 
-- Rebuilt the top section into a stronger signal desk module.
-- Recommendation and confidence now have a larger decision hierarchy.
-- Strategy tags and rationale remain available but are visually subordinate to the decision state.
+- Directional ambient glow matches the hero.
+- "Corner frame" terminal brackets overlay the hero signal state.
+- AI confidence + Market regime get dedicated two-up tiles below the strength meter.
+- Timeframe alignment uses a 3-column grid with directional pill background.
+- Strategy tags use the `ICT` vs `SMC` distinction with consistent iconography.
+- Bottom rationale list uses smaller dots, tighter line-height for scanability.
 
-### Sidebar and search
+### Multi-chart grid (REFINED)
 
-- Sidebar now shows the active instrument and reinforces that symbol syncs across charts, alerts, and risk.
-- Navigation active states use the gold brand accent.
-- Search has rounded terminal-style surfaces, stronger focus states, and clearer result grouping.
+- Workspace header gets a small icon plate (`Layers`) for visual anchor.
+- Layout toggle becomes a `bg-bg-primary/50` segmented control — feels more deliberate than a button group.
+- Per-chart card uses an animated live indicator (two-tone ping).
+- Header height reduced, candle count badge simplified.
+
+### Charts (REFINED)
+
+- Grid lines dropped to 6% opacity for less visual noise.
+- Crosshair now uses the gold accent with `style: 2` (dashed) for terminal feel.
+- Font is JetBrains Mono via CSS variable for monospaced price labels.
+- Watermark chip on top-left retained but smaller and with `backdrop-blur-sm`.
+
+### Ticker search (REFINED)
+
+- Trigger button uses an icon-led layout with a hover-lift gold border.
+- Dropdown animates in with `cubic-bezier(0.23, 1, 0.32, 1)` over 180ms — origin-aware from the top center.
+- Active symbol now shows a small "Active" pill with `<Sparkles />` icon.
+- Search results show a small icon plate per row instead of a `TrendingUp` glyph inline.
+- Footer shows the result count + Esc hint, both in mono uppercase.
+
+### Sidebar (REFINED)
+
+- Active instrument block gets a `bg-gradient-to-br` accent shimmer.
+- Nav items shrink padding slightly; active state uses a more deliberate border + bg.
+- Tab triggers use monospace uppercase tracking for typographic consistency.
+- Watchlist / alert empty states shrink and use less copy.
+- Dialog gets a small icon plate and rounded `xl` corners.
+
+### Position calculator (REFINED)
+
+- 2-column input row (Account + Risk) is more compact.
+- Quick-pick risk buttons use accent-gold active state.
+- Position size gets its own bordered row above the 2-up R:R / R-multiple grid.
+- Profit/loss outcomes are grouped in a single bordered card with colored icons.
+- Warning callouts use icon-leading copy with subtle borders.
+
+### Kill zone (REFINED)
+
+- Title block gets an icon plate (`Activity`) in amber.
+- Active state glow matches the signal direction (bullish / amber / neutral).
+- Schedule legend uses an `accent-violet` dot for Asian session (new color slot).
+
+### Rationale list (REFINED)
+
+- Icon plate (`ListTree`) replaces the bare title.
+- Per-timeframe cards now use iconography + directional badge in a single row.
+- ICT signals section uses distinct background colors per signal type (cyan for phase, amber for trend).
 
 ## Theme modes
 
-GloryPicks now supports three theme preferences:
-
-- **Dark** — the default Obsidian Quant command center.
-- **Light** — a warm paper trading-desk palette for daytime review, meetings, and low-contrast room lighting.
+- **Dark** — default, primary experience.
+- **Light** — warm paper palette for daytime review, meetings, and low-contrast lighting. The accent palette maps to deeper, more saturated values to maintain contrast.
 - **System** — follows the device-level color-scheme preference.
-
-Theme state is saved in `glorypicks_preferences`, applied before first paint by the root layout script, then synchronized by `ThemeController` after hydration.
 
 ## UX principles
 
-1. **Cockpit over dashboard** — the user should feel they are operating a signal terminal, not browsing cards.
-2. **Risk-first hierarchy** — confidence, live status, risk and session timing outrank decorative stats.
-3. **Dense but disciplined** — high data density is appropriate for trading; avoid filler metrics.
-4. **Color has a job** — green/red only for directional meaning, gold for brand/focus, cyan for live/data, amber for time/caution.
-5. **No generic fintech blue-purple gradients** — this system intentionally overrides the prior generic dashboard direction.
+1. **Cockpit over dashboard** — the user is operating a signal terminal, not browsing cards.
+2. **Risk-first hierarchy** — confidence, live status, risk, and session timing outrank decorative stats.
+3. **Dense but disciplined** — high data density is appropriate; avoid filler metrics.
+4. **Color has a job** — green/red for direction, gold for brand/focus, cyan for live/data, amber for time/caution, violet for Asian session.
+5. **Motion with intent** — every animation answers "why does this animate?". If it just "looks cool", it doesn't ship.
+6. **No generic fintech tropes** — no blue-purple gradients, no glassmorphism blur, no rounded-everything. Sharp corners, deliberate borders, dense data.
 
 ## Next recommended UX upgrades
 
-- Add a right-side **Trade Plan Drawer** with entry, stop, take-profit, invalidation, and position size.
+- Add a right-side **Trade Plan Drawer** with entry, stop, take-profit, invalidation, and position size in one panel.
 - Let users save **workspace presets** per strategy (ICT scalping, swing, crypto, forex).
 - Add a compact **Market Regime Ribbon** above charts showing D1/H1/M15 alignment.
 - Add keyboard shortcuts for symbol switching, timeframe cycling, and alert creation.
 - Add a replayable **signal timeline** so users can audit why a signal changed.
+- Add `flash-positive` / `flash-negative` to the price hero so ticks feel alive.
+- Investigate `<Motion />` (Framer Motion) for spring-based panel transitions.

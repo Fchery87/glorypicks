@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Calculator, TrendingUp, Target, AlertCircle, DollarSign, Percent } from 'lucide-react';
+import { Calculator, TrendingUp, Target, AlertCircle, DollarSign, Percent, Shield, Zap } from 'lucide-react';
 
 interface PositionCalculatorProps {
   signal?: {
@@ -47,23 +46,12 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
     const stopLoss = signal.stop_loss;
     const takeProfit = signal.take_profit || entryPrice * 1.02;
 
-    // Calculate stop distance
     const stopDistance = Math.abs(entryPrice - stopLoss);
-
-    // Risk amount
     const riskAmount = accountBalance * (riskPercent / 100);
-
-    // Position size based on risk
     const positionSize = riskAmount / stopDistance;
-
-    // Risk/Reward
     const rewardDistance = Math.abs(takeProfit - entryPrice);
     const riskRewardRatio = rewardDistance / stopDistance;
-
-    // R-Multiple (how many R's of profit potential)
     const rMultiple = riskRewardRatio;
-
-    // Potential outcomes
     const potentialProfit = positionSize * rewardDistance;
     const maxLoss = riskAmount;
 
@@ -96,13 +84,13 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
 
   const getRiskColor = (riskPercent: number) => {
     if (riskPercent <= 1) return 'text-accent-bullish';
-    if (riskPercent <= 2) return 'text-yellow-500';
+    if (riskPercent <= 2) return 'text-accent-amber';
     return 'text-accent-bearish';
   };
 
   const getRatioColor = (ratio: number) => {
     if (ratio >= 3) return 'text-accent-bullish';
-    if (ratio >= 2) return 'text-yellow-500';
+    if (ratio >= 2) return 'text-accent-amber';
     return 'text-accent-bearish';
   };
 
@@ -118,173 +106,186 @@ export function PositionCalculator({ signal, className }: PositionCalculatorProp
   }
 
   return (
-    <Card className={cn('bg-gradient-to-br from-bg-tertiary to-bg-secondary', className)}>
-      <CardHeader className="pb-4">
-        <div className="flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-accent-primary" />
-          <h3 className="text-h3 font-semibold text-text-primary">Position Calculator</h3>
+    <Card className={cn('relative overflow-hidden', className)}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-16 -left-16 h-48 w-48 rounded-full bg-accent-primary/8 blur-3xl"
+      />
+      <CardHeader className="relative z-10 pb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-accent-primary/30 bg-accent-primary/10 text-accent-primary">
+            <Calculator className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="section-eyebrow">Risk desk</p>
+            <h3 className="text-h3 font-semibold text-text-primary tracking-[-0.015em]">
+              Position Calculator
+            </h3>
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-5">
-        {/* Account Balance Input */}
-        <div className="space-y-2">
-          <Label className="text-text-secondary text-sm flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            Account Balance
-          </Label>
-          <Input
-            type="number"
-            value={accountBalance}
-            onChange={(e) => setAccountBalance(Number(e.target.value))}
-            className="font-mono"
-            min={1000}
-            step={1000}
-          />
-        </div>
-
-        {/* Risk Percentage Input */}
-        <div className="space-y-2">
-          <Label className="text-text-secondary text-sm flex items-center gap-2">
-            <Percent className="h-4 w-4" />
-            Risk Per Trade
-          </Label>
-          <div className="flex items-center gap-3">
+      <CardContent className="relative z-10 space-y-5">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-text-tertiary">
+              <DollarSign className="h-3.5 w-3.5" />
+              Account
+            </Label>
             <Input
               type="number"
-              value={riskPercent}
-              onChange={(e) => setRiskPercent(Number(e.target.value))}
-              className={cn('font-mono', getRiskColor(riskPercent))}
-              min={0.1}
-              max={5}
-              step={0.1}
+              value={accountBalance}
+              onChange={(e) => setAccountBalance(Number(e.target.value))}
+              className="font-mono h-9"
+              min={1000}
+              step={1000}
             />
-            <span className="text-text-secondary">%</span>
           </div>
-          <div className="flex gap-2">
-            {[0.5, 1, 1.5, 2].map((risk) => (
-              <button
-                key={risk}
-                onClick={() => setRiskPercent(risk)}
-                className={cn(
-                  'px-2 py-1 text-xs rounded transition-colors',
-                  riskPercent === risk
-                    ? 'bg-accent-primary text-bg-primary'
-                    : 'bg-bg-elevated text-text-secondary hover:bg-bg-tertiary'
-                )}
-              >
-                {risk}%
-              </button>
-            ))}
+
+          <div className="space-y-1.5">
+            <Label className="flex items-center gap-1.5 text-text-tertiary">
+              <Percent className="h-3.5 w-3.5" />
+              Risk
+            </Label>
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="number"
+                value={riskPercent}
+                onChange={(e) => setRiskPercent(Number(e.target.value))}
+                className={cn('font-mono h-9', getRiskColor(riskPercent))}
+                min={0.1}
+                max={5}
+                step={0.1}
+              />
+              <span className="text-text-tertiary text-sm font-mono">%</span>
+            </div>
           </div>
         </div>
 
-        {/* Signal Info */}
+        <div className="flex gap-1.5">
+          {[0.5, 1, 1.5, 2].map((risk) => (
+            <button
+              key={risk}
+              onClick={() => setRiskPercent(risk)}
+              className={cn(
+                'flex-1 rounded-md border px-2 py-1.5 text-[11px] font-mono transition-all',
+                riskPercent === risk
+                  ? 'bg-accent-primary/15 text-accent-primary border-accent-primary/35'
+                  : 'bg-bg-tertiary/60 text-text-tertiary hover:bg-bg-tertiary border-border-subtle hover:text-text-secondary'
+              )}
+            >
+              {risk}%
+            </button>
+          ))}
+        </div>
+
         {signal && (
-          <div className="p-3 bg-bg-elevated rounded-sm space-y-2">
+          <div className="rounded-xl border border-border-subtle bg-bg-tertiary/40 p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-xs">Entry Price</span>
-              <span className="font-mono text-text-primary">
+              <span className="text-[11px] text-text-tertiary uppercase tracking-[0.14em] font-mono">
+                Entry
+              </span>
+              <span className="font-mono text-sm text-text-primary tabular-nums">
                 {formatCurrency(signal.entry_price)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-xs">Stop Loss</span>
-              <span className="font-mono text-accent-bearish">
+              <span className="text-[11px] text-text-tertiary uppercase tracking-[0.14em] font-mono">
+                Stop
+              </span>
+              <span className="font-mono text-sm text-accent-bearish tabular-nums">
                 {formatCurrency(signal.stop_loss)}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-xs">Take Profit</span>
-              <span className="font-mono text-accent-bullish">
+              <span className="text-[11px] text-text-tertiary uppercase tracking-[0.14em] font-mono">
+                Target
+              </span>
+              <span className="font-mono text-sm text-accent-bullish tabular-nums">
                 {formatCurrency(signal.take_profit || signal.entry_price * 1.02)}
               </span>
             </div>
           </div>
         )}
 
-        {/* Calculated Metrics */}
         {metrics && (
           <div className="space-y-3 pt-2 border-t border-border-subtle">
-            {/* Position Size */}
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-sm">Position Size</span>
-              <span className="font-mono text-lg text-text-primary">
-                {formatNumber(metrics.position_size, 0)} shares
+            <div className="flex items-center justify-between rounded-lg border border-border-subtle bg-bg-tertiary/40 px-3 py-2.5">
+              <span className="text-text-secondary text-xs flex items-center gap-1.5">
+                <Zap className="h-3.5 w-3.5 text-accent-primary" />
+                Position size
+              </span>
+              <span className="font-mono text-base text-text-primary tabular-nums">
+                {formatNumber(metrics.position_size, 0)}{' '}
+                <span className="text-xs text-text-tertiary">shares</span>
               </span>
             </div>
 
-            {/* Risk Amount */}
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-sm">Risk Amount</span>
-              <span className={cn('font-mono', getRiskColor(metrics.risk_percentage))}>
-                {formatCurrency(metrics.risk_amount)} ({metrics.risk_percentage}%)
-              </span>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border-subtle bg-bg-tertiary/40 p-2.5">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-[0.14em] font-mono mb-1 flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  R:R
+                </p>
+                <p
+                  className={cn(
+                    'font-mono text-base tabular-nums',
+                    getRatioColor(metrics.risk_reward_ratio)
+                  )}
+                >
+                  1:{formatNumber(metrics.risk_reward_ratio, 1)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border-subtle bg-bg-tertiary/40 p-2.5">
+                <p className="text-[10px] text-text-tertiary uppercase tracking-[0.14em] font-mono mb-1 flex items-center gap-1">
+                  <Target className="h-3 w-3" />
+                  R-multiple
+                </p>
+                <p
+                  className={cn(
+                    'font-mono text-base tabular-nums',
+                    getRatioColor(metrics.r_multiple)
+                  )}
+                >
+                  {formatNumber(metrics.r_multiple, 1)}R
+                </p>
+              </div>
             </div>
 
-            {/* Risk/Reward */}
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-sm flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                R:R Ratio
-              </span>
-              <Badge
-                variant="outline"
-                className={cn('font-mono', getRatioColor(metrics.risk_reward_ratio))}
-              >
-                1:{formatNumber(metrics.risk_reward_ratio, 1)}
-              </Badge>
-            </div>
-
-            {/* R-Multiple */}
-            <div className="flex items-center justify-between">
-              <span className="text-text-secondary text-sm flex items-center gap-1">
-                <Target className="h-3 w-3" />
-                R-Multiple
-              </span>
-              <span className={cn('font-mono', getRatioColor(metrics.r_multiple))}>
-                {formatNumber(metrics.r_multiple, 1)}R
-              </span>
-            </div>
-
-            {/* Potential Outcomes */}
-            <div className="mt-4 p-3 bg-bg-elevated rounded-sm space-y-2">
+            <div className="rounded-xl border border-border-subtle bg-bg-tertiary/30 p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-text-secondary text-xs flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3 text-accent-bullish" />
-                  Potential Profit
+                <span className="text-text-secondary text-xs flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5 text-accent-bullish" />
+                  Potential profit
                 </span>
-                <span className="font-mono text-accent-bullish">
+                <span className="font-mono text-sm text-accent-bullish tabular-nums">
                   +{formatCurrency(metrics.potential_profit)}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-text-secondary text-xs flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3 text-accent-bearish" />
-                  Max Loss
+                <span className="text-text-secondary text-xs flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 text-accent-bearish" />
+                  Max loss
                 </span>
-                <span className="font-mono text-accent-bearish">
+                <span className="font-mono text-sm text-accent-bearish tabular-nums">
                   -{formatCurrency(metrics.max_loss)}
                 </span>
               </div>
             </div>
 
-            {/* Risk Warning */}
             {metrics.risk_percentage > 2 && (
-              <div className="flex items-start gap-2 p-2 bg-accent-bearish/10 rounded-sm">
+              <div className="flex items-start gap-2 p-2.5 bg-accent-bearish/10 border border-accent-bearish/30 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-accent-bearish flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-accent-bearish">
-                  Risk exceeds 2%. Consider reducing position size to maintain proper risk
-                  management.
+                <p className="text-[11px] text-accent-bearish">
+                  Risk exceeds 2%. Consider reducing position size for proper risk management.
                 </p>
               </div>
             )}
 
-            {/* Low R:R Warning */}
             {metrics.risk_reward_ratio < 2 && (
-              <div className="flex items-start gap-2 p-2 bg-yellow-500/10 rounded-sm">
-                <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-yellow-500">
+              <div className="flex items-start gap-2 p-2.5 bg-accent-amber/10 border border-accent-amber/30 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-accent-amber flex-shrink-0 mt-0.5" />
+                <p className="text-[11px] text-accent-amber">
                   Risk/Reward below 1:2. Consider waiting for a better setup or adjusting targets.
                 </p>
               </div>

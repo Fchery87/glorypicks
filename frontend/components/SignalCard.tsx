@@ -14,6 +14,7 @@ import {
   Brain,
   Target,
   Zap,
+  Sparkles,
 } from 'lucide-react';
 
 export function SignalCard() {
@@ -25,7 +26,9 @@ export function SignalCard() {
         <CardContent className="flex items-center justify-center h-48">
           <div className="flex items-center gap-3 text-text-secondary">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Analyzing market data...</span>
+            <span className="text-sm font-mono uppercase tracking-[0.14em]">
+              Computing confluence
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -69,6 +72,8 @@ export function SignalCard() {
           bgColor: 'bg-accent-bullish/10',
           borderColor: 'border-accent-bullish/30',
           progressVariant: 'bullish' as const,
+          glow: 'glow-bullish',
+          gradient: 'from-accent-bullish/15 to-transparent',
         };
       case 'Sell':
         return {
@@ -78,15 +83,19 @@ export function SignalCard() {
           bgColor: 'bg-accent-bearish/10',
           borderColor: 'border-accent-bearish/30',
           progressVariant: 'bearish' as const,
+          glow: 'glow-bearish',
+          gradient: 'from-accent-bearish/15 to-transparent',
         };
       default:
         return {
           icon: Minus,
           label: 'NEUTRAL',
           color: 'text-text-secondary',
-          bgColor: 'bg-text-secondary/10',
-          borderColor: 'border-text-secondary/30',
+          bgColor: 'bg-bg-elevated',
+          borderColor: 'border-border-default',
           progressVariant: 'neutral' as const,
+          glow: '',
+          gradient: 'from-accent-primary/10 to-transparent',
         };
     }
   };
@@ -100,33 +109,55 @@ export function SignalCard() {
     return 'Weak';
   };
 
+  // Pull AI confidence & market regime from rationale, if present
+  const aiConfidence =
+    signal.rationale?.find((r) => r.includes('AI Confidence'))?.match(/\d+%/)?.[0] || 'N/A';
+  const marketRegime = signal.rationale
+    ?.find((r) => r.includes('Market Regime'))
+    ?.replace('Market Regime:', '')
+    .trim();
+
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-b border-border-subtle bg-bg-primary/30 pb-4">
+    <Card className="relative overflow-hidden">
+      {/* Directional ambient glow */}
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute -top-24 -right-24 h-56 w-56 rounded-full opacity-50 blur-3xl bg-gradient-to-br',
+          config.gradient
+        )}
+      />
+
+      <CardHeader className="relative z-10 border-b border-border-subtle bg-bg-primary/30 pb-4">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="section-eyebrow mb-2">Signal desk</p>
-            <h3 className="text-h3 font-semibold text-text-primary">Confluence Analysis</h3>
+            <h3 className="text-h3 font-semibold text-text-primary tracking-[-0.015em]">
+              Confluence Analysis
+            </h3>
           </div>
           {signal.updated_at && (
-            <span className="rounded-full border border-border-subtle bg-bg-secondary px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-text-tertiary">
+            <span className="rounded-full border border-border-subtle bg-bg-secondary px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
               {new Date(signal.updated_at).toLocaleTimeString()}
             </span>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6 pt-5">
-        {/* Signal Badge */}
-        <div className="grid gap-4 rounded-2xl border border-border-subtle bg-bg-secondary/60 p-4 sm:grid-cols-[auto_1fr] sm:items-center">
+      <CardContent className="relative z-10 space-y-6 pt-5">
+        {/* Hero signal state */}
+        <div className="relative grid gap-5 rounded-2xl border border-border-default bg-bg-secondary/60 p-5 sm:grid-cols-[auto_1fr] sm:items-center overflow-hidden">
+          {/* Corner brackets for terminal frame */}
+          <div className="pointer-events-none absolute inset-2 corner-frame" />
+
           <div
             className={cn(
-              'flex h-20 w-20 items-center justify-center rounded-2xl border',
+              'relative flex h-24 w-24 items-center justify-center rounded-2xl border',
               config.bgColor,
               config.borderColor
             )}
           >
-            <Icon className={cn('h-9 w-9', config.color)} />
+            <Icon className={cn('h-10 w-10', config.color, config.glow)} />
           </div>
 
           <div className="min-w-0">
@@ -142,139 +173,157 @@ export function SignalCard() {
               {config.label}
             </Badge>
             <div className="mt-3 flex flex-wrap items-baseline gap-2">
-              <span className="font-mono text-4xl tracking-[-0.04em] text-text-primary">
+              <span
+                className={cn(
+                  'display-numeral text-5xl tracking-[-0.045em] text-text-primary'
+                )}
+              >
                 {strengthPercent}
               </span>
-              <span className="text-sm text-text-tertiary">/100 confidence</span>
-              <span className={cn('text-xs font-medium uppercase tracking-wider', config.color)}>
+              <span className="text-sm text-text-tertiary font-mono">/100</span>
+              <span
+                className={cn(
+                  'text-[10px] font-medium uppercase tracking-[0.18em] font-mono',
+                  config.color
+                )}
+              >
                 {getStrengthLabel()} setup
               </span>
             </div>
+            {aiConfidence !== 'N/A' && (
+              <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-text-tertiary">
+                <Sparkles className="h-3.5 w-3.5 text-accent-primary" />
+                <span>AI confidence {aiConfidence}</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Strength Meter */}
-        <div className="space-y-3">
+        {/* Strength meter */}
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <span className="text-text-secondary text-sm">Confidence Score</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-data-lg font-mono text-text-primary">{strengthPercent}</span>
-              <span className="text-text-tertiary text-sm">/100</span>
+            <span className="label">Confidence</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-mono text-sm text-text-primary tabular-nums">
+                {strengthPercent}
+              </span>
+              <span className="text-[10px] text-text-tertiary font-mono">/100</span>
             </div>
           </div>
 
           <Progress value={strengthPercent} max={100} variant={config.progressVariant} />
 
-          <div className="flex justify-between items-center">
-            <span className={cn('text-xs font-medium uppercase tracking-wider', config.color)}>
-              {getStrengthLabel()} Signal
-            </span>
+          <div className="flex justify-between items-center text-[10px] text-text-tertiary font-mono uppercase tracking-[0.12em]">
+            <span>0</span>
+            <span>25</span>
+            <span>50</span>
+            <span>75</span>
+            <span>100</span>
           </div>
         </div>
 
-        {/* Timeframe Breakdown */}
+        {/* Timeframe breakdown */}
         {signal.breakdown && (
           <div className="pt-4 border-t border-border-subtle">
-            <h4 className="text-caption text-text-secondary uppercase tracking-wider mb-3">
-              Timeframe Analysis
-            </h4>
-            <div className="space-y-2">
-              {Object.entries(signal.breakdown).map(([tf, data]) => (
-                <div key={tf} className="flex items-center justify-between">
-                  <span className="text-text-secondary text-sm">{tf}</span>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'text-sm font-medium',
-                        data === 'Bullish'
-                          ? 'text-accent-bullish'
-                          : data === 'Bearish'
-                            ? 'text-accent-bearish'
-                            : 'text-text-secondary'
-                      )}
-                    >
+            <h4 className="label mb-3">Timeframe alignment</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {Object.entries(signal.breakdown).map(([tf, data]) => {
+                const tone =
+                  data === 'Bullish'
+                    ? 'border-accent-bullish/30 bg-accent-bullish/8 text-accent-bullish'
+                    : data === 'Bearish'
+                      ? 'border-accent-bearish/30 bg-accent-bearish/8 text-accent-bearish'
+                      : 'border-border-default bg-bg-tertiary text-text-secondary';
+                return (
+                  <div
+                    key={tf}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 rounded-lg border py-2.5 px-1',
+                      tone
+                    )}
+                  >
+                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-text-tertiary">
+                      {tf}
+                    </span>
+                    <span className="font-mono text-[11px] uppercase tracking-[0.1em] font-semibold">
                       {data}
                     </span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* AI & Strategy Analysis */}
-        {signal.rationale && signal.rationale.length > 0 && (
-          <div className="pt-4 border-t border-border-subtle space-y-3">
-            {/* AI Confidence Badge */}
-            {signal.rationale.some((r) => r.includes('AI Confidence')) && (
-              <div className="flex items-center justify-between p-3 bg-bg-elevated rounded-sm">
-                <div className="flex items-center gap-2">
-                  <Brain className="h-4 w-4 text-accent-primary" />
-                  <span className="text-text-secondary text-sm">AI Confidence</span>
+        {/* AI / Market regime row */}
+        {(aiConfidence !== 'N/A' || marketRegime) && (
+          <div className="grid grid-cols-2 gap-2">
+            {aiConfidence !== 'N/A' && (
+              <div className="flex items-center gap-2.5 rounded-lg border border-border-subtle bg-bg-tertiary/50 px-3 py-2.5">
+                <Brain className="h-4 w-4 text-accent-primary" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-[0.14em] font-mono">
+                    AI
+                  </p>
+                  <p className="font-mono text-sm text-text-primary">{aiConfidence}</p>
                 </div>
-                <span className="font-mono text-accent-primary">
-                  {signal.rationale.find((r) => r.includes('AI Confidence'))?.match(/\d+%/)?.[0] ||
-                    'N/A'}
-                </span>
               </div>
             )}
-
-            {/* Market Regime */}
-            {signal.rationale.some((r) => r.includes('Market Regime')) && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-text-secondary" />
-                  <span className="text-text-secondary text-sm">Market Regime</span>
+            {marketRegime && (
+              <div className="flex items-center gap-2.5 rounded-lg border border-border-subtle bg-bg-tertiary/50 px-3 py-2.5">
+                <Target className="h-4 w-4 text-text-secondary" />
+                <div className="min-w-0">
+                  <p className="text-[10px] text-text-tertiary uppercase tracking-[0.14em] font-mono">
+                    Regime
+                  </p>
+                  <p className="font-mono text-sm text-text-primary truncate">{marketRegime}</p>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {signal.rationale
-                    .find((r) => r.includes('Market Regime'))
-                    ?.replace('Market Regime:', '')
-                    .trim()}
-                </Badge>
               </div>
             )}
-
-            {/* Strategy Tags */}
-            <div className="flex flex-wrap gap-2 pt-2">
-              {signal.rationale
-                .filter((r) => r.includes('ICT:') || r.includes('SMC:'))
-                .map((r, idx) => {
-                  const isICT = r.includes('ICT:');
-                  const isSMC = r.includes('SMC:');
-                  const cleanText = r
-                    .replace('📊', '')
-                    .replace('🎯', '')
-                    .replace('ICT:', '')
-                    .replace('SMC:', '')
-                    .trim();
-
-                  return (
-                    <Badge
-                      key={idx}
-                      variant="outline"
-                      className={cn(
-                        'text-xs',
-                        isICT && 'border-accent-primary/50 text-accent-primary',
-                        isSMC && 'border-accent-bullish/50 text-accent-bullish'
-                      )}
-                    >
-                      {isICT && <Zap className="h-3 w-3 mr-1" />}
-                      {isSMC && <Target className="h-3 w-3 mr-1" />}
-                      {cleanText}
-                    </Badge>
-                  );
-                })}
-            </div>
           </div>
         )}
 
-        {/* Rationale List */}
+        {/* Strategy tags */}
+        <div className="pt-4 border-t border-border-subtle space-y-3">
+          <h4 className="label">Detected strategies</h4>
+          <div className="flex flex-wrap gap-1.5">
+            {signal.rationale
+              ?.filter((r) => r.includes('ICT:') || r.includes('SMC:'))
+              .map((r, idx) => {
+                const isICT = r.includes('ICT:');
+                const cleanText = r
+                  .replace('📊', '')
+                  .replace('🎯', '')
+                  .replace('ICT:', '')
+                  .replace('SMC:', '')
+                  .trim();
+
+                return (
+                  <Badge
+                    key={idx}
+                    variant="outline"
+                    className={cn(
+                      'text-[11px] font-mono tracking-[0.04em] gap-1.5',
+                      isICT
+                        ? 'border-accent-primary/45 text-accent-primary bg-accent-primary/8'
+                        : 'border-accent-bullish/45 text-accent-bullish bg-accent-bullish/8'
+                    )}
+                  >
+                    {isICT ? <Zap className="h-3 w-3" /> : <Target className="h-3 w-3" />}
+                    {cleanText}
+                  </Badge>
+                );
+              })}
+            {!signal.rationale?.some((r) => r.includes('ICT:') || r.includes('SMC:')) && (
+              <span className="text-xs text-text-tertiary font-mono">No strategy tags</span>
+            )}
+          </div>
+        </div>
+
+        {/* Rationale */}
         {signal.rationale && (
           <div className="pt-4 border-t border-border-subtle">
-            <h4 className="text-caption text-text-secondary uppercase tracking-wider mb-3">
-              Analysis Details
-            </h4>
+            <h4 className="label mb-3">Analysis</h4>
             <ul className="space-y-2">
               {signal.rationale
                 .filter(
@@ -289,8 +338,11 @@ export function SignalCard() {
                 )
                 .slice(0, 5)
                 .map((rationale, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-sm text-text-secondary">
-                    <span className="text-accent-primary mt-1">•</span>
+                  <li
+                    key={idx}
+                    className="flex items-start gap-2.5 text-[13px] text-text-secondary leading-relaxed"
+                  >
+                    <span className="mt-1.5 h-1 w-1 rounded-full bg-accent-primary shrink-0" />
                     <span>{rationale}</span>
                   </li>
                 ))}

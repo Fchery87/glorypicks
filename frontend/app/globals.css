@@ -1,67 +1,79 @@
 @import 'tailwindcss';
 
 @theme {
-  /* GloryPicks v2: institutional command-center palette */
+  /* GloryPicks v3: institutional signal cockpit — refined for v3 */
+  /* Surfaces */
   --color-bg-primary: #050608;
-  --color-bg-secondary: #0b0d10;
-  --color-bg-tertiary: #11151a;
-  --color-bg-elevated: #18202a;
-  --color-bg-panel: #0e1217;
+  --color-bg-secondary: #0a0d11;
+  --color-bg-tertiary: #10141a;
+  --color-bg-elevated: #161b22;
+  --color-bg-panel: #0c1015;
 
-  /* Border colors */
-  --color-border-subtle: #1d242e;
-  --color-border-default: #2b3542;
-  --color-border-strong: #53606d;
+  /* Borders */
+  --color-border-subtle: #1b212b;
+  --color-border-default: #2a3340;
+  --color-border-strong: #4a5462;
 
-  /* Text colors */
-  --color-text-primary: #f4efe5;
-  --color-text-secondary: #a8b0b8;
-  --color-text-tertiary: #626c76;
+  /* Text */
+  --color-text-primary: #f6f1e6;
+  --color-text-secondary: #aab1ba;
+  --color-text-tertiary: #6a727c;
 
-  /* Accent colors */
-  --color-accent-primary: #d6b56d;
-  --color-accent-bullish: #2bd576;
-  --color-accent-bearish: #ff5d73;
+  /* Accents — keep warm gold signature, sharpen saturation */
+  --color-accent-primary: #d9b86c;
+  --color-accent-primary-soft: #e6cd92;
+  --color-accent-bullish: #2dd474;
+  --color-accent-bearish: #ff5f73;
   --color-accent-neutral: #94a3b8;
   --color-accent-cyan: #5eead4;
   --color-accent-amber: #f4c95d;
+  --color-accent-violet: #a78bfa;
 
-  /* Functional colors */
-  --color-success: #2bd576;
+  /* Functional */
+  --color-success: #2dd474;
   --color-warning: #f4c95d;
-  --color-error: #ff5d73;
+  --color-error: #ff5f73;
   --color-info: #5ea0ff;
 
   /* Shadcn compatibility */
   --color-background: #050608;
-  --color-foreground: #f4efe5;
-  --color-card: #11151a;
-  --color-card-foreground: #f4efe5;
-  --color-popover: #11151a;
-  --color-popover-foreground: #f4efe5;
-  --color-primary: #d6b56d;
+  --color-foreground: #f6f1e6;
+  --color-card: #10141a;
+  --color-card-foreground: #f6f1e6;
+  --color-popover: #10141a;
+  --color-popover-foreground: #f6f1e6;
+  --color-primary: #d9b86c;
   --color-primary-foreground: #050608;
-  --color-secondary: #11151a;
-  --color-secondary-foreground: #f4efe5;
-  --color-muted: #11151a;
-  --color-muted-foreground: #a8b0b8;
-  --color-accent: #18202a;
-  --color-accent-foreground: #f4efe5;
-  --color-destructive: #ff5d73;
-  --color-destructive-foreground: #f4efe5;
-  --color-border: #1d242e;
-  --color-input: #2b3542;
-  --color-ring: #d6b56d;
+  --color-secondary: #10141a;
+  --color-secondary-foreground: #f6f1e6;
+  --color-muted: #10141a;
+  --color-muted-foreground: #aab1ba;
+  --color-accent: #161b22;
+  --color-accent-foreground: #f6f1e6;
+  --color-destructive: #ff5f73;
+  --color-destructive-foreground: #f6f1e6;
+  --color-border: #1b212b;
+  --color-input: #2a3340;
+  --color-ring: #d9b86c;
 
-  /* Border radius */
+  /* Radii */
   --radius-sm: 2px;
   --radius-md: 4px;
   --radius-lg: 8px;
-  --radius-xl: 12px;
+  --radius-xl: 14px;
 
-  /* Font families */
+  /* Type */
   --font-sans: var(--font-dm-sans), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Monaco, Consolas, monospace;
+
+  /* Motion — strong, custom easing curves per Emil's framework */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-fast: 140ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
 }
 
 @layer base {
@@ -86,87 +98,63 @@
   }
 
   body {
-    background:
-      radial-gradient(
-        circle at 16% 0%,
-        color-mix(in oklch, var(--color-accent-primary) 12%, transparent) 0 26rem,
-        transparent 42rem
-      ),
-      radial-gradient(
-        circle at 86% 14%,
-        color-mix(in oklch, var(--color-accent-cyan) 10%, transparent) 0 24rem,
-        transparent 38rem
-      ),
-      linear-gradient(
-        180deg,
-        var(--color-bg-primary) 0%,
-        color-mix(in oklch, var(--color-bg-primary) 92%, var(--color-bg-tertiary) 8%) 42%,
-        var(--color-bg-primary) 100%
-      );
+    background-color: var(--color-bg-primary);
     color: var(--color-text-primary);
-    font-feature-settings:
-      'rlig' 1,
-      'calt' 1;
     min-height: 100vh;
   }
 
   html.light {
     color-scheme: light;
 
-    --color-bg-primary: #f5f1e8;
-    --color-bg-secondary: #ece6d8;
-    --color-bg-tertiary: #fffdf7;
-    --color-bg-elevated: #e2d8c4;
-    --color-bg-panel: #f8f4ea;
+    --color-bg-primary: #f6f1e6;
+    --color-bg-secondary: #ece5d4;
+    --color-bg-tertiary: #fdf9ee;
+    --color-bg-elevated: #e3d9c1;
+    --color-bg-panel: #f7f1e2;
 
-    --color-border-subtle: #ddd2be;
-    --color-border-default: #c7b99f;
-    --color-border-strong: #91836d;
+    --color-border-subtle: #dccfb6;
+    --color-border-default: #c5b59a;
+    --color-border-strong: #8e7e63;
 
-    --color-text-primary: #17140f;
-    --color-text-secondary: #514a3f;
-    --color-text-tertiary: #817664;
+    --color-text-primary: #1a140a;
+    --color-text-secondary: #4f4636;
+    --color-text-tertiary: #80745c;
 
-    --color-accent-primary: #8f6b22;
-    --color-accent-bullish: #087a3d;
+    --color-accent-primary: #8c6920;
+    --color-accent-primary-soft: #a78537;
+    --color-accent-bullish: #0a7a3d;
     --color-accent-bearish: #b4233a;
     --color-accent-neutral: #64748b;
     --color-accent-cyan: #047a76;
     --color-accent-amber: #a66e05;
+    --color-accent-violet: #6d3fc4;
 
-    --color-success: #087a3d;
-    --color-warning: #a66e05;
-    --color-error: #b4233a;
-    --color-info: #1d4ed8;
-
-    --color-background: #f5f1e8;
-    --color-foreground: #17140f;
-    --color-card: #fffdf7;
-    --color-card-foreground: #17140f;
-    --color-popover: #fffdf7;
-    --color-popover-foreground: #17140f;
-    --color-primary: #8f6b22;
-    --color-primary-foreground: #fffdf7;
-    --color-secondary: #ece6d8;
-    --color-secondary-foreground: #17140f;
-    --color-muted: #ece6d8;
-    --color-muted-foreground: #514a3f;
-    --color-accent: #e2d8c4;
-    --color-accent-foreground: #17140f;
+    --color-background: #f6f1e6;
+    --color-foreground: #1a140a;
+    --color-card: #fdf9ee;
+    --color-card-foreground: #1a140a;
+    --color-popover: #fdf9ee;
+    --color-popover-foreground: #1a140a;
+    --color-primary: #8c6920;
+    --color-primary-foreground: #fdf9ee;
+    --color-secondary: #ece5d4;
+    --color-secondary-foreground: #1a140a;
+    --color-muted: #ece5d4;
+    --color-muted-foreground: #4f4636;
+    --color-accent: #e3d9c1;
+    --color-accent-foreground: #1a140a;
     --color-destructive: #b4233a;
-    --color-destructive-foreground: #fffdf7;
-    --color-border: #ddd2be;
-    --color-input: #c7b99f;
-    --color-ring: #8f6b22;
+    --color-destructive-foreground: #fdf9ee;
+    --color-border: #dccfb6;
+    --color-input: #c5b59a;
+    --color-ring: #8c6920;
   }
 
-  /* Selection styling */
   ::selection {
-    background-color: color-mix(in oklch, var(--color-accent-primary) 20%, transparent);
+    background-color: color-mix(in oklch, var(--color-accent-primary) 26%, transparent);
     color: var(--color-text-primary);
   }
 
-  /* Focus visible styles */
   :focus-visible {
     outline: none;
     box-shadow:
@@ -174,53 +162,54 @@
       0 0 0 4px var(--color-bg-primary);
   }
 
-  /* Scrollbar styling */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-
   ::-webkit-scrollbar-track {
-    background-color: var(--color-bg-secondary);
+    background-color: transparent;
   }
-
   ::-webkit-scrollbar-thumb {
     background-color: var(--color-border-default);
-    border-radius: 2px;
+    border-radius: 999px;
   }
-
   ::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-border-strong);
   }
-
-  /* Firefox scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-border-default) var(--color-bg-secondary);
+    scrollbar-color: var(--color-border-default) transparent;
   }
 }
 
 @layer components {
-  /* Data text - monospace for numbers */
+  /* Data text — tabular numbers for stability across tick updates */
   .font-data {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
-  /* Card component base */
+  /* ---------- Card primitives ---------- */
+
+  /* Refined card — subtle gradient sheen, crisp 1px borders, faint inner highlight */
   .card-base {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--color-bg-tertiary) 94%, white 6%),
-      var(--color-bg-secondary)
-    );
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--color-bg-tertiary) 92%, white 8%) 0%,
+        var(--color-bg-secondary) 100%
+      );
     border: 1px solid color-mix(in oklch, var(--color-border-subtle) 88%, white 12%);
     border-radius: var(--radius-lg);
     box-shadow:
-      0 18px 60px rgba(0, 0, 0, 0.28),
-      inset 0 1px 0 rgba(255, 255, 255, 0.035);
+      0 1px 0 0 color-mix(in oklch, white 5%, transparent) inset,
+      0 24px 60px -28px rgba(0, 0, 0, 0.6);
+    transition:
+      border-color var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
   }
 
   .card-base::before {
@@ -228,18 +217,225 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 26%);
-    opacity: 0.65;
+    background:
+      radial-gradient(
+        circle at top right,
+        color-mix(in oklch, var(--color-accent-primary) 4%, transparent) 0%,
+        transparent 50%
+      );
+    opacity: 0.9;
   }
 
-  /* Panel component */
   .panel {
     background: linear-gradient(180deg, var(--color-bg-panel), var(--color-bg-secondary));
     border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-lg);
   }
 
-  /* Button base styles */
+  /* ---------- Premium command surface (hero panels) ---------- */
+  .command-surface {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklch, var(--color-border-default) 70%, white 30%);
+    border-radius: 18px;
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in oklch, var(--color-accent-primary) 10%, transparent) 0%,
+        transparent 28%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--color-bg-tertiary) 94%, transparent) 0%,
+        color-mix(in oklch, var(--color-bg-secondary) 96%, transparent) 100%
+      );
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+      0 30px 80px -20px rgba(0, 0, 0, 0.55);
+  }
+
+  .command-surface::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(
+      rgba(255, 255, 255, 0.035) 1px,
+      transparent 1px
+    );
+    background-size: 100% 32px;
+    opacity: 0.22;
+  }
+
+  html.light .command-surface,
+  html.light .card-base {
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.65) inset,
+      0 18px 40px -18px rgba(82, 60, 28, 0.22);
+  }
+  html.light .command-surface::after {
+    background-image: linear-gradient(
+      rgba(23, 20, 15, 0.05) 1px,
+      transparent 1px
+    );
+    opacity: 0.4;
+  }
+
+  /* ---------- Metric tile — a refined stat card ---------- */
+  .metric-tile {
+    position: relative;
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 12px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+    box-shadow:
+      0 1px 0 0 rgba(255, 255, 255, 0.045) inset;
+    transition:
+      border-color var(--duration-base) var(--ease-out),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .metric-tile:hover {
+      border-color: color-mix(in oklch, var(--color-accent-primary) 35%, var(--color-border-subtle));
+      transform: translateY(-1px);
+    }
+  }
+
+  /* ---------- Typographic helpers ---------- */
+  .section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    line-height: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+
+  .display-numeral {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+    font-weight: 500;
+  }
+
+  /* ---------- Live status / dot ---------- */
+  .live-dot {
+    position: relative;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--color-accent-bullish);
+    box-shadow:
+      0 0 0 3px color-mix(in oklch, var(--color-accent-bullish) 18%, transparent),
+      0 0 16px var(--color-accent-bullish);
+  }
+  .live-dot::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in oklch, var(--color-accent-bullish) 50%, transparent);
+    animation: livePulse 2.2s var(--ease-out) infinite;
+  }
+
+  @keyframes livePulse {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1.7);
+      opacity: 0;
+    }
+  }
+
+  /* ---------- Divider ---------- */
+  .precision-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--color-border-default) 50%,
+      transparent 100%
+    );
+  }
+
+  /* ---------- Status chip (pill) ---------- */
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--color-text-secondary);
+    background: color-mix(in oklch, var(--color-bg-tertiary) 90%, transparent);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 999px;
+  }
+
+  /* ---------- Ticker tape (scrolling) ---------- */
+  .ticker-tape {
+    position: relative;
+    overflow: hidden;
+    border-block: 1px solid var(--color-border-subtle);
+    background: color-mix(in oklch, var(--color-bg-secondary) 80%, transparent);
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      black 6%,
+      black 94%,
+      transparent 100%
+    );
+  }
+
+  .ticker-tape__track {
+    display: flex;
+    width: max-content;
+    gap: 2.5rem;
+    padding: 0.5rem 0;
+    animation: tickerScroll 60s linear infinite;
+  }
+
+  @keyframes tickerScroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* ---------- App shell background — subtle, almost invisible ---------- */
+  .app-shell {
+    position: relative;
+    isolation: isolate;
+  }
+  .app-shell::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 80% 50% at 50% 0%,
+        color-mix(in oklch, var(--color-accent-primary) 8%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 100% 100%,
+        color-mix(in oklch, var(--color-accent-cyan) 6%, transparent) 0%,
+        transparent 60%
+      );
+  }
+
+  /* ---------- Buttons ---------- */
   .btn-base {
     display: inline-flex;
     align-items: center;
@@ -248,24 +444,27 @@
     font-size: 0.875rem;
     font-weight: 500;
     border-radius: var(--radius-sm);
-    transition: all 150ms;
+    transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out),
+      border-color 140ms var(--ease-out), color 140ms var(--ease-out);
   }
-
   .btn-base:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent-primary) 50%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent-primary) 60%, transparent);
   }
-
   .btn-base:disabled {
     opacity: 0.5;
     pointer-events: none;
   }
-
+  @media (hover: hover) and (pointer: fine) {
+    .btn-base:hover {
+      transform: translateY(-1px);
+    }
+  }
   .btn-base:active {
-    transform: scale(0.98);
+    transform: scale(0.97);
   }
 
-  /* Input base styles */
+  /* ---------- Inputs ---------- */
   .input-base {
     background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border-default);
@@ -273,258 +472,229 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     color: var(--color-text-primary);
-    transition: colors 150ms;
+    transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
   }
-
   .input-base::placeholder {
     color: var(--color-text-tertiary);
   }
-
   .input-base:focus-visible {
     outline: none;
-    border-color: var(--color-border-strong);
-    box-shadow: 0 0 0 1px var(--color-border-strong);
+    border-color: color-mix(in oklch, var(--color-accent-primary) 70%, var(--color-border-default));
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-accent-primary) 16%, transparent);
   }
 
-  /* Label styles */
+  /* ---------- Labels & sections ---------- */
   .label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.16em;
     color: var(--color-text-secondary);
   }
 
-  /* Section header */
   .section-header {
     font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-text-primary);
+    letter-spacing: -0.015em;
   }
 
-  /* Price display */
+  /* ---------- Price / change ---------- */
   .price-display {
     font-family: var(--font-mono);
     font-size: 1.75rem;
     font-weight: 500;
     color: var(--color-text-primary);
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
   }
 
-  /* Change display */
   .change-positive {
     color: var(--color-accent-bullish);
   }
-
   .change-negative {
     color: var(--color-accent-bearish);
   }
 
-  /* Signal badge variants */
+  /* ---------- Signal badge variants ---------- */
   .signal-buy {
     background-color: color-mix(in oklch, var(--color-accent-bullish) 12%, transparent);
     color: var(--color-accent-bullish);
-    border: 1px solid color-mix(in oklch, var(--color-accent-bullish) 34%, transparent);
-    box-shadow: 0 0 24px color-mix(in oklch, var(--color-accent-bullish) 10%, transparent);
+    border: 1px solid color-mix(in oklch, var(--color-accent-bullish) 36%, transparent);
+    box-shadow: 0 0 24px color-mix(in oklch, var(--color-accent-bullish) 12%, transparent);
   }
-
   .signal-sell {
     background-color: color-mix(in oklch, var(--color-accent-bearish) 12%, transparent);
     color: var(--color-accent-bearish);
-    border: 1px solid color-mix(in oklch, var(--color-accent-bearish) 34%, transparent);
-    box-shadow: 0 0 24px color-mix(in oklch, var(--color-accent-bearish) 10%, transparent);
+    border: 1px solid color-mix(in oklch, var(--color-accent-bearish) 36%, transparent);
+    box-shadow: 0 0 24px color-mix(in oklch, var(--color-accent-bearish) 12%, transparent);
   }
-
   .signal-neutral {
     background-color: color-mix(in oklch, var(--color-accent-neutral) 10%, transparent);
     color: var(--color-accent-neutral);
-    border: 1px solid color-mix(in oklch, var(--color-accent-neutral) 30%, transparent);
+    border: 1px solid color-mix(in oklch, var(--color-accent-neutral) 32%, transparent);
   }
 
-  /* Status indicators */
+  /* ---------- Status indicators ---------- */
   .status-online {
     background-color: var(--color-accent-bullish);
   }
-
   .status-offline {
     background-color: var(--color-error);
   }
-
   .status-warning {
     background-color: var(--color-warning);
   }
 
-  /* Hover states */
+  /* ---------- Hover affordance ---------- */
+  .hover-surface {
+    transition: background-color var(--duration-fast) var(--ease-out);
+  }
   .hover-surface:hover {
     background-color: var(--color-bg-elevated);
-    transition: colors 150ms;
   }
 
-  /* Divider */
+  /* ---------- Divider ---------- */
   .divider {
     height: 1px;
     background-color: var(--color-border-subtle);
   }
 
-  /* Premium trading workstation primitives */
-  .app-shell {
-    position: relative;
-    isolation: isolate;
-    background:
-      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-    background-size: 56px 56px;
-  }
-
-  html.light .app-shell {
-    background:
-      linear-gradient(90deg, rgba(23, 20, 15, 0.035) 1px, transparent 1px),
-      linear-gradient(180deg, rgba(23, 20, 15, 0.035) 1px, transparent 1px);
-    background-size: 56px 56px;
-  }
-
-  .app-shell::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background: radial-gradient(
-      circle at 50% -20%,
-      color-mix(in oklch, var(--color-accent-primary) 16%, transparent),
-      transparent 34rem
-    );
-    mask-image: linear-gradient(to bottom, black, transparent 72%);
-  }
-
-  .command-surface {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid color-mix(in oklch, var(--color-border-default) 76%, white 24%);
-    border-radius: 18px;
-    background:
-      linear-gradient(
-        135deg,
-        color-mix(in oklch, var(--color-accent-primary) 13%, transparent),
-        transparent 28%
-      ),
-      linear-gradient(
-        180deg,
-        color-mix(in oklch, var(--color-bg-tertiary) 96%, transparent),
-        color-mix(in oklch, var(--color-bg-secondary) 96%, transparent)
-      );
-    box-shadow:
-      0 24px 90px rgba(0, 0, 0, 0.38),
-      inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  html.light .command-surface,
-  html.light .card-base {
-    box-shadow:
-      0 18px 50px rgba(65, 49, 24, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  }
-
-  .command-surface::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    background-size: 100% 14px;
-    opacity: 0.18;
-  }
-
-  html.light .command-surface::after {
-    background-image: linear-gradient(rgba(23, 20, 15, 0.055) 1px, transparent 1px);
-    opacity: 0.3;
-  }
-
-  .metric-tile {
-    border: 1px solid var(--color-border-subtle);
-    border-radius: 12px;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  }
-
-  .section-eyebrow {
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
-    line-height: 1;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    color: var(--color-text-tertiary);
-  }
-
-  .live-dot {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 999px;
-    background: var(--color-accent-bullish);
-    box-shadow:
-      0 0 0 4px color-mix(in oklch, var(--color-accent-bullish) 14%, transparent),
-      0 0 22px var(--color-accent-bullish);
-  }
-
-  .precision-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-border-default), transparent);
-  }
-
-  .ticker-tape {
-    border-block: 1px solid var(--color-border-subtle);
-    background: rgba(5, 6, 8, 0.72);
-  }
-
-  /* Table styles */
+  /* ---------- Table ---------- */
   .table-base {
     width: 100%;
     text-align: left;
     border-collapse: collapse;
   }
-
   .table-base th {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
-    color: var(--color-text-secondary);
+    letter-spacing: 0.14em;
+    color: var(--color-text-tertiary);
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--color-border-subtle);
   }
-
   .table-base td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--color-border-subtle);
     font-size: 0.8125rem;
   }
-
   .table-base tr:hover td {
     background-color: var(--color-bg-tertiary);
+  }
+
+  /* ---------- Sparkline / mini chart wrapper ---------- */
+  .sparkline {
+    width: 100%;
+    height: 28px;
+    overflow: visible;
+  }
+
+  /* ---------- Corner brackets (terminal frame) ---------- */
+  .corner-frame {
+    position: relative;
+  }
+  .corner-frame::before,
+  .corner-frame::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px solid color-mix(in oklch, var(--color-accent-primary) 50%, transparent);
+    pointer-events: none;
+  }
+  .corner-frame::before {
+    top: -1px;
+    left: -1px;
+    border-right: none;
+    border-bottom: none;
+  }
+  .corner-frame::after {
+    bottom: -1px;
+    right: -1px;
+    border-left: none;
+    border-top: none;
+  }
+
+  /* ---------- "Scan" highlight on price change ---------- */
+  @keyframes priceFlash {
+    0% {
+      background-color: transparent;
+    }
+    20% {
+      background-color: color-mix(in oklch, currentColor 12%, transparent);
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
+  .flash-positive {
+    animation: priceFlash 700ms var(--ease-out);
+    color: var(--color-accent-bullish);
+  }
+  .flash-negative {
+    animation: priceFlash 700ms var(--ease-out);
+    color: var(--color-accent-bearish);
   }
 }
 
 @layer utilities {
-  /* Text utilities */
   .text-balance {
     text-wrap: balance;
   }
-
-  /* Tabular numbers */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Animation utilities */
-  .animate-flash-green {
-    animation: flash-green 0.5s ease-out;
+  /* ---------- Skeleton shimmer ---------- */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklch, white 5%, transparent) 50%,
+      transparent 100%
+    );
+    animation: skeletonShine 1.4s var(--ease-in-out) infinite;
+  }
+  @keyframes skeletonShine {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
   }
 
-  .animate-flash-red {
-    animation: flash-red 0.5s ease-out;
+  /* ---------- Subtle background grid ---------- */
+  .bg-precision-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 64px 64px;
   }
 
-  /* Reduced motion */
+  /* ---------- Glow on data emphasis ---------- */
+  .glow-bullish {
+    text-shadow: 0 0 18px color-mix(in oklch, var(--color-accent-bullish) 40%, transparent);
+  }
+  .glow-bearish {
+    text-shadow: 0 0 18px color-mix(in oklch, var(--color-accent-bearish) 40%, transparent);
+  }
+  .glow-primary {
+    text-shadow: 0 0 18px color-mix(in oklch, var(--color-accent-primary) 40%, transparent);
+  }
+
+  /* ---------- Reduced motion ---------- */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -535,29 +705,26 @@
     }
   }
 
-  /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 }
 
-/* Toast notification animations */
+/* ---------- Toast animations (using custom easings) ---------- */
 @keyframes toast-enter {
   from {
     opacity: 0;
-    transform: translateY(100%) scale(0.95);
+    transform: translateY(100%) scale(0.96);
   }
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
 }
-
 @keyframes toast-leave {
   from {
     opacity: 1;
@@ -565,14 +732,45 @@
   }
   to {
     opacity: 0;
-    transform: translateY(100%) scale(0.95);
+    transform: translateY(100%) scale(0.96);
   }
 }
-
 .toast-enter {
-  animation: toast-enter 0.2s ease-out forwards;
+  animation: toast-enter 240ms var(--ease-out) forwards;
+}
+.toast-leave {
+  animation: toast-leave 160ms var(--ease-in-out) forwards;
 }
 
-.toast-leave {
-  animation: toast-leave 0.15s ease-in forwards;
+/* ---------- Stagger reveal (used for hero tiles) ---------- */
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise-in {
+  animation: riseIn 480ms var(--ease-out) both;
+}
+.rise-in-1 { animation-delay: 40ms; }
+.rise-in-2 { animation-delay: 80ms; }
+.rise-in-3 { animation-delay: 120ms; }
+.rise-in-4 { animation-delay: 160ms; }
+.rise-in-5 { animation-delay: 200ms; }
+.rise-in-6 { animation-delay: 240ms; }
+
+/* ---------- Dropdown / popover entrance ---------- */
+@keyframes dropdownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
