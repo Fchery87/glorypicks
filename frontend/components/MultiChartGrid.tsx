@@ -13,10 +13,12 @@ import { cn } from '@/lib/utils';
 import { useStore, ChartLayout, ChartConfig } from '@/lib/store';
 import { LightweightChart } from '@/components/LightweightChart';
 import { LayoutGrid, Columns2, Square, Lock, Layers } from 'lucide-react';
-import type { Interval } from '@/types';
+import type { ICTAnnotation, Interval, Candle } from '@/types';
 
 interface MultiChartGridProps {
   isPremium: boolean;
+  annotations?: ICTAnnotation[];
+  showAnnotations?: boolean;
 }
 
 const INTERVALS: Interval[] = ['1m', '5m', '15m', '30m', '1h', '2h', '4h', '1d'];
@@ -27,7 +29,7 @@ const LAYOUT_OPTIONS: { value: ChartLayout; label: string; icon: React.ReactNode
   { value: '2x2', label: 'Matrix', icon: <LayoutGrid className="h-3.5 w-3.5" /> },
 ];
 
-export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
+export function MultiChartGrid({ isPremium, annotations = [], showAnnotations = true }: MultiChartGridProps) {
   const { symbol, chartLayout, setChartLayout, charts, setChartInterval, candles } = useStore();
 
   const [chartData, setChartData] = useState<Record<string, any[]>>({});
@@ -154,6 +156,8 @@ export function MultiChartGrid({ isPremium }: MultiChartGridProps) {
             height={getChartHeight()}
             onIntervalChange={(interval) => setChartInterval(chart.id, interval)}
             showIntervalSelector={true}
+            annotations={chart.id === 'chart-1' ? annotations : []}
+            showAnnotations={showAnnotations && chart.id === 'chart-1'}
           />
         ))}
       </div>
@@ -175,6 +179,8 @@ interface ChartCardProps {
   height: string;
   onIntervalChange: (interval: Interval) => void;
   showIntervalSelector?: boolean;
+  annotations?: ICTAnnotation[];
+  showAnnotations?: boolean;
 }
 
 function ChartCard({
@@ -185,6 +191,8 @@ function ChartCard({
   height,
   onIntervalChange,
   showIntervalSelector,
+  annotations = [],
+  showAnnotations = true,
 }: ChartCardProps) {
   return (
     <Card className="overflow-hidden">
@@ -244,7 +252,13 @@ function ChartCard({
             </div>
           </div>
         ) : candles.length > 0 ? (
-          <LightweightChart symbol={symbol} interval={chart.interval} candles={candles} />
+          <LightweightChart
+            symbol={symbol}
+            interval={chart.interval}
+            candles={candles as Candle[]}
+            annotations={annotations}
+            showAnnotations={showAnnotations}
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-text-secondary">
             <span className="text-sm">No data available</span>

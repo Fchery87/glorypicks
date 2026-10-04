@@ -22,11 +22,97 @@ export interface TradeEntry {
   post_trade_notes?: string;
   tags: string[];
   screenshots: string[];
+  checklist?: TradeChecklistItem[];
+  linked_signal_id?: string;
+  signal_history?: JournalTradeSignal[];
+  chart_snapshot?: JournalChartSnapshot;
   pnl_dollar?: number;
   pnl_percent?: number;
   r_multiple?: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface JournalTradeCreatePayload extends Partial<TradeEntry> {
+  initial_signal?: JournalTradeSignal;
+  chart_snapshot?: JournalChartSnapshot;
+}
+
+export interface TradeChecklistItem {
+  key: string;
+  label: string;
+  passed: boolean;
+  reason?: string;
+}
+
+export interface JournalTradeSignal {
+  id?: string;
+  phase: 'entry' | 'review' | 'exit';
+  source_signal_id?: string;
+  symbol: string;
+  recommendation: 'Buy' | 'Sell' | 'Neutral';
+  strength: number;
+  rationale?: string[];
+  key_levels?: Record<string, number>;
+}
+
+export interface JournalChartSnapshot {
+  schema_version: 1;
+  symbol: string;
+  timeframe: string;
+  captured_at: string;
+  candles: {
+    t: number;
+    o: number;
+    h: number;
+    l: number;
+    c: number;
+    v: number;
+  }[];
+  annotations: {
+    id: string;
+    concept: string;
+    render_type: string;
+    label: string;
+    direction?: string;
+    timeframe: string;
+    price_low?: number;
+    price_high?: number;
+    price?: number;
+    start_time?: number;
+    end_time?: number;
+    status: string;
+    confidence: number;
+  }[];
+  analysis_summary?: string;
+}
+
+export interface JournalReviewMetrics {
+  matched_trades: number;
+  closed_trades: number;
+  checklist_captured_trades: number;
+  checklist_adherent_trades: number;
+  checklist_adherence_rate: number;
+  signal_linked_trades: number;
+  snapshot_captured_trades: number;
+  screenshot_captured_trades: number;
+  win_rate: number;
+  total_pnl: number;
+  avg_r_multiple: number;
+}
+
+export interface JournalTradeFilters {
+  status?: string;
+  symbol?: string;
+  ict_pattern?: string;
+  direction?: string;
+  timeframe?: string;
+  emotional_state?: string;
+  tags?: string[];
+  start_date?: string;
+  end_date?: string;
+  min_pnl?: number;
+  max_pnl?: number;
 }
 
 export type ICTPatternType =
@@ -90,6 +176,19 @@ export interface UserTierLimits {
   screenshot_limit: number;
 }
 
+export interface JournalImportRowResult {
+  row_number: number;
+  accepted: boolean;
+  trade_id?: string;
+  error?: string;
+}
+
+export interface JournalImportResult {
+  imported_count: number;
+  rejected_count: number;
+  rows: JournalImportRowResult[];
+}
+
 export interface TradeFormData {
   symbol: string;
   direction: 'long' | 'short';
@@ -103,4 +202,7 @@ export interface TradeFormData {
   emotional_state?: EmotionalState;
   pre_trade_notes?: string;
   tags: string[];
+  checklist: TradeChecklistItem[];
+  linked_signal_id?: string;
+  screenshots: string[];
 }

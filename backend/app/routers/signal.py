@@ -12,14 +12,9 @@ from app.engine.kill_zones import KillZoneDetector, KillZoneType
 from app.models import (
     AssetClass,
     Candle,
-    ICTAnalysis,
-    ICTSignalType,
+    ICTMapResponse,
     Interval,
-    MarketStructure,
     SignalResponse,
-)
-from app.models import (
-    ICTSignalResult as ICTSignalResultModel,
 )
 from app.utils import CacheManager
 from app.utils.time import utc_now, utc_timestamp
@@ -177,8 +172,12 @@ async def get_signal(
         raise HTTPException(status_code=500, detail=f"Error generating signal: {str(e)}")
 
 
-@router.get("/signal/{symbol}/ict", response_model=ICTAnalysis)
-async def get_ict_analysis(symbol: str) -> Any:
+@router.get("/signal/{symbol}/ict", response_model=ICTMapResponse)
+async def get_ict_analysis(
+    symbol: str,
+    interval: Interval = Query(Interval.H1),
+    min_rr: float = Query(1.5, ge=1.0, le=5.0),
+) -> ICTMapResponse:
     """
     Get detailed ICT strategy analysis for a symbol.
 
@@ -190,7 +189,7 @@ async def get_ict_analysis(symbol: str) -> Any:
     """
     try:
         # Fetch data
-        candles = await fetch_candles_with_failover(symbol, Interval.H1, 200)
+        candles = await fetch_candles_with_failover(symbol, interval, 200)
 
         if not candles:
             raise HTTPException(status_code=404, detail=f"No data found for {symbol}")
@@ -200,49 +199,12 @@ async def get_ict_analysis(symbol: str) -> Any:
         if _signal_engine is None:
             _signal_engine = SignalEngine()
 
-        # Analyze with ICT strategies
-        ict_signals, ict_metadata = _signal_engine._analyze_with_ict(symbol, candles, [], [])
-
-        # Get liquidity pools
-        liquidity_pools = ict_metadata.get("liquidity_pools", {})
-
-        # Build ICT analysis response
-        analysis = ICTAnalysis(
-            signals=[
-                ICTSignalResultModel(
-                    signal_type=ICTSignalType(signal.signal_type.value),
-                    strength=signal.strength,
-                    confidence=signal.confidence,
-                    price=signal.price,
-                    entry_zone_low=signal.entry_zone[0],
-                    entry_zone_high=signal.entry_zone[1],
-                    stop_loss=signal.stop_loss,
-                    take_profit=signal.take_profit,
-                    rationale=signal.rationale,
-                    market_phase=signal.market_phase,
-                    liquidity_pool=signal.liquidity_pool,
-                )
-                for signal in ict_signals
-            ],
-            market_structure=MarketStructure(
-                trend=ict_metadata.get("timeframe_bias", {}).get("current_trend", "neutral"),
-                last_swing_high=0.0,
-                last_swing_low=0.0,
-                swing_high_timestamp=0,
-                swing_low_timestamp=0,
-                bos_confirmed=ict_metadata.get("timeframe_bias", {}).get("bos_status")
-                == "confirmed",
-                bos_direction=ict_metadata.get("timeframe_bias", {}).get("bos_direction"),
-                mss_confirmed=ict_metadata.get("timeframe_bias", {}).get("mss_status")
-                == "confirmed",
-                mss_direction=ict_metadata.get("timeframe_bias", {}).get("mss_direction"),
-            ),
-            liquidity_pools=liquidity_pools,
-            timeframe_bias=ict_metadata.get("timeframe_bias"),
-            analysis_summary=f"ICT analysis detected {len(ict_signals)} signals, {len(_signal_engine.ict_strategies.order_blocks)} order blocks, and {len(_signal_engine.ict_strategies.fair_value_gaps)} fair value gaps.",
+        return _signal_engine.generate_ict_map(
+            symbol=symbol,
+            candles=candles,
+            interval=interval,
+            min_rr=min_rr,
         )
-
-        return analysis
 
     except HTTPException:
         raise

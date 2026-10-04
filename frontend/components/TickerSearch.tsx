@@ -5,6 +5,11 @@ import { useStore } from '@/lib/store';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Search, X, Command, TrendingUp, Star, Sparkles } from 'lucide-react';
+import {
+  recordRecentSymbol,
+  searchSymbols,
+  type SymbolResult,
+} from '@/lib/symbolApi';
 
 const POPULAR_SYMBOLS = {
   stocks: [
@@ -49,7 +54,11 @@ export function TickerSearch() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeClass, setActiveClass] = useState<AssetClass>('all');
-  const { symbol, setSymbol, watchlist } = useStore();
+  const [backendResults, setBackendResults] = useState<SymbolResult[] | null>(null);
+  const [recent, setRecent] = useState<SymbolResult[]>([]);
+  const [trending, setTrending] = useState<SymbolResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const { symbol, setSymbol, watchlists } = useStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -84,11 +93,12 @@ export function TickerSearch() {
 
   const handleSelect = (newSymbol: string) => {
     setSymbol(newSymbol);
+    void recordRecentSymbol(newSymbol).catch(() => undefined);
     setIsOpen(false);
     setQuery('');
   };
 
-  const getFilteredSymbols = useCallback(() => {
+  const getFallbackSymbols = useCallback((): SymbolResult[] => {
     const allSymbols = Object.entries(POPULAR_SYMBOLS).flatMap(([category, symbols]) =>
       symbols.map((s) => ({ ...s, category }))
     );
@@ -107,11 +117,54 @@ export function TickerSearch() {
       );
     }
 
-    return filtered;
+    return filtered.map((item) => ({
+      symbol: item.symbol,
+      name: item.name,
+      asset_class:
+        item.category === 'crypto'
+          ? 'crypto'
+          : item.category === 'forex'
+            ? 'forex'
+            : item.category === 'indices'
+              ? 'index'
+              : 'stock',
+      sector: item.sector,
+    }));
   }, [activeClass, query]);
 
-  const filteredSymbols = getFilteredSymbols();
-  const isInWatchlist = (sym: string) => watchlist.some((w) => w.symbol === sym);
+  useEffect(() => {
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await searchSymbols(query, activeClass === 'all' ? 'all' : activeClass === 'indices' ? 'index' : activeClass === 'stocks' ? 'stock' : activeClass, controller.signal);
+        setBackendResults(response.results);
+        setRecent(response.recent);
+        setTrending(response.trending);
+      } catch {
+        if (!controller.signal.aborted) {
+          setBackendResults(null);
+          setRecent([]);
+          setTrending([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsSearching(false);
+      }
+    }, 250);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [query, activeClass]);
+
+  const filteredSymbols = query ? backendResults ?? getFallbackSymbols() : backendResults ?? getFallbackSymbols();
+  const sections = query
+    ? [{ title: 'Results', items: filteredSymbols }]
+    : [
+        { title: 'Recent', items: recent.length ? recent : filteredSymbols.slice(0, 5) },
+        { title: 'Trending', items: trending.length ? trending : filteredSymbols.slice(5, 10) },
+      ];
+  const isInWatchlist = (sym: string) => watchlists.some((w) => w.symbols.includes(sym));
 
   return (
     <div ref={containerRef} className="relative w-full max-w-md">
@@ -193,7 +246,9 @@ export function TickerSearch() {
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {filteredSymbols.length === 0 ? (
+            {isSearching ? (
+              <div className="p-8 text-center text-text-secondary text-sm">Searching symbols...</div>
+            ) : filteredSymbols.length === 0 ? (
               <div className="p-8 text-center">
                 <Search className="h-8 w-8 text-text-tertiary mx-auto mb-3" />
                 <p className="text-text-secondary text-sm">No symbols found</p>
@@ -201,7 +256,14 @@ export function TickerSearch() {
               </div>
             ) : (
               <div className="p-1.5">
-                {filteredSymbols.map((item) => {
+                {sections.map((section) => (
+                  <div key={section.title}>
+                    {!query && (
+                      <p className="px-3 pt-2 pb-1 text-[10px] font-mono uppercase tracking-[0.14em] text-text-tertiary">
+                        {section.title}
+                      </p>
+                    )}
+                    {section.items.map((item) => {
                   const isActive = symbol === item.symbol;
                   return (
                     <div
@@ -245,15 +307,24 @@ export function TickerSearch() {
                               <Star className="h-3 w-3 text-accent-primary fill-accent-primary" />
                             )}
                           </div>
-                          <p className="text-text-tertiary text-xs truncate">{item.name}</p>
+                            <p className="text-text-tertiary text-xs truncate">
+                              {item.name}
+                              {[item.exchange, item.currency, item.sector].filter(Boolean).length > 0 && (
+                                <span className="ml-2 text-[10px]">
+                                  {[item.exchange, item.currency, item.sector].filter(Boolean).join(' · ')}
+                                </span>
+                              )}
+                            </p>
                         </div>
                       </div>
                       <span className="text-text-tertiary text-[10px] uppercase tracking-[0.14em] font-mono">
-                        {item.category}
+                        {item.asset_class}
                       </span>
                     </div>
                   );
-                })}
+                    })}
+                  </div>
+                ))}
               </div>
             )}
           </div>

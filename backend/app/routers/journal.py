@@ -1,23 +1,30 @@
 """Trade Journal API router."""
 
 import logging
+from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
 
 from ..models.journal import (
     EmotionalState,
     ICTPatternType,
     JournalAnalyticsResponse,
+    JournalImportResponse,
+    JournalReviewMetrics,
     TradeCloseRequest,
     TradeCreateRequest,
     TradeDirection,
     TradeEntry,
+    TradeJournalFilters,
+    TradeSignalSnapshotRequest,
     TradeStatistics,
     TradeStatus,
     TradeUpdateRequest,
     UserTierLimits,
 )
+from ..routers.dependencies import get_session_id
 from ..services.journal_service import trade_journal_service
 
 logger = logging.getLogger(__name__)
@@ -25,11 +32,72 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/journal", tags=["Trade Journal"])
 
 
-def get_user_id(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> str:
-    """Get user ID from session header or generate temporary one."""
-    if x_session_id:
-        return x_session_id
-    return "free_user_temp"  # Default free user
+def _journal_filters(
+    status: TradeStatus | None = None,
+    symbol: str | None = None,
+    ict_pattern: ICTPatternType | None = None,
+    direction: TradeDirection | None = None,
+    timeframe: str | None = None,
+    emotional_state: EmotionalState | None = None,
+    tags: list[str] | None = Query(None),
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    min_pnl: float | None = None,
+    max_pnl: float | None = None,
+) -> TradeJournalFilters:
+    """Build and validate the shared journal filter contract."""
+    return TradeJournalFilters(
+        status=status,
+        symbol=symbol,
+        ict_pattern=ict_pattern,
+        direction=direction,
+        timeframe=timeframe,
+        emotional_state=emotional_state,
+        tags=tags,
+        start_date=start_date,
+        end_date=end_date,
+        min_pnl=min_pnl,
+        max_pnl=max_pnl,
+    )
+
+
+@router.post("/trades/import", response_model=JournalImportResponse)
+async def import_trades(
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_session_id),
+) -> JournalImportResponse:
+    """Import validated trade rows from a CSV file."""
+    try:
+        content = (await file.read()).decode("utf-8-sig")
+        return await trade_journal_service.import_csv(user_id, content)
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="CSV file must be UTF-8 encoded")
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        logger.error(f"Error importing trades: {error}")
+        raise HTTPException(status_code=500, detail="Failed to import trades")
+
+
+@router.get("/trades/export")
+async def export_trades(user_id: str = Depends(get_session_id)) -> StreamingResponse:
+    """Export the current user's trades as CSV for premium users."""
+    if not trade_journal_service._check_tier_limits(user_id).can_export:
+        raise HTTPException(
+            status_code=403,
+            detail="Trade export is a Premium feature. Upgrade to export your journal.",
+        )
+
+    try:
+        content = await trade_journal_service.export_csv(user_id)
+        return StreamingResponse(
+            iter([content]),
+            media_type="text/csv",
+            headers={"Content-Disposition": 'attachment; filename="trade-journal.csv"'},
+        )
+    except Exception as error:
+        logger.error(f"Error exporting trades: {error}")
+        raise HTTPException(status_code=500, detail="Failed to export trades")
 
 
 @router.get("/trades", response_model=list[TradeEntry])
@@ -37,19 +105,50 @@ async def get_trades(
     status: TradeStatus | None = None,
     symbol: str | None = None,
     ict_pattern: ICTPatternType | None = None,
+    direction: TradeDirection | None = None,
+    timeframe: str | None = None,
+    emotional_state: EmotionalState | None = None,
+    tags: list[str] | None = Query(None),
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    min_pnl: float | None = None,
+    max_pnl: float | None = None,
     limit: int = Query(50, ge=1, le=100),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    user_id: str = Depends(get_session_id),
 ) -> list[TradeEntry]:
     """Get all trades for the current user with optional filtering."""
-    user_id = get_user_id(x_session_id)
+
 
     try:
-        if status or symbol or ict_pattern:
+        if any(
+            value is not None
+            for value in (
+                status,
+                symbol,
+                ict_pattern,
+                direction,
+                timeframe,
+                emotional_state,
+                tags,
+                start_date,
+                end_date,
+                min_pnl,
+                max_pnl,
+            )
+        ):
             trades = await trade_journal_service.filter_trades(
                 user_id=user_id,
                 status=status,
                 symbol=symbol,
                 ict_pattern=ict_pattern.value if ict_pattern else None,
+                direction=direction,
+                timeframe=timeframe,
+                emotional_state=emotional_state.value if emotional_state else None,
+                tags=tags,
+                start_date=start_date,
+                end_date=end_date,
+                min_pnl=min_pnl,
+                max_pnl=max_pnl,
             )
         else:
             trades = await trade_journal_service.get_by_user(user_id, limit=limit)
@@ -60,10 +159,25 @@ async def get_trades(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/review-metrics", response_model=JournalReviewMetrics)
+async def get_review_metrics(
+    filters: TradeJournalFilters = Depends(_journal_filters),
+    user_id: str = Depends(get_session_id),
+) -> JournalReviewMetrics:
+    """Get review coverage and performance for the filtered trades."""
+    tier_limits = trade_journal_service._check_tier_limits(user_id)
+    if not tier_limits.can_view_analytics:
+        raise HTTPException(
+            status_code=403,
+            detail="Journal review metrics are a Premium feature.",
+        )
+    return await trade_journal_service.get_review_metrics(user_id, filters)
+
+
 @router.get("/trades/open", response_model=list[TradeEntry])
-async def get_open_trades(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> Any:
+async def get_open_trades(user_id: str = Depends(get_session_id)) -> Any:
     """Get all open trades for the current user."""
-    user_id = get_user_id(x_session_id)
+
 
     try:
         trades = await trade_journal_service.get_open_trades(user_id)
@@ -75,10 +189,10 @@ async def get_open_trades(x_session_id: str | None = Header(None, alias="X-Sessi
 
 @router.get("/trades/{trade_id}", response_model=TradeEntry)
 async def get_trade(
-    trade_id: str, x_session_id: str | None = Header(None, alias="X-Session-ID")
+    trade_id: str, user_id: str = Depends(get_session_id)
 ) -> Any:
     """Get a specific trade by ID."""
-    trade = await trade_journal_service.get(trade_id)
+    trade = await trade_journal_service.get(user_id, trade_id)
 
     if not trade:
         raise HTTPException(status_code=404, detail="Trade not found")
@@ -88,10 +202,10 @@ async def get_trade(
 
 @router.post("/trades", response_model=TradeEntry, status_code=201)
 async def create_trade(
-    request: TradeCreateRequest, x_session_id: str | None = Header(None, alias="X-Session-ID")
+    request: TradeCreateRequest, user_id: str = Depends(get_session_id)
 ) -> TradeEntry:
     """Create a new trade entry."""
-    user_id = get_user_id(x_session_id)
+
 
     try:
         trade = await trade_journal_service.create(user_id, request)
@@ -104,20 +218,43 @@ async def create_trade(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/trades/{trade_id}/signals", response_model=TradeEntry)
+async def append_trade_signal(
+    trade_id: str,
+    request: TradeSignalSnapshotRequest,
+    user_id: str = Depends(get_session_id),
+) -> TradeEntry:
+    """Append an immutable signal observation to a trade."""
+    try:
+        trade = await trade_journal_service.append_signal(user_id, trade_id, request)
+        if not trade:
+            raise HTTPException(status_code=404, detail="Trade not found")
+        return trade
+    except HTTPException:
+        raise
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+    except Exception as error:
+        logger.error(f"Error appending trade signal: {error}")
+        raise HTTPException(status_code=500, detail="Failed to append trade signal")
+
+
 @router.patch("/trades/{trade_id}", response_model=TradeEntry)
 async def update_trade(
     trade_id: str,
     request: TradeUpdateRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    user_id: str = Depends(get_session_id),
 ) -> TradeEntry:
     """Update an existing trade."""
     try:
-        trade = await trade_journal_service.update(trade_id, request)
+        trade = await trade_journal_service.update(user_id, trade_id, request)
 
         if not trade:
             raise HTTPException(status_code=404, detail="Trade not found")
 
         return trade
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -129,17 +266,19 @@ async def update_trade(
 async def close_trade(
     trade_id: str,
     request: TradeCloseRequest,
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    user_id: str = Depends(get_session_id),
 ) -> TradeEntry:
     """Close a trade with exit details."""
     try:
-        trade = await trade_journal_service.close_trade(trade_id, request)
+        trade = await trade_journal_service.close_trade(user_id, trade_id, request)
 
         if not trade:
             raise HTTPException(status_code=404, detail="Trade not found")
 
         logger.info(f"Closed trade {trade_id}")
         return trade
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -149,10 +288,10 @@ async def close_trade(
 
 @router.delete("/trades/{trade_id}", status_code=204)
 async def delete_trade(
-    trade_id: str, x_session_id: str | None = Header(None, alias="X-Session-ID")
+    trade_id: str, user_id: str = Depends(get_session_id)
 ) -> None:
     """Delete a trade by ID."""
-    success = await trade_journal_service.delete(trade_id)
+    success = await trade_journal_service.delete(user_id, trade_id)
 
     if not success:
         raise HTTPException(status_code=404, detail="Trade not found")
@@ -163,14 +302,14 @@ async def delete_trade(
 @router.get("/statistics", response_model=TradeStatistics)
 async def get_statistics(
     days: int | None = Query(None, ge=1, le=365, description="Number of days to analyze"),
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    user_id: str = Depends(get_session_id),
 ) -> TradeStatistics:
     """Get trade statistics for the current user.
 
     **Premium Feature**: Detailed analytics including win rate by pattern,
     emotional state analysis, and expectancy metrics.
     """
-    user_id = get_user_id(x_session_id)
+
 
     # Check tier
     tier_limits = trade_journal_service._check_tier_limits(user_id)
@@ -190,13 +329,13 @@ async def get_statistics(
 
 
 @router.get("/analytics", response_model=JournalAnalyticsResponse)
-async def get_analytics(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> Any:
+async def get_analytics(user_id: str = Depends(get_session_id)) -> Any:
     """Get comprehensive journal analytics.
 
     **Premium Feature**: Full analytics dashboard with streaks,
     top performers, and detailed insights.
     """
-    user_id = get_user_id(x_session_id)
+
 
     # Check tier
     tier_limits = trade_journal_service._check_tier_limits(user_id)
@@ -216,9 +355,9 @@ async def get_analytics(x_session_id: str | None = Header(None, alias="X-Session
 
 
 @router.get("/tier-limits", response_model=UserTierLimits)
-async def get_tier_limits(x_session_id: str | None = Header(None, alias="X-Session-ID")) -> Any:
+async def get_tier_limits(user_id: str = Depends(get_session_id)) -> Any:
     """Get current user's tier limits and remaining quota."""
-    user_id = get_user_id(x_session_id)
+
 
     try:
         limits = trade_journal_service._check_tier_limits(user_id)
@@ -230,10 +369,10 @@ async def get_tier_limits(x_session_id: str | None = Header(None, alias="X-Sessi
 
 @router.post("/trades/sample", response_model=list[TradeEntry], include_in_schema=False)
 async def create_sample_trades(
-    x_session_id: str | None = Header(None, alias="X-Session-ID"),
+    user_id: str = Depends(get_session_id),
 ) -> Any:
     """Create sample trades for demo purposes."""
-    user_id = get_user_id(x_session_id)
+
 
     sample_trades = [
         TradeCreateRequest(

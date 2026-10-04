@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -13,6 +14,7 @@ from app.adapters.finnhub_ws import finnhub_ws_manager
 from app.config import settings
 from app.models import Interval, Signal
 from app.routers.signal import get_signal
+from app.services.alert_service import alert_service
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,10 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket, symbol: str) -> Any:
         """Accept and register a new connection."""
         await websocket.accept()
+        self.register(websocket, symbol)
+
+    def register(self, websocket: WebSocket, symbol: str) -> None:
+        """Register an already accepted connection for a symbol."""
         if symbol not in self.active_connections:
             self.active_connections[symbol] = set()
         self.active_connections[symbol].add(websocket)
@@ -84,7 +90,11 @@ async def send_heartbeat(websocket: WebSocket) -> Any:
         pass
 
 
-async def setup_provider_stream(symbol: str, websocket: WebSocket) -> Any:
+async def setup_provider_stream(
+    symbol: str,
+    websocket: WebSocket,
+    session_id: str | None = None,
+) -> Any:
     """
     Setup real-time provider WebSocket stream.
 
@@ -99,8 +109,25 @@ async def setup_provider_stream(symbol: str, websocket: WebSocket) -> Any:
             if "symbol" not in data:
                 data["symbol"] = symbol
 
-            # Broadcast to all connected clients for this symbol
-            await manager.broadcast_to_symbol(symbol, data)
+            # Finnhub uses one shared upstream client for all stock symbols, so
+            # route by the provider's symbol when it is present. Binance also
+            # includes the symbol in every update.
+            update_symbol = str(data.get("symbol") or symbol).upper()
+            await manager.broadcast_to_symbol(update_symbol, data)
+            if data.get("type") == "price" and data.get("price") is not None:
+                triggered_alerts = alert_service.check_price(
+                    update_symbol,
+                    float(data["price"]),
+                    user_id=session_id,
+                )
+                for triggered in triggered_alerts:
+                    await websocket.send_json(
+                        {
+                            "type": "alert_triggered",
+                            "symbol": update_symbol,
+                            "payload": triggered.model_dump(),
+                        }
+                    )
         except Exception as e:
             logger.error(f"Error handling provider update: {e}")
 
@@ -128,43 +155,39 @@ async def setup_provider_stream(symbol: str, websocket: WebSocket) -> Any:
         return None
 
 
-from app.services.alert_service import alert_service
-
-
-async def stream_signal_updates(websocket: WebSocket, symbol: str) -> Any:
+async def stream_signal_updates(
+    websocket: WebSocket, symbol: str, session_id: str | None = None
+) -> Any:
     """
     Stream signal updates periodically.
 
     Regenerates signal every 60 seconds on closed candles.
+    When session_id is provided, alerts are scoped to that session.
     """
     try:
         while True:
-            await asyncio.sleep(60)  # Check every minute
+            await asyncio.sleep(60)
 
             try:
-                # Regenerate signal
                 signal = await get_signal(symbol)
                 await websocket.send_json(
                     {"type": "signal", "symbol": symbol, "payload": signal.model_dump()}
                 )
 
-                # Check for triggered alerts
                 alert_signal = Signal(
                     symbol=signal.symbol,
                     recommendation=signal.recommendation,
                     strength=signal.strength,
                 )
-                triggered_alerts = alert_service.check_signal(alert_signal)
+                triggered_alerts = alert_service.check_signal(alert_signal, user_id=session_id)
                 if triggered_alerts:
-                    # Broadcast triggered alerts to all clients
                     for triggered in triggered_alerts:
-                        await manager.broadcast_to_symbol(
-                            symbol,
+                        await websocket.send_json(
                             {
                                 "type": "alert_triggered",
                                 "symbol": symbol,
                                 "payload": triggered.model_dump(),
-                            },
+                            }
                         )
                         logger.info(
                             f"Alert triggered: {triggered.alert_type} for {symbol} - {triggered.message}"
@@ -218,7 +241,10 @@ async def fallback_polling_stream(websocket: WebSocket, symbol: str) -> Any:
 
 @router.websocket("/ws")
 async def websocket_endpoint(
-    websocket: WebSocket, symbol: str = Query(..., description="Trading symbol to subscribe to")
+    websocket: WebSocket,
+    symbol: str | None = Query(None, description="Legacy single trading symbol"),
+    symbols: str | None = Query(None, description="Comma-separated trading symbols"),
+    session_id: str | None = Query(None, description="Session ID for alert scoping"),
 ) -> None:
     """
     WebSocket endpoint for real-time updates.
@@ -235,34 +261,65 @@ async def websocket_endpoint(
     - Heartbeat messages (every 30 seconds)
 
     Query Parameters:
-    - symbol: Trading symbol (e.g., AAPL, BTC/USDT)
+    - symbol: Legacy single symbol (e.g., AAPL, BTC/USDT)
+    - symbols: Comma-separated symbols for one multi-symbol connection
     """
-    await manager.connect(websocket, symbol)
+    requested_symbols = symbols.split(",") if symbols else ([symbol] if symbol else [])
+    normalized_symbols: list[str] = []
+    for requested in requested_symbols:
+        normalized = requested.strip().upper()
+        if (
+            normalized
+            and len(normalized) <= 32
+            and re.fullmatch(r"[A-Z0-9./-]+", normalized)
+            and normalized not in normalized_symbols
+        ):
+            normalized_symbols.append(normalized)
 
-    fallback_task = None
+    if not normalized_symbols or len(normalized_symbols) > 20:
+        await websocket.close(code=1008, reason="Provide between 1 and 20 valid symbols")
+        return
+
+    await websocket.accept()
+    for subscribed_symbol in normalized_symbols:
+        manager.register(websocket, subscribed_symbol)
+
+    fallback_tasks: list[asyncio.Task[Any]] = []
+    heartbeat_task: asyncio.Task[Any] | None = None
+    signal_tasks: list[asyncio.Task[Any]] = []
 
     try:
         # Send initial connection confirmation
-        await websocket.send_json(
-            {
-                "type": "connected",
-                "symbol": symbol,
-                "timestamp": int(datetime.now(UTC).timestamp() * 1000),
-                "message": f"Connected to {symbol} stream",
-            }
-        )
+        for subscribed_symbol in normalized_symbols:
+            await websocket.send_json(
+                {
+                    "type": "connected",
+                    "symbol": subscribed_symbol,
+                    "timestamp": int(datetime.now(UTC).timestamp() * 1000),
+                    "message": f"Connected to {subscribed_symbol} stream",
+                }
+            )
 
-        # Try to setup provider WebSocket stream
-        provider_client = await setup_provider_stream(symbol, websocket)
+        # Set up one provider subscription per symbol. The provider managers
+        # deduplicate their upstream clients and subscriptions.
+        provider_clients = await asyncio.gather(
+            *(setup_provider_stream(item, websocket, session_id) for item in normalized_symbols)
+        )
 
         # Start background tasks
         heartbeat_task = asyncio.create_task(send_heartbeat(websocket))
-        signal_task = asyncio.create_task(stream_signal_updates(websocket, symbol))
+        signal_tasks = [
+            asyncio.create_task(stream_signal_updates(websocket, item, session_id))
+            for item in normalized_symbols
+        ]
 
         # If provider stream failed, use fallback polling
-        if not provider_client:
-            logger.info(f"Using fallback polling for {symbol}")
-            fallback_task = asyncio.create_task(fallback_polling_stream(websocket, symbol))
+        for subscribed_symbol, provider_client in zip(normalized_symbols, provider_clients):
+            if not provider_client:
+                logger.info(f"Using fallback polling for {subscribed_symbol}")
+                fallback_tasks.append(
+                    asyncio.create_task(fallback_polling_stream(websocket, subscribed_symbol))
+                )
 
         # Keep connection alive and handle client messages
         while True:
@@ -278,17 +335,19 @@ async def websocket_endpoint(
             except WebSocketDisconnect:
                 break
             except Exception as e:
-                logger.error(f"WebSocket error for {symbol}: {e}")
+                logger.error(f"WebSocket error for {normalized_symbols}: {e}")
                 break
 
     finally:
         # Cleanup
-        manager.disconnect(websocket, symbol)
+        for subscribed_symbol in normalized_symbols:
+            manager.disconnect(websocket, subscribed_symbol)
 
         # Cancel background tasks
-        tasks = [heartbeat_task, signal_task]
-        if fallback_task:
-            tasks.append(fallback_task)
+        tasks: list[asyncio.Task[Any]] = [task for task in signal_tasks]
+        tasks.extend(fallback_tasks)
+        if heartbeat_task:
+            tasks.append(heartbeat_task)
 
         for task in tasks:
             if not task.done():

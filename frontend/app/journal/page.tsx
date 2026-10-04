@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +18,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/lib/store';
 import {
   TradeEntry,
   TradeFormData,
   UserTierLimits,
   ICTPatternType,
   EmotionalState,
+  JournalImportResult,
+  JournalReviewMetrics,
+  JournalTradeFilters,
 } from '@/types/journal';
 import {
   getTrades,
@@ -33,6 +37,9 @@ import {
   getTierLimits,
   createSampleTrades,
   getPatternOptions,
+  getReviewMetrics,
+  importTrades,
+  exportTrades,
 } from '@/lib/journalApi';
 import {
   Plus,
@@ -43,10 +50,17 @@ import {
   Lock,
   Sparkles,
   Loader2,
+  Upload,
+  Download,
+  Filter,
 } from 'lucide-react';
 import { JournalAnalyticsPanel } from '@/components/JournalAnalyticsPanel';
 
 export default function JournalPage() {
+  const currentTimeframe = useStore((state) => state.timeframe);
+  const currentCandles = useStore((state) => state.candles);
+  const currentSignal = useStore((state) => state.signal);
+  const currentICTMap = useStore((state) => state.ictMap);
   const [trades, setTrades] = useState<TradeEntry[]>([]);
   const [tierLimits, setTierLimits] = useState<UserTierLimits | null>(null);
   const [patternOptions, setPatternOptions] = useState<{
@@ -59,6 +73,15 @@ export default function JournalPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isClosingTrade, setIsClosingTrade] = useState<TradeEntry | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<JournalImportResult | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [reviewMetrics, setReviewMetrics] = useState<JournalReviewMetrics | null>(null);
+  const [filters, setFilters] = useState<JournalTradeFilters>({});
+  const [filterTag, setFilterTag] = useState('');
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<TradeFormData>({
     symbol: '',
@@ -73,23 +96,42 @@ export default function JournalPage() {
     emotional_state: undefined,
     pre_trade_notes: '',
     tags: [],
+    checklist: [
+      { key: 'htf_bias', label: 'Higher-timeframe bias is clear', passed: false },
+      { key: 'liquidity', label: 'Liquidity target is identified', passed: false },
+      { key: 'risk_defined', label: 'Risk and invalidation are defined', passed: false },
+    ],
+    linked_signal_id: '',
+    screenshots: [],
   });
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [activeTab, filters]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
+      const requestFilters = { ...filters, status: activeTab === 'all' ? undefined : activeTab };
       const [tradesData, limitsData, patternsData] = await Promise.all([
-        getTrades(),
+        getTrades(requestFilters),
         getTierLimits(),
         getPatternOptions(),
       ]);
       setTrades(tradesData);
       setTierLimits(limitsData);
       setPatternOptions(patternsData);
+      if (limitsData.is_premium) {
+        try {
+          setReviewMetrics(await getReviewMetrics(requestFilters));
+          setReviewError(null);
+        } catch (error) {
+          setReviewMetrics(null);
+          setReviewError(error instanceof Error ? error.message : 'Unable to load review metrics');
+        }
+      } else {
+        setReviewMetrics(null);
+      }
     } catch (error) {
       console.error('Error loading journal data:', error);
     } finally {
@@ -108,6 +150,47 @@ export default function JournalPage() {
         position_size: parseFloat(formData.position_size),
         stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
         take_profit: formData.take_profit ? parseFloat(formData.take_profit) : undefined,
+        checklist: formData.checklist,
+        linked_signal_id: formData.linked_signal_id || undefined,
+        screenshots: formData.screenshots,
+        initial_signal:
+          currentSignal && currentSignal.symbol === formData.symbol.toUpperCase()
+            ? {
+                phase: 'entry',
+                source_signal_id: formData.linked_signal_id || undefined,
+                symbol: currentSignal.symbol,
+                recommendation: currentSignal.recommendation,
+                strength: currentSignal.strength,
+                rationale: currentSignal.rationale ?? [],
+                key_levels: currentSignal.key_levels ?? {},
+              }
+            : undefined,
+        chart_snapshot:
+          currentSignal && currentSignal.symbol === formData.symbol.toUpperCase()
+            ? {
+                schema_version: 1,
+                symbol: formData.symbol.toUpperCase(),
+                timeframe: currentTimeframe,
+                captured_at: new Date().toISOString(),
+                candles: (currentCandles[currentTimeframe] ?? []).slice(-500),
+                annotations: (currentICTMap?.annotations ?? []).map((annotation) => ({
+                  id: annotation.id,
+                  concept: annotation.concept,
+                  render_type: annotation.render_type,
+                  label: annotation.label,
+                  direction: annotation.direction,
+                  timeframe: annotation.timeframe,
+                  price_low: annotation.price_low,
+                  price_high: annotation.price_high,
+                  price: annotation.price,
+                  start_time: annotation.start_time,
+                  end_time: annotation.end_time,
+                  status: annotation.status,
+                  confidence: annotation.confidence,
+                })),
+                analysis_summary: currentICTMap?.analysis_summary,
+              }
+            : undefined,
       });
 
       setIsCreateDialogOpen(false);
@@ -168,6 +251,46 @@ export default function JournalPage() {
     }
   };
 
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportResult(null);
+    setImportError(null);
+    try {
+      const result = await importTrades(file);
+      setImportResult(result);
+      await loadData();
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'Failed to import trades');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!tierLimits?.can_export) return;
+
+    setIsExporting(true);
+    try {
+      const blob = await exportTrades();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'glorypicks-trades.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to export trades');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       symbol: '',
@@ -182,14 +305,33 @@ export default function JournalPage() {
       emotional_state: undefined,
       pre_trade_notes: '',
       tags: [],
+      checklist: [
+        { key: 'htf_bias', label: 'Higher-timeframe bias is clear', passed: false },
+        { key: 'liquidity', label: 'Liquidity target is identified', passed: false },
+        { key: 'risk_defined', label: 'Risk and invalidation are defined', passed: false },
+      ],
+      linked_signal_id: '',
+      screenshots: [],
     });
   };
 
-  const filteredTrades = trades.filter((trade) => {
-    if (activeTab === 'open') return trade.status === 'open';
-    if (activeTab === 'closed') return trade.status === 'closed';
-    return true;
-  });
+  const filteredTrades = trades;
+
+  const updateFilter = (key: keyof JournalTradeFilters, value: string) => {
+    setFilters((current) => ({ ...current, [key]: value || undefined }));
+  };
+
+  const addFilterTag = () => {
+    const tag = filterTag.trim();
+    if (!tag) return;
+    setFilters((current) => ({ ...current, tags: [...(current.tags ?? []), tag] }));
+    setFilterTag('');
+  };
+
+  const clearFilters = () => {
+    setFilters({});
+    setFilterTag('');
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -198,7 +340,7 @@ export default function JournalPage() {
     }).format(value);
   };
 
-  if (isLoading) {
+  if (isLoading && !tierLimits) {
     return (
       <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="flex items-center gap-3 text-text-secondary">
@@ -222,7 +364,7 @@ export default function JournalPage() {
             <p className="text-text-secondary mt-1">Track your ICT trades and improve your edge</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Tier Indicator */}
             {tierLimits && (
               <div className="flex items-center gap-2 bg-bg-tertiary rounded-md px-4 py-2">
@@ -246,6 +388,55 @@ export default function JournalPage() {
               </div>
             )}
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImport}
+              className="sr-only"
+              aria-label="Import trades from CSV"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting}
+              aria-label="Import trades from CSV"
+            >
+              {isImporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {isImporting ? 'Importing...' : 'Import CSV'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={!tierLimits?.can_export || isExporting}
+              title={
+                tierLimits?.can_export
+                  ? 'Download your trades as a CSV'
+                  : 'CSV export is available with Premium'
+              }
+              aria-label={
+                tierLimits?.can_export
+                  ? 'Export trades as CSV'
+                  : 'Export trades as CSV, Premium feature'
+              }
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : tierLimits?.can_export ? (
+                <Download className="h-4 w-4 mr-2" />
+              ) : (
+                <Lock className="h-4 w-4 mr-2" />
+              )}
+              {isExporting
+                ? 'Exporting...'
+                : tierLimits?.can_export
+                  ? 'Export CSV'
+                  : 'Export CSV (Premium)'}
+            </Button>
             <Button
               onClick={() => setIsCreateDialogOpen(true)}
               disabled={tierLimits?.trades_remaining === 0}
@@ -256,7 +447,201 @@ export default function JournalPage() {
           </div>
         </div>
 
+        {(importResult || importError) && (
+          <Card className="mb-6 border-border-default">
+            <CardContent className="p-4" role="status" aria-live="polite">
+              {importError ? (
+                <div className="text-sm text-accent-bearish">
+                  <p className="font-semibold">CSV import failed</p>
+                  <p className="mt-1">{importError}</p>
+                </div>
+              ) : importResult ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold text-text-primary">CSV import complete</p>
+                    <p className="text-sm text-text-secondary mt-1">
+                      {importResult.imported_count} accepted, {importResult.rejected_count}{' '}
+                      rejected.
+                    </p>
+                  </div>
+                  {importResult.rejected_count > 0 && (
+                    <ul
+                      className="space-y-1 text-sm text-accent-bearish"
+                      aria-label="Rejected CSV rows"
+                    >
+                      {importResult.rows
+                        .filter((row) => !row.accepted)
+                        .map((row) => (
+                          <li key={row.row_number}>
+                            Row {row.row_number}: {row.error || 'Row was rejected'}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Content */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="h-4 w-4 text-accent-primary" />
+              <h2 className="font-semibold text-text-primary">Review filters</h2>
+              {Object.values(filters).some((value) => value !== undefined) && (
+                <Button variant="ghost" size="sm" className="ml-auto" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <Input
+                aria-label="Filter by symbol"
+                placeholder="Symbol"
+                value={filters.symbol ?? ''}
+                onChange={(e) => updateFilter('symbol', e.target.value.toUpperCase())}
+              />
+              <Select
+                value={filters.direction ?? 'all'}
+                onValueChange={(value) => updateFilter('direction', value === 'all' ? '' : value)}
+              >
+                <SelectTrigger aria-label="Filter by direction">
+                  <SelectValue placeholder="Direction" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All directions</SelectItem>
+                  <SelectItem value="long">Long</SelectItem>
+                  <SelectItem value="short">Short</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.timeframe ?? 'all'}
+                onValueChange={(value) => updateFilter('timeframe', value === 'all' ? '' : value)}
+              >
+                <SelectTrigger aria-label="Filter by timeframe">
+                  <SelectValue placeholder="Timeframe" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All timeframes</SelectItem>
+                  <SelectItem value="15m">15m</SelectItem>
+                  <SelectItem value="1h">1h</SelectItem>
+                  <SelectItem value="4h">4h</SelectItem>
+                  <SelectItem value="1d">1d</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filters.emotional_state ?? 'all'}
+                onValueChange={(value) =>
+                  updateFilter('emotional_state', value === 'all' ? '' : value)
+                }
+              >
+                <SelectTrigger aria-label="Filter by emotional state">
+                  <SelectValue placeholder="Emotion" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All emotions</SelectItem>
+                  {patternOptions?.emotions.map((emotion) => (
+                    <SelectItem key={emotion.value} value={emotion.value}>
+                      {emotion.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Input
+                  aria-label="Add tag filter"
+                  placeholder="Tag"
+                  value={filterTag}
+                  onChange={(e) => setFilterTag(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addFilterTag()}
+                />
+                <Button type="button" variant="outline" size="sm" onClick={addFilterTag}>
+                  Add
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+              <Input
+                aria-label="Minimum P&L"
+                type="number"
+                placeholder="Min P&L"
+                value={filters.min_pnl ?? ''}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    min_pnl: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+              <Input
+                aria-label="Maximum P&L"
+                type="number"
+                placeholder="Max P&L"
+                value={filters.max_pnl ?? ''}
+                onChange={(e) =>
+                  setFilters({
+                    ...filters,
+                    max_pnl: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+              <Input
+                aria-label="Entered after"
+                type="date"
+                value={filters.start_date?.slice(0, 10) ?? ''}
+                onChange={(e) => updateFilter('start_date', e.target.value)}
+              />
+              <Input
+                aria-label="Entered before"
+                type="date"
+                value={filters.end_date?.slice(0, 10) ?? ''}
+                onChange={(e) => updateFilter('end_date', e.target.value)}
+              />
+            </div>
+            {(filters.tags?.length ?? 0) > 0 && (
+              <div className="flex gap-2 mt-3 flex-wrap">
+                {filters.tags?.map((tag) => (
+                  <Badge key={tag} variant="outline">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {tierLimits?.is_premium && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <h2 className="font-semibold text-text-primary mb-4">Review summary</h2>
+              {reviewError ? (
+                <p className="text-sm text-accent-bearish">{reviewError}</p>
+              ) : reviewMetrics ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                  {[
+                    ['Matched', reviewMetrics.matched_trades],
+                    ['Closed', reviewMetrics.closed_trades],
+                    ['Win rate', `${reviewMetrics.win_rate.toFixed(1)}%`],
+                    ['Total P&L', formatCurrency(reviewMetrics.total_pnl)],
+                    ['Avg R', `${reviewMetrics.avg_r_multiple.toFixed(2)}R`],
+                    ['Checklist', `${reviewMetrics.checklist_adherence_rate.toFixed(1)}%`],
+                    ['Linked signals', reviewMetrics.signal_linked_trades],
+                  ].map(([label, value]) => (
+                    <div key={label}>
+                      <p className="text-xs text-text-tertiary">{label}</p>
+                      <p className="font-mono font-semibold text-text-primary mt-1">{value}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-text-secondary">No review metrics available.</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All Trades ({trades.length})</TabsTrigger>
@@ -322,6 +707,18 @@ export default function JournalPage() {
                             <Badge variant={trade.status === 'open' ? 'default' : 'secondary'}>
                               {trade.status}
                             </Badge>
+                            {trade.checklist?.length ? (
+                              <Badge variant="outline">Checklist</Badge>
+                            ) : null}
+                            {trade.linked_signal_id ? (
+                              <Badge variant="outline">Signal linked</Badge>
+                            ) : null}
+                            {trade.chart_snapshot ? (
+                              <Badge variant="outline">Snapshot</Badge>
+                            ) : null}
+                            {trade.screenshots?.length ? (
+                              <Badge variant="outline">Screenshot</Badge>
+                            ) : null}
                           </div>
 
                           <div className="flex items-center gap-4 text-sm text-text-secondary">
@@ -371,7 +768,7 @@ export default function JournalPage() {
                                 {trade.pnl_percent && trade.pnl_percent >= 0 ? '+' : ''}
                                 {trade.pnl_percent?.toFixed(2)}%
                               </div>
-                              {trade.r_multiple !== undefined && (
+                              {trade.r_multiple != null && (
                                 <div className="text-xs text-text-tertiary">
                                   {trade.r_multiple >= 0 ? '+' : ''}
                                   {trade.r_multiple.toFixed(2)}R
@@ -614,6 +1011,68 @@ export default function JournalPage() {
                 placeholder="Why are you taking this trade? What's your plan?"
                 rows={3}
               />
+            </div>
+
+            {/* Review Capture */}
+            <div className="space-y-4 border-t border-border-subtle pt-4">
+              <h3 className="font-semibold text-text-primary">Review capture</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="linked_signal_id">Linked Signal ID</Label>
+                  <Input
+                    id="linked_signal_id"
+                    value={formData.linked_signal_id}
+                    onChange={(e) => setFormData({ ...formData, linked_signal_id: e.target.value })}
+                    placeholder="Optional signal ID"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="screenshots">Screenshot references</Label>
+                  <Input
+                    id="screenshots"
+                    value={formData.screenshots.join(', ')}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        screenshots: e.target.value
+                          .split(',')
+                          .map((value) => value.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    placeholder="https://... or asset reference"
+                  />
+                </div>
+              </div>
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium text-text-primary">Entry checklist</legend>
+                {[
+                  ['htf_bias', 'Higher-timeframe bias is clear'],
+                  ['liquidity', 'Liquidity target is identified'],
+                  ['risk_defined', 'Risk and invalidation are defined'],
+                ].map(([key, label]) => {
+                  const item = formData.checklist.find((check) => check.key === key);
+                  return (
+                    <label
+                      key={key}
+                      className="flex items-center gap-2 text-sm text-text-secondary"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={item?.passed ?? false}
+                        onChange={(e) => {
+                          const checklist = formData.checklist.filter((check) => check.key !== key);
+                          setFormData({
+                            ...formData,
+                            checklist: [...checklist, { key, label, passed: e.target.checked }],
+                          });
+                        }}
+                      />
+                      {label}
+                    </label>
+                  );
+                })}
+              </fieldset>
             </div>
 
             {/* Submit */}

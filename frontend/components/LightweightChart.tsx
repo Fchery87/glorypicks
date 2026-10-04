@@ -3,12 +3,14 @@
 import { useEffect, useRef } from 'react';
 import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
 import { cn } from '@/lib/utils';
-import type { Interval } from '@/types';
+import type { ICTAnnotation, Interval, Candle } from '@/types';
 
 interface LightweightChartProps {
   symbol: string;
   interval: Interval;
-  candles: any[];
+  candles: Candle[];
+  annotations?: ICTAnnotation[];
+  showAnnotations?: boolean;
   className?: string;
   onClick?: () => void;
   isActive?: boolean;
@@ -18,6 +20,8 @@ export function LightweightChart({
   symbol,
   interval,
   candles,
+  annotations = [],
+  showAnnotations = true,
   className,
   onClick,
   isActive,
@@ -120,6 +124,51 @@ export function LightweightChart({
       chartRef.current.timeScale().fitContent();
     }
   }, [candles]);
+
+  useEffect(() => {
+    const series = candlestickSeriesRef.current;
+    if (!series || !showAnnotations) return;
+
+    const priceLines = annotations
+      .filter((annotation) => annotation.render_type === 'level' && annotation.price !== undefined)
+      .map((annotation) =>
+        series.createPriceLine({
+          price: annotation.price as number,
+          color:
+            annotation.concept === 'stop_loss'
+              ? '#ff5f73'
+              : annotation.concept === 'take_profit'
+                ? '#2dd474'
+                : '#d9b86c',
+          lineWidth: 1,
+          lineStyle: 2,
+          axisLabelVisible: true,
+          title: annotation.label,
+        })
+      );
+
+    const markers = annotations
+      .filter((annotation) => annotation.render_type === 'marker' && annotation.price !== undefined)
+      .flatMap((annotation) =>
+        annotation.start_time
+          ? [
+              {
+                time: annotation.start_time as any,
+                position: annotation.direction === 'bearish' ? 'aboveBar' : 'belowBar',
+                color: annotation.direction === 'bearish' ? '#ff5f73' : '#2dd474',
+                shape: annotation.concept === 'liquidity_sweep' ? 'arrowDown' : 'circle',
+                text: annotation.label,
+              },
+            ]
+          : []
+      );
+    series.setMarkers(markers as any);
+
+    return () => {
+      priceLines.forEach((line) => series.removePriceLine(line));
+      series.setMarkers([]);
+    };
+  }, [annotations, showAnnotations]);
 
   return (
     <div

@@ -11,6 +11,7 @@ import type {
   Watchlist,
   Alert,
   UserPreferences,
+  ICTMapResponse,
 } from '@/types';
 export type { Alert, AlertType, SoundName, AlertTriggered, AlertStats } from '@/types';
 
@@ -315,6 +316,20 @@ interface AppState {
   signal: Signal | null;
   setSignal: (signal: Signal | null) => void;
 
+  // Chart-ready ICT analysis
+  ictMap: ICTMapResponse | null;
+  setICTMap: (ictMap: ICTMapResponse | null) => void;
+  isLoadingICTMap: boolean;
+  setIsLoadingICTMap: (loading: boolean) => void;
+  ictMapError: string | null;
+  setICTMapError: (error: string | null) => void;
+  tradePlanPreferences: {
+    minRiskReward: number;
+    disclaimerAcknowledged: boolean;
+  };
+  setMinRiskReward: (value: number) => void;
+  acknowledgeTradePlanDisclaimer: () => void;
+
   // Current price
   currentPrice: number | null;
   setCurrentPrice: (price: number | null) => void;
@@ -492,6 +507,30 @@ export const useStore = create<AppState>((set) => ({
   // Signal data
   signal: null,
   setSignal: (signal) => set({ signal }),
+  ictMap: null,
+  setICTMap: (ictMap) => set({ ictMap }),
+  isLoadingICTMap: false,
+  setIsLoadingICTMap: (isLoadingICTMap) => set({ isLoadingICTMap }),
+  ictMapError: null,
+  setICTMapError: (ictMapError) => set({ ictMapError }),
+  tradePlanPreferences: {
+    minRiskReward: 1.5,
+    disclaimerAcknowledged: false,
+  },
+  setMinRiskReward: (minRiskReward) =>
+    set((state) => ({
+      tradePlanPreferences: {
+        ...state.tradePlanPreferences,
+        minRiskReward: Math.min(5, Math.max(1, minRiskReward)),
+      },
+    })),
+  acknowledgeTradePlanDisclaimer: () =>
+    set((state) => ({
+      tradePlanPreferences: {
+        ...state.tradePlanPreferences,
+        disclaimerAcknowledged: true,
+      },
+    })),
 
   // Current price
   currentPrice: null,

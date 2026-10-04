@@ -147,15 +147,33 @@ export function SignalCard() {
       <CardContent className="relative z-10 space-y-6 pt-5">
         {/* Hero signal state */}
         <div className="relative grid gap-5 rounded-2xl border border-border-default bg-bg-secondary/60 p-5 sm:grid-cols-[auto_1fr] sm:items-center overflow-hidden">
-          {/* Corner brackets for terminal frame */}
-          <div className="pointer-events-none absolute inset-2 corner-frame" />
+          {/* Animated corner brackets for terminal frame */}
+          <div className="pointer-events-none absolute inset-2 corner-frame-animated" />
+
+          {/* Directional glow inside hero */}
+          <div
+            aria-hidden
+            className={cn(
+              'pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-2xl transition-opacity duration-700',
+              config.progressVariant === 'bullish' && 'bg-accent-bullish/20',
+              config.progressVariant === 'bearish' && 'bg-accent-bearish/20',
+              config.progressVariant === 'neutral' && 'bg-accent-primary/12'
+            )}
+          />
 
           <div
             className={cn(
-              'relative flex h-24 w-24 items-center justify-center rounded-2xl border',
+              'relative flex h-24 w-24 items-center justify-center rounded-2xl border transition-all duration-500',
               config.bgColor,
               config.borderColor
             )}
+            style={{
+              boxShadow: signal.recommendation === 'Buy'
+                ? '0 0 30px rgba(45, 212, 116, 0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
+                : signal.recommendation === 'Sell'
+                  ? '0 0 30px rgba(255, 95, 115, 0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
+                  : 'inset 0 1px 0 rgba(255,255,255,0.06)'
+            }}
           >
             <Icon className={cn('h-10 w-10', config.color, config.glow)} />
           </div>

@@ -2,8 +2,9 @@
 
 from datetime import datetime
 from enum import Enum
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.utils.time import utc_now
 
@@ -49,6 +50,92 @@ class ICTPatternType(str, Enum):
     OTHER = "other"
 
 
+class TradeChecklistItem(BaseModel):
+    """Immutable checklist answer captured with a trade."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str = Field(..., min_length=1, max_length=64)
+    label: str = Field(..., min_length=1, max_length=160)
+    passed: bool
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class JournalCandleSnapshot(BaseModel):
+    """Immutable OHLCV candle used for journal replay."""
+
+    model_config = ConfigDict(frozen=True)
+
+    t: int
+    o: float
+    h: float
+    l: float
+    c: float
+    v: float
+
+
+class JournalAnnotationSnapshot(BaseModel):
+    """Stable chart annotation captured for journal replay."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    concept: str
+    render_type: str
+    label: str
+    direction: str | None = None
+    timeframe: str
+    price_low: float | None = None
+    price_high: float | None = None
+    price: float | None = None
+    start_time: int | None = None
+    end_time: int | None = None
+    status: str
+    confidence: float = Field(..., ge=0, le=100)
+
+
+class TradeChartSnapshot(BaseModel):
+    """Immutable, bounded chart state captured with a trade."""
+
+    model_config = ConfigDict(frozen=True)
+
+    schema_version: Literal[1] = 1
+    symbol: str
+    timeframe: str
+    captured_at: datetime = Field(default_factory=utc_now)
+    candles: tuple[JournalCandleSnapshot, ...] = Field(default=(), max_length=500)
+    annotations: tuple[JournalAnnotationSnapshot, ...] = Field(default=(), max_length=200)
+    analysis_summary: str | None = Field(default=None, max_length=2000)
+
+
+class TradeSignalSnapshot(BaseModel):
+    """Immutable signal observation linked to a journal trade."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: str
+    phase: Literal["entry", "review", "exit"]
+    captured_at: datetime = Field(default_factory=utc_now)
+    source_signal_id: str | None = Field(default=None, max_length=128)
+    symbol: str
+    recommendation: Literal["Buy", "Sell", "Neutral"]
+    strength: int = Field(..., ge=0, le=100)
+    rationale: tuple[str, ...] = Field(default=(), max_length=50)
+    key_levels: dict[str, float] = Field(default_factory=dict)
+
+
+class TradeSignalSnapshotRequest(BaseModel):
+    """Request for appending a signal observation to a trade."""
+
+    phase: Literal["entry", "review", "exit"] = "review"
+    source_signal_id: str | None = Field(default=None, max_length=128)
+    symbol: str
+    recommendation: Literal["Buy", "Sell", "Neutral"]
+    strength: int = Field(..., ge=0, le=100)
+    rationale: list[str] = Field(default_factory=list, max_length=50)
+    key_levels: dict[str, float] = Field(default_factory=dict)
+
+
 class TradeEntry(BaseModel):
     """Trade journal entry model."""
 
@@ -85,6 +172,18 @@ class TradeEntry(BaseModel):
     post_trade_notes: str | None = Field(default=None, description="Post-trade review")
     tags: list[str] = Field(default_factory=list, description="Custom tags")
     screenshots: list[str] = Field(default_factory=list, description="Screenshot URLs/identifiers")
+    checklist: list[TradeChecklistItem] = Field(
+        default_factory=list, description="Pre-trade checklist captured at entry"
+    )
+    linked_signal_id: str | None = Field(
+        default=None, description="Opaque source signal identifier"
+    )
+    signal_history: list[TradeSignalSnapshot] = Field(
+        default_factory=list, description="Immutable signal observations"
+    )
+    chart_snapshot: TradeChartSnapshot | None = Field(
+        default=None, description="Immutable chart context captured at entry"
+    )
 
     # Calculated fields (computed on exit)
     pnl_dollar: float | None = Field(default=None, description="Profit/Loss in dollars")
@@ -142,6 +241,15 @@ class TradeJournalFilters(BaseModel):
     min_pnl: float | None = None
     max_pnl: float | None = None
 
+    @model_validator(mode="after")
+    def validate_ranges(self) -> "TradeJournalFilters":
+        """Validate date and P&L bounds."""
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValueError("start_date must be before or equal to end_date")
+        if self.min_pnl is not None and self.max_pnl is not None and self.min_pnl > self.max_pnl:
+            raise ValueError("min_pnl must be less than or equal to max_pnl")
+        return self
+
 
 class TradeJournalResponse(BaseModel):
     """Response model for trade journal queries."""
@@ -166,6 +274,11 @@ class TradeCreateRequest(BaseModel):
     emotional_state: EmotionalState | None = None
     pre_trade_notes: str | None = None
     tags: list[str] = Field(default_factory=list)
+    screenshots: list[str] = Field(default_factory=list, max_length=5)
+    checklist: list[TradeChecklistItem] = Field(default_factory=list, max_length=32)
+    linked_signal_id: str | None = Field(default=None, max_length=128)
+    initial_signal: TradeSignalSnapshotRequest | None = None
+    chart_snapshot: TradeChartSnapshot | None = None
 
 
 class TradeUpdateRequest(BaseModel):
@@ -176,6 +289,7 @@ class TradeUpdateRequest(BaseModel):
     post_trade_notes: str | None = None
     emotional_state: EmotionalState | None = None
     tags: list[str] | None = None
+    screenshots: list[str] | None = Field(default=None, max_length=5)
     status: TradeStatus | None = None
 
 
@@ -198,6 +312,22 @@ class JournalAnalyticsResponse(BaseModel):
     streaks: dict[str, int] = Field(..., description="Win/loss streaks")
 
 
+class JournalReviewMetrics(BaseModel):
+    """Review coverage and outcomes for a filtered trade set."""
+
+    matched_trades: int
+    closed_trades: int
+    checklist_captured_trades: int
+    checklist_adherent_trades: int
+    checklist_adherence_rate: float = Field(..., ge=0, le=100)
+    signal_linked_trades: int
+    snapshot_captured_trades: int
+    screenshot_captured_trades: int
+    win_rate: float = Field(..., ge=0, le=100)
+    total_pnl: float
+    avg_r_multiple: float
+
+
 class UserTierLimits(BaseModel):
     """Tier limits for free vs premium users."""
 
@@ -208,3 +338,20 @@ class UserTierLimits(BaseModel):
     can_view_analytics: bool
     can_tag_emotions: bool
     screenshot_limit: int
+
+
+class JournalImportRow(BaseModel):
+    """Validation result for one imported CSV row."""
+
+    row_number: int = Field(..., ge=2)
+    accepted: bool
+    trade_id: str | None = None
+    error: str | None = None
+
+
+class JournalImportResponse(BaseModel):
+    """Summary of a journal CSV import."""
+
+    imported_count: int = Field(..., ge=0)
+    rejected_count: int = Field(..., ge=0)
+    rows: list[JournalImportRow] = Field(default_factory=list)

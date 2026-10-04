@@ -11,9 +11,13 @@ import { TickerSearch } from '@/components/TickerSearch';
 import { MultiChartGrid } from '@/components/MultiChartGrid';
 import { PositionCalculator } from '@/components/PositionCalculator';
 import { KillZoneIndicator } from '@/components/KillZoneIndicator';
+import { ICTMapPanel } from '@/components/ICTMapPanel';
+import { TradePlanPanel } from '@/components/TradePlanPanel';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { useStore } from '@/lib/store';
+import { fetchICTMap, filterICTAnnotations } from '@/lib/ict-map';
 import type { Interval, Signal } from '@/types';
+import { useStore } from '@/lib/store';
+import { getSessionId } from '@/lib/session';
 import { cn } from '@/lib/utils';
 import {
   Activity,
@@ -83,14 +87,25 @@ function CockpitHero({
 
   return (
     <section className="command-surface relative">
-      {/* Ambient directional glow driven by signal direction */}
+      {/* Ambient directional glow driven by signal direction — with pulse */}
       <div
         aria-hidden
         className={cn(
-          'pointer-events-none absolute -top-32 right-0 h-72 w-[55%] opacity-60 blur-3xl transition-colors duration-700',
-          isBullish && 'bg-accent-bullish/15',
-          isBearish && 'bg-accent-bearish/15',
-          isFlat && 'bg-accent-primary/10'
+          'pointer-events-none absolute -top-32 right-0 h-72 w-[55%] blur-3xl transition-colors duration-700',
+          isBullish && 'bg-accent-bullish/15 glow-pulse-bullish',
+          isBearish && 'bg-accent-bearish/15 glow-pulse-bearish',
+          isFlat && 'bg-accent-primary/10 glow-pulse-neutral'
+        )}
+      />
+
+      {/* Secondary ambient glow — bottom-left, subtle depth */}
+      <div
+        aria-hidden
+        className={cn(
+          'pointer-events-none absolute -bottom-20 -left-20 h-48 w-48 rounded-full blur-3xl transition-colors duration-700',
+          isBullish && 'bg-accent-bullish/8',
+          isBearish && 'bg-accent-bearish/8',
+          isFlat && 'bg-accent-cyan/6'
         )}
       />
 
@@ -100,7 +115,7 @@ function CockpitHero({
           {/* Status row */}
           <div className="mb-5 flex flex-wrap items-center gap-2.5">
             <div className="status-chip">
-              <span className={wsConnected ? 'live-dot' : 'h-2 w-2 rounded-full bg-accent-bearish'} />
+              <span className={wsConnected ? 'live-dot status-pulse' : 'h-2 w-2 rounded-full bg-accent-bearish'} />
               <span>{wsConnected ? 'Live execution context' : 'Feed reconnecting'}</span>
             </div>
             <div className="status-chip text-accent-primary border-accent-primary/25 bg-accent-primary/10">
@@ -140,7 +155,7 @@ function CockpitHero({
             <div className="flex items-baseline gap-3">
               <span
                 className={cn(
-                  'display-numeral text-[clamp(2.75rem,6.5vw,5.5rem)] leading-none transition-colors duration-300',
+                  'display-numeral text-[clamp(2.75rem,6.5vw,5.5rem)] leading-none transition-all duration-500',
                   currentPrice
                     ? isUp
                       ? 'text-accent-bullish glow-bullish'
@@ -252,11 +267,20 @@ function MetricTile({ label, value, detail, icon, tone, delay }: MetricTileProps
     neutral: 'text-accent-primary',
   }[tone];
 
+  const toneGlow = {
+    bullish: 'drop-shadow(0 0 6px rgba(45, 212, 116, 0.4))',
+    bearish: 'drop-shadow(0 0 6px rgba(255, 95, 115, 0.4))',
+    good: 'drop-shadow(0 0 6px rgba(45, 212, 116, 0.4))',
+    warn: 'drop-shadow(0 0 6px rgba(244, 201, 93, 0.4))',
+    bad: 'drop-shadow(0 0 6px rgba(255, 95, 115, 0.4))',
+    neutral: 'drop-shadow(0 0 4px rgba(217, 184, 108, 0.3))',
+  }[tone];
+
   return (
     <div className={cn('metric-tile p-3.5 rise-in', delay)}>
       <div className="mb-2.5 flex items-center justify-between text-text-tertiary">
         <span className="section-eyebrow text-[0.6rem]">{label}</span>
-        <span className={toneAccent}>{icon}</span>
+        <span className={toneAccent} style={{ filter: toneGlow }}>{icon}</span>
       </div>
       <div className="truncate font-mono text-[1.05rem] font-medium text-text-primary tabular-nums">
         {value}
@@ -284,13 +308,23 @@ export default function HomePage() {
     alerts,
     watchlists,
     candles,
+    charts,
+    ictMap,
+    setICTMap,
+    isLoadingICTMap,
+    setIsLoadingICTMap,
+    ictMapError,
+    setICTMapError,
+    tradePlanPreferences,
+    setMinRiskReward,
+    acknowledgeTradePlanDisclaimer,
   } = useStore();
 
   const [isPremium, setIsPremium] = useState(false);
+  const [ictMapMode, setICTMapMode] = useState<'beginner' | 'pro'>('beginner');
 
   useEffect(() => {
-    const sessionId = localStorage.getItem('glorypicks_session_id');
-    if (sessionId && sessionId.startsWith('premium_')) {
+    if (getSessionId().startsWith('premium_')) {
       setIsPremium(true);
     }
   }, []);
@@ -383,6 +417,41 @@ export default function HomePage() {
     fetchSignal();
   }, [symbol, setSignal, setIsLoadingSignal, setSignalError]);
 
+  const primaryInterval = charts[0]?.interval ?? '15m';
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadICTMap = async () => {
+      setIsLoadingICTMap(true);
+      setICTMapError(null);
+      try {
+        const map = await fetchICTMap(
+          {
+            symbol,
+            interval: primaryInterval,
+            minRiskReward: tradePlanPreferences.minRiskReward,
+          },
+          { signal: controller.signal }
+        );
+        setICTMap(map);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') return;
+        setICTMap(null);
+        setICTMapError(error instanceof Error ? error.message : 'Failed to load ICT Map.');
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingICTMap(false);
+      }
+    };
+    loadICTMap();
+    return () => controller.abort();
+  }, [
+    symbol,
+    primaryInterval,
+    tradePlanPreferences.minRiskReward,
+    setICTMap,
+    setIsLoadingICTMap,
+    setICTMapError,
+  ]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -449,10 +518,34 @@ export default function HomePage() {
               priceChangePct={priceChangePct}
             />
 
-            <MultiChartGrid isPremium={isPremium} />
+            <MultiChartGrid
+              isPremium={isPremium}
+              annotations={
+                ictMap
+                  ? filterICTAnnotations(ictMap.annotations, {
+                      mode: ictMapMode,
+                      showAnnotations: !isLoadingICTMap && !ictMapError,
+                      tradePlan: ictMap.trade_plan,
+                    })
+                  : []
+              }
+            />
 
             <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1.7fr)_minmax(380px,0.8fr)] gap-6">
               <div className="space-y-6">
+                <ICTMapPanel
+                  ictMap={ictMap}
+                  mode={ictMapMode}
+                  onModeChange={setICTMapMode}
+                  minRiskReward={tradePlanPreferences.minRiskReward}
+                  onMinRiskRewardChange={setMinRiskReward}
+                />
+                {ictMapError && <p className="text-sm text-accent-bearish">{ictMapError}</p>}
+                <TradePlanPanel
+                  tradePlan={ictMap?.trade_plan ?? null}
+                  disclaimerAcknowledged={tradePlanPreferences.disclaimerAcknowledged}
+                  onAcknowledge={acknowledgeTradePlanDisclaimer}
+                />
                 <SignalCard />
                 <PositionCalculator
                   signal={

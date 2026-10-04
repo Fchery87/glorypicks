@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Filter, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { useKillZone, formatMinutes, isInOptimalWindow } from '@/lib/killzone';
 import { useStore } from '@/lib/store';
+import { Filter, Clock, Shield, AlertTriangle } from 'lucide-react';
 
 interface KillZoneFilterProps {
   className?: string;
@@ -14,59 +15,20 @@ interface KillZoneFilterProps {
 
 export function KillZoneFilter({ className }: KillZoneFilterProps) {
   const [filterEnabled, setFilterEnabled] = useState(false);
-  const [currentZone, setCurrentZone] = useState<{
-    zone_name?: string;
-    is_active?: boolean;
-    optimal_for_entries?: boolean;
-    time_until_next?: number;
-    time_remaining?: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: currentZone, loading } = useKillZone();
   const { setSignalError } = useStore();
-
-  useEffect(() => {
-    fetchKillZoneStatus();
-    const interval = setInterval(fetchKillZoneStatus, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchKillZoneStatus = async () => {
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${apiUrl}/killzone`);
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentZone(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch kill zone:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFilterToggle = (checked: boolean) => {
     setFilterEnabled(checked);
-
-    if (checked && currentZone) {
-      // Check if currently outside optimal kill zone
-      if (!currentZone.is_active || !currentZone.optimal_for_entries) {
-        setSignalError?.(
-          `⚠️ Kill Zone Filter Active: Currently in ${currentZone.zone_name}. ` +
-            `Signals may be suppressed outside optimal trading windows. ` +
-            `Next optimal window: ${formatTime(currentZone.time_until_next)}`
-        );
-      }
+    if (checked && currentZone && !isInOptimalWindow(currentZone)) {
+      setSignalError?.(
+        `Kill Zone Filter Active: Currently in ${currentZone.zone_name}. ` +
+        `Signals may be suppressed outside optimal trading windows. ` +
+        `Next optimal window: ${formatMinutes(currentZone.time_until_next)}`
+      );
     } else {
       setSignalError?.(null);
     }
-  };
-
-  const formatTime = (minutes: number | undefined) => {
-    if (!minutes) return 'Unknown';
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   const getZoneStatusColor = () => {
@@ -90,14 +52,7 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
   }
 
   return (
-    <Card
-      className={cn(
-        filterEnabled && currentZone && !currentZone.optimal_for_entries
-          ? 'border-yellow-500/50 bg-yellow-500/5'
-          : '',
-        className
-      )}
-    >
+    <Card className={cn(filterEnabled && currentZone && !currentZone.optimal_for_entries ? 'border-yellow-500/50 bg-yellow-500/5' : '', className)}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -109,7 +64,6 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {/* Current Status */}
         <div className="flex items-center justify-between p-2 bg-bg-elevated rounded">
           <span className="text-xs text-text-secondary">Current Zone</span>
           <span className={cn('text-xs font-medium', getZoneStatusColor())}>
@@ -117,53 +71,43 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
           </span>
         </div>
 
-        {/* Filter Status */}
         {filterEnabled ? (
           <>
             <div className="flex items-start gap-2 p-2 bg-accent-bullish/10 rounded border border-accent-bullish/30">
               <Shield className="h-4 w-4 text-accent-bullish flex-shrink-0 mt-0.5" />
               <div className="text-xs">
                 <span className="text-accent-bullish font-medium">Filter Active</span>
-                <p className="text-text-secondary mt-1">
-                  Only showing signals during optimal kill zones
-                </p>
+                <p className="text-text-secondary mt-1">Only showing signals during optimal kill zones</p>
               </div>
             </div>
 
-            {/* Warning if outside kill zone */}
             {currentZone && !currentZone.optimal_for_entries && (
               <div className="flex items-start gap-2 p-2 bg-yellow-500/10 rounded border border-yellow-500/30">
                 <AlertTriangle className="h-4 w-4 text-yellow-500 flex-shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <span className="text-yellow-500 font-medium">Outside Optimal Window</span>
                   <p className="text-text-secondary mt-1">
-                    Next optimal zone in {formatTime(currentZone.time_until_next)}
+                    Next optimal zone in {formatMinutes(currentZone.time_until_next)}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Optimal zone indicator */}
             {currentZone?.optimal_for_entries && (
               <div className="flex items-center gap-2">
                 <Badge className="bg-accent-bullish/20 text-accent-bullish border-accent-bullish/50 text-xs">
-                  ✓ Optimal Entry Window
+                  Optimal Entry Window
                 </Badge>
                 {currentZone.time_remaining && (
-                  <span className="text-xs text-text-secondary">
-                    {formatTime(currentZone.time_remaining)} remaining
-                  </span>
+                  <span className="text-xs text-text-secondary">{formatMinutes(currentZone.time_remaining)} remaining</span>
                 )}
               </div>
             )}
           </>
         ) : (
-          <div className="text-xs text-text-secondary">
-            Enable to only show signals during optimal trading windows
-          </div>
+          <div className="text-xs text-text-secondary">Enable to only show signals during optimal trading windows</div>
         )}
 
-        {/* Filter Legend */}
         <div className="pt-2 border-t border-border-subtle">
           <p className="text-xs text-text-tertiary mb-2">Optimal Trading Windows (EST)</p>
           <div className="space-y-1">

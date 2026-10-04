@@ -65,10 +65,25 @@ export function StatusBar() {
           : 'border-border-subtle bg-bg-primary/85'
       )}
     >
+      {/* Gradient accent line at top of status bar */}
+      <div
+        aria-hidden
+        className="absolute top-0 left-0 right-0 h-px"
+        style={{
+          background: hasErrors
+            ? 'linear-gradient(90deg, transparent 0%, var(--color-error) 30%, var(--color-error) 70%, transparent 100%)'
+            : 'linear-gradient(90deg, transparent 0%, var(--color-accent-primary) 25%, var(--color-accent-cyan) 50%, var(--color-accent-primary) 75%, transparent 100%)',
+          opacity: hasErrors ? 0.5 : 0.25,
+        }}
+      />
       <div className="flex flex-1 items-center gap-5 min-w-0">
         <div className="flex items-center gap-2">
           {wsConnected ? (
             <>
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-bullish opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-bullish" />
+              </span>
               <Wifi className="h-3.5 w-3.5 text-accent-bullish" />
               <span className="font-mono uppercase tracking-[0.14em] text-text-secondary">
                 Connected

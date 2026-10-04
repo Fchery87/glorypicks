@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '@/lib/store';
+import { getSessionId } from '@/lib/session';
 import type { WebSocketMessage, Candle, Signal } from '@/types';
 
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
@@ -35,7 +36,7 @@ export function useWebSocket(symbol: string) {
     }
 
     try {
-      const ws = new WebSocket(`${WS_URL}/ws?symbol=${symbol}`);
+      const ws = new WebSocket(`${WS_URL}/ws?symbol=${symbol}&session_id=${encodeURIComponent(getSessionId())}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
