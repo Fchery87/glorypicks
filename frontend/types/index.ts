@@ -50,6 +50,88 @@ export interface ICTAnalysis {
   };
 }
 
+export type TradePlanStatus = 'unlocked' | 'withheld' | 'none';
+export type AnnotationRenderType = 'zone' | 'level' | 'marker' | 'session';
+export type AnnotationStatus = 'active' | 'mitigated' | 'filled' | 'broken' | 'invalidated';
+export type AnnotationConcept =
+  | 'order_block'
+  | 'breaker_block'
+  | 'fair_value_gap'
+  | 'liquidity_pool'
+  | 'liquidity_sweep'
+  | 'bos'
+  | 'mss'
+  | 'kill_zone'
+  | 'entry'
+  | 'stop_loss'
+  | 'take_profit';
+
+export interface ICTAnnotation {
+  id: string;
+  concept: AnnotationConcept;
+  render_type: AnnotationRenderType;
+  label: string;
+  direction?: 'bullish' | 'bearish' | 'neutral';
+  timeframe: Interval;
+  price_low?: number;
+  price_high?: number;
+  price?: number;
+  start_time?: number;
+  end_time?: number;
+  status: AnnotationStatus;
+  confidence: number;
+  is_primary_setup?: boolean;
+  beginner_explanation: string;
+  detection_reason: string;
+}
+
+export interface TradePlanChecklistItem {
+  key: string;
+  label: string;
+  passed: boolean;
+  reason?: string;
+}
+
+export interface TakeProfitTarget {
+  label: string;
+  price: number;
+  reason: string;
+  risk_reward: number;
+}
+
+export interface TradePlan {
+  status: TradePlanStatus;
+  setup?: string;
+  direction?: 'bullish' | 'bearish' | 'neutral';
+  confidence?: number;
+  min_risk_reward_required: number;
+  actual_risk_reward?: number;
+  entry_zone_low?: number;
+  entry_zone_high?: number;
+  stop_loss?: number;
+  take_profits: TakeProfitTarget[];
+  checklist: TradePlanChecklistItem[];
+  warnings: string[];
+  withheld_reason?: string;
+}
+
+export interface ICTMapResponse {
+  symbol: string;
+  interval: Interval;
+  bias: 'bullish' | 'bearish' | 'neutral';
+  higher_timeframe_bias?: Record<string, string>;
+  annotations: ICTAnnotation[];
+  trade_plan: TradePlan;
+  analysis_summary: string;
+  updated_at: string;
+  signals?: unknown[];
+  market_structure?: unknown;
+  order_blocks?: unknown[];
+  fair_value_gaps?: unknown[];
+  liquidity_pools?: Record<string, Record<string, number>>;
+  timeframe_bias?: Record<string, string>;
+}
+
 export interface Signal {
   symbol: string;
   recommendation: Recommendation;

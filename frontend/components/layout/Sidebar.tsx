@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WatchlistItem } from '@/components/WatchlistItem';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Star, Bell, Plus, Trash2, ChevronDown, BookOpen, LayoutDashboard, X, Sparkles } from 'lucide-react';
+import { Star, Bell, Plus, Trash2, ChevronDown, BookOpen, LayoutDashboard, X, Sparkles, Pencil } from 'lucide-react';
+import { getSessionId } from '@/lib/session';
 import type { Watchlist } from '@/types';
+import { getAlertHistory, getAlertStats } from '@/lib/alertApi';
+import type { AlertStats, AlertTriggered } from '@/types';
 
 interface SidebarProps {
   className?: string;
@@ -19,21 +22,142 @@ interface SidebarProps {
 
 const WatchlistSection = ({ watchlist }: { watchlist: Watchlist }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(watchlist.name);
+  const [isDeleteConfirm, setIsDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { updateWatchlist, deleteWatchlist, addToast } = useStore();
+
+  const handleRename = async () => {
+    const name = renameValue.trim();
+    if (!name || name === watchlist.name) {
+      setIsRenaming(false);
+      setRenameValue(watchlist.name);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') +
+          '/watchlist/' +
+          watchlist.id,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': getSessionId(),
+          },
+          body: JSON.stringify({ name }),
+        }
+      );
+
+      if (response.ok) {
+        const updated = await response.json();
+        updateWatchlist(updated);
+      } else {
+        updateWatchlist({ ...watchlist, name, updated_at: new Date().toISOString() });
+      }
+    } catch {
+      updateWatchlist({ ...watchlist, name, updated_at: new Date().toISOString() });
+    }
+
+    setIsRenaming(false);
+    addToast(`Renamed to "${name}"`, 'success');
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') +
+          '/watchlist/' +
+          watchlist.id,
+        {
+          method: 'DELETE',
+          headers: { 'X-Session-ID': getSessionId() },
+        }
+      );
+    } catch {
+      // Backend unavailable, delete locally
+    }
+    deleteWatchlist(watchlist.id);
+    setIsDeleting(false);
+    setIsDeleteConfirm(false);
+    addToast(`Deleted "${watchlist.name}"`, 'info');
+  };
 
   return (
     <div className="rounded-lg border border-border-subtle overflow-hidden">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-2.5 bg-bg-tertiary/40 hover:bg-bg-tertiary transition-colors"
-      >
-        <span className="font-medium text-text-primary text-sm">{watchlist.name}</span>
-        <ChevronDown
-          className={cn(
-            'h-3.5 w-3.5 text-text-tertiary transition-transform duration-200',
-            isExpanded && 'rotate-180'
+      <div className="flex items-center justify-between p-2.5 bg-bg-tertiary/40 hover:bg-bg-tertiary transition-colors">
+        {isRenaming ? (
+          <input
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleRename();
+              if (e.key === 'Escape') {
+                setRenameValue(watchlist.name);
+                setIsRenaming(false);
+              }
+            }}
+            onBlur={handleRename}
+            className="flex-1 bg-bg-primary border border-border-default rounded px-2 py-1 text-sm font-medium text-text-primary font-mono outline-none focus:border-accent-primary"
+            autoFocus
+          />
+        ) : (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2 flex-1 text-left"
+          >
+            <span className="font-medium text-text-primary text-sm">{watchlist.name}</span>
+            <ChevronDown
+              className={cn(
+                'h-3.5 w-3.5 text-text-tertiary transition-transform duration-200',
+                isExpanded && 'rotate-180'
+              )}
+            />
+          </button>
+        )}
+
+        <div className="flex items-center gap-1 ml-2">
+          <button
+            onClick={() => {
+              setRenameValue(watchlist.name);
+              setIsRenaming(true);
+            }}
+            className="h-6 w-6 flex items-center justify-center rounded text-text-tertiary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+            title="Rename watchlist"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+          {isDeleteConfirm ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="h-6 px-2 flex items-center justify-center rounded text-[10px] font-mono uppercase tracking-wider bg-accent-bearish/20 text-accent-bearish hover:bg-accent-bearish/30 transition-colors"
+              >
+                {isDeleting ? '...' : 'Confirm'}
+              </button>
+              <button
+                onClick={() => setIsDeleteConfirm(false)}
+                className="h-6 w-6 flex items-center justify-center rounded text-text-tertiary hover:text-text-primary transition-colors"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsDeleteConfirm(true)}
+              className="h-6 w-6 flex items-center justify-center rounded text-text-tertiary hover:text-accent-bearish hover:bg-accent-bearish/10 transition-colors"
+              title="Delete watchlist"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
           )}
-        />
-      </button>
+        </div>
+      </div>
 
       {isExpanded && (
         <div className="p-1.5">
@@ -50,10 +174,25 @@ export function Sidebar({ className, style }: SidebarProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newWatchlistName, setNewWatchlistName] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [alertStats, setAlertStats] = useState<AlertStats | null>(null);
+  const [alertHistory, setAlertHistory] = useState<AlertTriggered[]>([]);
 
   const { watchlists, addWatchlist, alerts, removeAlert, symbol, addToast } = useStore();
 
-  const handleCreateWatchlist = () => {
+  useEffect(() => {
+    if (activeTab !== 'alerts') return;
+    Promise.all([getAlertStats(), getAlertHistory(5)])
+      .then(([stats, history]) => {
+        setAlertStats(stats);
+        setAlertHistory(history);
+      })
+      .catch(() => {
+        setAlertStats(null);
+        setAlertHistory([]);
+      });
+  }, [activeTab, alerts.length]);
+
+  const handleCreateWatchlist = async () => {
     setCreateError(null);
     const name = newWatchlistName.trim();
 
@@ -70,6 +209,33 @@ export function Sidebar({ className, style }: SidebarProps) {
       return;
     }
 
+    // Try backend first
+    try {
+      const response = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') + '/watchlist',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Session-ID': getSessionId(),
+          },
+          body: JSON.stringify({ name, symbols: [] }),
+        }
+      );
+
+      if (response.ok) {
+        const watchlist = await response.json();
+        addWatchlist(watchlist);
+        addToast(`Created watchlist "${name}"`, 'success');
+        setNewWatchlistName('');
+        setIsCreateDialogOpen(false);
+        return;
+      }
+    } catch {
+      // Backend unavailable, fall through to local creation
+    }
+
+    // Fallback: create locally
     const now = new Date().toISOString();
     const newWatchlist: Watchlist = {
       id: `wl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -81,7 +247,7 @@ export function Sidebar({ className, style }: SidebarProps) {
     };
 
     addWatchlist(newWatchlist);
-    addToast(`Created watchlist "${name}"`, 'success');
+    addToast(`Created watchlist "${name}" (local)`, 'success');
     setNewWatchlistName('');
     setIsCreateDialogOpen(false);
   };
@@ -107,10 +273,18 @@ export function Sidebar({ className, style }: SidebarProps) {
     >
       <div className="border-b border-border-subtle p-3.5">
         <p className="section-eyebrow mb-2">Active instrument</p>
-        <div className="rounded-xl border border-border-subtle bg-bg-primary/60 p-3 relative overflow-hidden">
+        <div className="rounded-xl border border-border-subtle bg-bg-primary/60 p-3 relative overflow-hidden group">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-primary/8 to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent-primary/8 to-transparent transition-opacity duration-300 group-hover:from-accent-primary/12"
+          />
+          {/* Subtle top highlight */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 left-0 right-0 h-px"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
+            }}
           />
           <div className="relative flex items-center justify-between">
             <span className="font-mono text-base font-semibold tracking-[0.04em] text-text-primary">
@@ -204,6 +378,24 @@ export function Sidebar({ className, style }: SidebarProps) {
           </div>
         ) : (
           <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border-subtle bg-bg-tertiary/50 p-2.5">
+                <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-text-tertiary">
+                  Active
+                </p>
+                <p className="mt-1 font-mono text-lg text-text-primary">
+                  {alertStats?.active_alerts ?? alerts.filter((alert) => alert.status === 'active').length}
+                </p>
+              </div>
+              <div className="rounded-lg border border-border-subtle bg-bg-tertiary/50 p-2.5">
+                <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-text-tertiary">
+                  Triggered today
+                </p>
+                <p className="mt-1 font-mono text-lg text-text-primary">
+                  {alertStats?.triggered_today ?? 0}
+                </p>
+              </div>
+            </div>
             {alerts.length === 0 ? (
               <div className="text-center py-8">
                 <Bell className="h-7 w-7 text-text-tertiary mx-auto mb-3" />
@@ -236,6 +428,34 @@ export function Sidebar({ className, style }: SidebarProps) {
                 </div>
               ))
             )}
+            <div className="rounded-lg border border-border-subtle bg-bg-tertiary/30 p-2.5">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] font-mono uppercase tracking-[0.12em] text-text-tertiary">
+                  Recent history
+                </p>
+                <span className="text-[10px] text-text-tertiary">{alertHistory.length}</span>
+              </div>
+              {alertHistory.length === 0 ? (
+                <p className="text-xs text-text-tertiary">No triggered alerts yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {alertHistory.map((entry) => (
+                    <div key={`${entry.alert_id}-${entry.triggered_at}`} className="border-b border-border-subtle pb-2 last:border-0 last:pb-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs text-text-primary">{entry.symbol}</span>
+                        <span className="text-[10px] text-text-tertiary">
+                          {new Date(entry.triggered_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] leading-4 text-text-secondary">{entry.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

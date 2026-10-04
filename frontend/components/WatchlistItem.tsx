@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { getSessionId } from '@/lib/session';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, X } from 'lucide-react';
 import { SymbolPicker } from './SymbolPicker';
+import { useMultiSymbolWebSocket } from '@/hooks/useMultiSymbolWebSocket';
 
 /**
  * WatchlistItem - Displays symbols in a watchlist with real-time signals
@@ -42,6 +43,34 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
   const [addError, setAddError] = useState<string | null>(null);
 
   const watchlist = watchlists.find((w) => w.id === watchlistId);
+
+  const handleRealtimeUpdate = useCallback((update: {
+    symbol: string;
+    price?: number;
+    signal?: import('@/types').Signal;
+  }) => {
+    setSignals((current) => {
+      const previous = current[update.symbol] || {
+        symbol: update.symbol,
+        recommendation: 'Neutral',
+        strength: 0,
+        currentPrice: 0,
+      };
+      return {
+        ...current,
+        [update.symbol]: {
+          ...previous,
+          currentPrice: update.price ?? previous.currentPrice,
+          recommendation: update.signal?.recommendation ?? previous.recommendation,
+          strength: update.signal?.strength ?? previous.strength,
+        },
+      };
+    });
+  }, []);
+
+  const { offline } = useMultiSymbolWebSocket(watchlist?.symbols ?? [], {
+    onUpdate: handleRealtimeUpdate,
+  });
 
   useEffect(() => {
     if (!watchlist || watchlist.symbols.length === 0) {
@@ -104,7 +133,7 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
 
     fetchSignals();
 
-    // Refresh signals every 30 seconds
+    // Refresh signals every 30 seconds as a fallback for delayed realtime data.
     const interval = setInterval(fetchSignals, 30000);
 
     return () => clearInterval(interval);
@@ -113,6 +142,44 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
   const handleSymbolClick = (symbol: string) => {
     setSymbol(symbol);
     addToast('Loaded ' + symbol + ' in chart', 'info');
+  };
+
+  const handleRemoveSymbol = async (symbolToRemove: string) => {
+    try {
+      const response = await fetch(
+        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') +
+          '/watchlist/' +
+          watchlistId +
+          '/symbols/' +
+          symbolToRemove,
+        {
+          method: 'DELETE',
+          headers: { 'X-Session-ID': getSessionId() },
+        }
+      );
+
+      if (response.ok) {
+        const updatedWatchlist = await response.json();
+        updateWatchlist(updatedWatchlist);
+      } else {
+        if (watchlist) {
+          updateWatchlist({
+            ...watchlist,
+            symbols: watchlist.symbols.filter((s) => s !== symbolToRemove),
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    } catch {
+      if (watchlist) {
+        updateWatchlist({
+          ...watchlist,
+          symbols: watchlist.symbols.filter((s) => s !== symbolToRemove),
+          updated_at: new Date().toISOString(),
+        });
+      }
+    }
+    addToast(`Removed ${symbolToRemove} from watchlist`, 'info');
   };
 
   const handleAddSymbol = async (symbolToAdd?: string) => {
@@ -167,15 +234,24 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
         setIsAddingSymbol(false);
         setAddError(null);
         addToast('Added ' + symbol + ' to watchlist', 'success');
+      } else if (response.status === 404 && watchlist) {
+        // Watchlist not found on backend (local-only) - update locally
+        const updatedWatchlist = {
+          ...watchlist,
+          symbols: [...watchlist.symbols, symbol],
+          updated_at: new Date().toISOString(),
+        };
+        updateWatchlist(updatedWatchlist);
+        setNewSymbol('');
+        setIsAddingSymbol(false);
+        setAddError(null);
+        addToast('Added ' + symbol + ' to watchlist (local)', 'success');
       } else {
-        // Handle specific error codes
         let errorMessage = 'Failed to add symbol';
         try {
           const errorData = await response.json();
           if (response.status === 400) {
             errorMessage = errorData.detail || 'Invalid request';
-          } else if (response.status === 404) {
-            errorMessage = 'Watchlist not found';
           } else if (response.status === 409) {
             errorMessage = 'Symbol already in watchlist';
           } else {
@@ -216,6 +292,11 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
 
   return (
     <div className="py-2 space-y-1">
+      {offline && watchlist.symbols.length > 0 && (
+        <p className="px-2 pb-1 text-[10px] font-mono uppercase tracking-wider text-text-tertiary">
+          Realtime offline · polling
+        </p>
+      )}
       {watchlist.symbols.length === 0 && (
         <div className="py-4 text-center text-sm text-muted-foreground">
           No symbols in this watchlist.
@@ -226,20 +307,21 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
         const signal = signals[symbol];
 
         return (
-          <button
+          <div
             key={symbol}
-            onClick={() => handleSymbolClick(symbol)}
-            className="w-full flex items-center justify-between p-2 rounded hover:bg-muted transition-colors text-left group"
-            title={`Click to view ${symbol} chart`}
+            className="w-full flex items-center justify-between p-2 rounded hover:bg-bg-tertiary/50 transition-colors group"
           >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <span className="font-mono text-sm font-medium group-hover:text-primary transition-colors">
+            <button
+              onClick={() => handleSymbolClick(symbol)}
+              className="flex items-center gap-2 flex-1 min-w-0 text-left"
+              title={`Click to view ${symbol} chart`}
+            >
+              <span className="font-mono text-sm font-medium text-text-primary group-hover:text-accent-primary transition-colors">
                 {symbol}
               </span>
 
               {signal && (
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {/* Signal Badge */}
                   <Badge
                     variant={
                       signal.recommendation === 'Buy'
@@ -253,17 +335,27 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
                     {signal.recommendation}
                   </Badge>
 
-                  {/* Strength Progress Bar */}
                   <div className="flex items-center gap-2 min-w-[80px]">
                     <Progress value={signal.strength} className="w-16 h-2" />
-                    <span className="text-xs text-muted-foreground w-8 text-right font-mono">
+                    <span className="text-xs text-text-tertiary w-8 text-right font-mono">
                       {signal.strength}
                     </span>
                   </div>
                 </div>
               )}
-            </div>
-          </button>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveSymbol(symbol);
+              }}
+              className="h-6 w-6 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 text-text-tertiary hover:text-accent-bearish hover:bg-accent-bearish/10 transition-all"
+              title={`Remove ${symbol} from watchlist`}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
         );
       })}
 

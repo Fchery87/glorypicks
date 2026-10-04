@@ -11,10 +11,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
-import { getAlerts, deleteAlert, updateAlert } from '@/lib/alertApi';
+import {
+  getAlerts,
+  deleteAlert,
+  updateAlert,
+  resetAlert,
+  getAlertHistory,
+  getAlertStats,
+} from '@/lib/alertApi';
 import { getAlertTypeIcon, getAlertTypeName } from '@/lib/alertApi';
 import { Plus, Trash2, RotateCcw, Bell } from 'lucide-react';
 import { CreateAlertDialog } from '@/components/CreateAlertDialog';
+import type { AlertStats, AlertTriggered } from '@/types';
 
 export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string }) {
   const {
@@ -29,11 +37,23 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
 
   const [filterSymbol, setFilterSymbol] = useState<string>(defaultSymbol);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [history, setHistory] = useState<AlertTriggered[]>([]);
+  const [stats, setStats] = useState<AlertStats | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Load alerts on mount
   useEffect(() => {
     loadAlerts();
   }, [filterSymbol]);
+
+  useEffect(() => {
+    Promise.all([getAlertHistory(), getAlertStats()])
+      .then(([historyData, statsData]) => {
+        setHistory(historyData);
+        setStats(statsData);
+      })
+      .catch(() => addToast('Failed to load alert history', 'error'));
+  }, [addToast]);
 
   const loadAlerts = async () => {
     try {
@@ -76,8 +96,8 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
 
   const handleReset = async (alertId: string) => {
     try {
-      const updated = await updateAlert(alertId, { enabled: true });
-      updateStoreAlert(alertId, { ...updated, status: 'active' as const, triggered_at: undefined });
+      const updated = await resetAlert(alertId);
+      updateStoreAlert(alertId, updated);
       addToast('Alert reset to active', 'success');
     } catch (error) {
       console.error('Failed to reset alert:', error);
@@ -99,6 +119,13 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
             <Button onClick={() => setIsCreateDialogOpen(true)} size="sm">
               <Plus className="h-4 w-4 mr-2" />
               New Alert
+            </Button>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-text-secondary">
+            <span>{stats?.active_alerts ?? 0} active</span>
+            <span>{stats?.triggered_today ?? 0} triggered today</span>
+            <Button size="sm" variant="outline" onClick={() => setShowHistory((value) => !value)}>
+              {showHistory ? 'Hide history' : 'View history'}
             </Button>
           </div>
         </CardHeader>
@@ -140,6 +167,31 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
           )}
         </CardContent>
       </Card>
+
+      {showHistory && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Alert history</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {history.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No triggered alerts yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {history.map((item) => (
+                  <div key={`${item.alert_id}-${item.triggered_at}`} className="border-b border-border-subtle pb-2 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <span className="font-mono text-text-primary">{item.symbol}</span>
+                      <span className="text-xs text-text-tertiary">{new Date(item.triggered_at).toLocaleString()}</span>
+                    </div>
+                    <p className="text-text-secondary">{item.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Create Alert Dialog */}
       <CreateAlertDialog

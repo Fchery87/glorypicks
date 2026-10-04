@@ -14,6 +14,15 @@ interface HeaderProps {
 export function Header({ onMenuToggle, isMenuOpen, children }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 h-[4.5rem] border-b border-border-subtle bg-bg-primary/80 backdrop-blur-xl supports-[backdrop-filter]:bg-bg-primary/70">
+      {/* Gradient accent line at bottom of header */}
+      <div
+        aria-hidden
+        className="absolute bottom-0 left-0 right-0 h-px"
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, var(--color-accent-primary) 20%, var(--color-accent-cyan) 50%, var(--color-accent-primary) 80%, transparent 100%)',
+          opacity: 0.35,
+        }}
+      />
       <div className="flex h-full items-center justify-between gap-4 px-4 lg:px-6">
         {/* Left Section - Logo & Mobile Menu */}
         <div className="flex items-center gap-3 lg:gap-4">

@@ -37,7 +37,7 @@ function TickerItem({ sym, px, ch }: TickerItemProps) {
       </span>
       <span
         className={cn(
-          'inline-flex items-center gap-0.5 font-mono text-[11px] tabular-nums',
+          'inline-flex items-center gap-0.5 font-mono text-[11px] tabular-nums font-medium',
           up ? 'text-accent-bullish' : 'text-accent-bearish'
         )}
       >
@@ -45,7 +45,13 @@ function TickerItem({ sym, px, ch }: TickerItemProps) {
         {up ? '+' : ''}
         {ch.toFixed(2)}%
       </span>
-      <span className="h-3 w-px bg-border-subtle ml-1" aria-hidden />
+      <span
+        className="h-3 w-px ml-1"
+        aria-hidden
+        style={{
+          background: 'linear-gradient(180deg, transparent, var(--color-border-default), transparent)',
+        }}
+      />
     </div>
   );
 }
