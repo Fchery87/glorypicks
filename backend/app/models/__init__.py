@@ -121,13 +121,109 @@ class ICTSignalResult(BaseModel):
 class ICTAnalysis(BaseModel):
     """ICT Strategy Analysis Results."""
 
-    signals: list[ICTSignalResult] = []
+    signals: list[ICTSignalResult] = Field(default_factory=list)
     market_structure: MarketStructure | None = None
-    order_blocks: list[OrderBlock] = []
-    fair_value_gaps: list[FairValueGap] = []
-    liquidity_pools: dict[str, dict[str, float]] = {}
+    order_blocks: list[OrderBlock] = Field(default_factory=list)
+    fair_value_gaps: list[FairValueGap] = Field(default_factory=list)
+    liquidity_pools: dict[str, dict[str, float]] = Field(default_factory=dict)
     timeframe_bias: dict[str, str] | None = None
     analysis_summary: str | None = None
+
+
+AnnotationConcept = Literal[
+    "order_block",
+    "breaker_block",
+    "fair_value_gap",
+    "liquidity_pool",
+    "liquidity_sweep",
+    "bos",
+    "mss",
+    "kill_zone",
+    "entry",
+    "stop_loss",
+    "take_profit",
+]
+AnnotationRenderType = Literal["zone", "level", "marker", "session"]
+AnnotationStatus = Literal["active", "mitigated", "filled", "broken", "invalidated"]
+TradePlanStatus = Literal["unlocked", "withheld", "none"]
+
+
+class ICTAnnotation(BaseModel):
+    """Chart-ready explanation of one ICT or SMC object."""
+
+    id: str
+    concept: AnnotationConcept
+    render_type: AnnotationRenderType
+    label: str
+    direction: Literal["bullish", "bearish", "neutral"] | None = None
+    timeframe: Interval
+    price_low: float | None = None
+    price_high: float | None = None
+    price: float | None = None
+    start_time: int | None = None
+    end_time: int | None = None
+    status: AnnotationStatus
+    confidence: float = Field(ge=0, le=100)
+    is_primary_setup: bool = False
+    beginner_explanation: str
+    detection_reason: str
+
+
+class TradePlanChecklistItem(BaseModel):
+    """One requirement used to decide whether a Trade Plan is shown."""
+
+    key: str
+    label: str
+    passed: bool
+    reason: str | None = None
+
+
+class TakeProfitTarget(BaseModel):
+    """A structural Trade Plan target."""
+
+    label: str
+    price: float
+    reason: str
+    risk_reward: float
+
+
+class TradePlan(BaseModel):
+    """Trade Plan with explicit visibility states."""
+
+    status: TradePlanStatus
+    setup: str | None = None
+    direction: Literal["bullish", "bearish", "neutral"] | None = None
+    confidence: float | None = None
+    min_risk_reward_required: float = Field(1.5, ge=1.0, le=5.0)
+    actual_risk_reward: float | None = None
+    entry_zone_low: float | None = None
+    entry_zone_high: float | None = None
+    stop_loss: float | None = None
+    take_profits: list[TakeProfitTarget] = Field(default_factory=list)
+    checklist: list[TradePlanChecklistItem] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    withheld_reason: str | None = None
+
+
+class ICTMapResponse(BaseModel):
+    """Chart-ready ICT analysis for one symbol and interval."""
+
+    symbol: str
+    interval: Interval
+    bias: Literal["bullish", "bearish", "neutral"]
+    higher_timeframe_bias: dict[str, str] | None = None
+    annotations: list[ICTAnnotation] = Field(default_factory=list)
+    trade_plan: TradePlan
+    analysis_summary: str
+    updated_at: str
+
+    # Keep the original fields while clients migrate to annotations.
+    signals: list[ICTSignalResult] = Field(default_factory=list)
+    market_structure: MarketStructure | None = None
+    order_blocks: list[OrderBlock] = Field(default_factory=list)
+    fair_value_gaps: list[FairValueGap] = Field(default_factory=list)
+    liquidity_pools: dict[str, dict[str, float]] = Field(default_factory=dict)
+    timeframe_bias: dict[str, str] | None = None
 
 
 class Candle(BaseModel):
@@ -272,10 +368,19 @@ from .journal import (
     EmotionalState,
     ICTPatternType,
     JournalAnalyticsResponse,
+    JournalAnnotationSnapshot,
+    JournalCandleSnapshot,
+    JournalImportResponse,
+    JournalImportRow,
+    JournalReviewMetrics,
+    TradeChartSnapshot,
+    TradeChecklistItem,
     TradeCloseRequest,
     TradeCreateRequest,
     TradeDirection,
     TradeEntry,
+    TradeSignalSnapshot,
+    TradeSignalSnapshotRequest,
     TradeStatistics,
     TradeStatus,
     TradeUpdateRequest,

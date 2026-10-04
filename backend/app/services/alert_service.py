@@ -42,6 +42,7 @@ class AlertService:
         self._storage: dict[str, Alert] = {}
         self._history: list[AlertTriggered] = []
         self._triggered_cache: dict[str, datetime] = {}
+        self._observations: dict[tuple[str, str], dict[str, Any]] = {}
         self._cooldown_period = timedelta(minutes=5)
 
     # =======================================================================
@@ -138,21 +139,25 @@ class AlertService:
     # Alert Condition Checking
     # =======================================================================
 
-    def check_signal(self, signal: Signal) -> list[AlertTriggered]:
+    def check_signal(self, signal: Signal, user_id: str | None = None) -> list[AlertTriggered]:
         """
-        Check a signal against all active alerts and trigger matching ones.
+        Check a signal against active alerts and trigger matching ones.
 
         This is called whenever a new signal arrives via WebSocket.
+        When user_id is provided, only alerts owned by that session are checked.
 
         Args:
             signal: The incoming signal to check
+            user_id: Optional session ID to scope alert checking
 
         Returns:
             List of triggered alerts
         """
         triggered = []
+        observation_key = (user_id or "*", signal.symbol)
+        previous = self._observations.get(observation_key)
 
-        # Get all active alerts for this symbol
+        # Get active alerts for this symbol, optionally scoped to session
         relevant_alerts = [
             a
             for a in self._storage.values()
@@ -160,10 +165,11 @@ class AlertService:
             and a.enabled
             and a.status == "active"
             and (a.expires_at is None or a.expires_at > utc_now())
+            and (user_id is None or a.user_id == user_id)
         ]
 
         for alert in relevant_alerts:
-            triggered_alert = self._check_alert_condition(alert, signal)
+            triggered_alert = self._check_alert_condition(alert, signal, previous)
             if triggered_alert:
                 # Check cooldown
                 cache_key = f"{alert.id}:{signal.symbol}"
@@ -183,9 +189,63 @@ class AlertService:
 
                     triggered.append(triggered_alert)
 
+        self._observations[observation_key] = {
+            "recommendation": signal.recommendation,
+            "strength": signal.strength,
+            "price": signal.price
+            if signal.price is not None
+            else (previous.get("price") if previous else None),
+        }
         return triggered
 
-    def _check_alert_condition(self, alert: Alert, signal: Signal) -> AlertTriggered | None:
+    def check_price(
+        self, symbol: str, price: float, user_id: str | None = None
+    ) -> list[AlertTriggered]:
+        """Check live price alerts without changing signal observations."""
+        observation_key = (user_id or "*", symbol)
+        previous = self._observations.get(observation_key)
+        signal = Signal(
+            symbol=symbol,
+            recommendation="Neutral",
+            strength=0,
+            price=price,
+        )
+        triggered: list[AlertTriggered] = []
+
+        relevant_alerts = [
+            alert
+            for alert in self._storage.values()
+            if alert.symbol == symbol
+            and alert.enabled
+            and alert.status == "active"
+            and (user_id is None or alert.user_id == user_id)
+            and alert.alert_type in {"price_above", "price_below"}
+        ]
+        for alert in relevant_alerts:
+            triggered_alert = self._check_alert_condition(alert, signal, previous)
+            if triggered_alert:
+                cache_key = f"{alert.id}:{symbol}"
+                last_triggered = self._triggered_cache.get(cache_key)
+                if last_triggered is None or (utc_now() - last_triggered) > self._cooldown_period:
+                    alert.status = "triggered"
+                    alert.triggered_at = utc_now()
+                    alert.trigger_data = triggered_alert.trigger_data
+                    self._history.append(triggered_alert)
+                    self._triggered_cache[cache_key] = utc_now()
+                    triggered.append(triggered_alert)
+
+        self._observations[observation_key] = {
+            **(previous or {}),
+            "price": price,
+        }
+        return triggered
+
+    def _check_alert_condition(
+        self,
+        alert: Alert,
+        signal: Signal,
+        previous: dict[str, Any] | None,
+    ) -> AlertTriggered | None:
         """
         Check if a signal triggers a specific alert.
 
@@ -201,19 +261,19 @@ class AlertService:
 
         match alert.alert_type:
             case "signal_flip":
-                trigger_data, message = self._check_signal_flip(alert, signal)
+                trigger_data, message = self._check_signal_flip(alert, signal, previous)
 
             case "strength_above":
-                trigger_data, message = self._check_strength_above(alert, signal)
+                trigger_data, message = self._check_strength_above(alert, signal, previous)
 
             case "strength_below":
-                trigger_data, message = self._check_strength_below(alert, signal)
+                trigger_data, message = self._check_strength_below(alert, signal, previous)
 
             case "price_above":
-                trigger_data, message = self._check_price_above(alert, signal)
+                trigger_data, message = self._check_price_above(alert, signal, previous)
 
             case "price_below":
-                trigger_data, message = self._check_price_below(alert, signal)
+                trigger_data, message = self._check_price_below(alert, signal, previous)
 
             case "breaker_appeared":
                 trigger_data, message = self._check_pattern_appeared(alert, signal, "breaker")
@@ -246,33 +306,39 @@ class AlertService:
     # Condition Checkers
     # =======================================================================
 
-    def _check_signal_flip(self, alert: Alert, signal: Signal) -> tuple[dict[str, Any] | None, str]:
+    def _check_signal_flip(
+        self,
+        alert: Alert,
+        signal: Signal,
+        previous: dict[str, Any] | None,
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if signal flipped from buy to sell or vice versa."""
-        if not signal.recommendation:
+        if not previous or not signal.recommendation:
             return None, ""
 
-        # In a real implementation, we'd store the last signal state
-        # For now, we'll check if strength is high (probable flip)
-        if signal.strength and signal.strength > 80:
+        previous_recommendation = previous.get("recommendation")
+        if previous_recommendation and previous_recommendation != signal.recommendation:
             return (
                 {
                     "recommendation": signal.recommendation,
                     "strength": signal.strength,
                     "price": signal.price,
+                    "previous_recommendation": previous_recommendation,
                 },
-                f"🔄 Signal flip detected for {alert.symbol}! New {signal.recommendation} signal with {signal.strength}% strength.",
+                f"Signal changed from {previous_recommendation} to {signal.recommendation} for {alert.symbol}.",
             )
 
         return None, ""
 
     def _check_strength_above(
-        self, alert: Alert, signal: Signal
+        self, alert: Alert, signal: Signal, previous: dict[str, Any] | None
     ) -> tuple[dict[str, Any] | None, str]:
         """Check if strength rises above threshold."""
         if not signal.strength or not alert.strength_threshold:
             return None, ""
 
-        if signal.strength >= alert.strength_threshold:
+        previous_strength = None if previous is None else previous.get("strength")
+        if previous_strength is not None and previous_strength < alert.strength_threshold <= signal.strength:
             return (
                 {
                     "strength": signal.strength,
@@ -285,13 +351,14 @@ class AlertService:
         return None, ""
 
     def _check_strength_below(
-        self, alert: Alert, signal: Signal
+        self, alert: Alert, signal: Signal, previous: dict[str, Any] | None
     ) -> tuple[dict[str, Any] | None, str]:
         """Check if strength falls below threshold."""
         if not signal.strength or not alert.strength_threshold:
             return None, ""
 
-        if signal.strength <= alert.strength_threshold:
+        previous_strength = None if previous is None else previous.get("strength")
+        if previous_strength is not None and previous_strength > alert.strength_threshold >= signal.strength:
             return (
                 {
                     "strength": signal.strength,
@@ -303,12 +370,18 @@ class AlertService:
 
         return None, ""
 
-    def _check_price_above(self, alert: Alert, signal: Signal) -> tuple[dict[str, Any] | None, str]:
+    def _check_price_above(
+        self,
+        alert: Alert,
+        signal: Signal,
+        previous: dict[str, Any] | None,
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if price crosses above threshold."""
         if not signal.price or not alert.price_threshold:
             return None, ""
 
-        if signal.price >= alert.price_threshold:
+        previous_price = None if previous is None else previous.get("price")
+        if previous_price is not None and previous_price < alert.price_threshold <= signal.price:
             return (
                 {
                     "price": signal.price,
@@ -319,12 +392,18 @@ class AlertService:
 
         return None, ""
 
-    def _check_price_below(self, alert: Alert, signal: Signal) -> tuple[dict[str, Any] | None, str]:
+    def _check_price_below(
+        self,
+        alert: Alert,
+        signal: Signal,
+        previous: dict[str, Any] | None,
+    ) -> tuple[dict[str, Any] | None, str]:
         """Check if price crosses below threshold."""
         if not signal.price or not alert.price_threshold:
             return None, ""
 
-        if signal.price <= alert.price_threshold:
+        previous_price = None if previous is None else previous.get("price")
+        if previous_price is not None and previous_price > alert.price_threshold >= signal.price:
             return (
                 {
                     "price": signal.price,
@@ -433,6 +512,7 @@ class AlertService:
             alert.status = "active"
             alert.triggered_at = None
             alert.trigger_data = None
+            self._triggered_cache.pop(f"{alert.id}:{alert.symbol}", None)
 
         return alert
 

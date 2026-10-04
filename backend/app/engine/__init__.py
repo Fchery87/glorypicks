@@ -3,14 +3,26 @@
 from typing import Any, cast
 
 from app.indicators import Indicators
-from app.models import Candle, Interval, MiniSignal, Recommendation, SignalBreakdown, SignalResponse
+from app.models import (
+    Candle,
+    ICTMapResponse,
+    ICTSignalResult as ICTSignalResultModel,
+    Interval,
+    MiniSignal,
+    MarketStructure,
+    Recommendation,
+    SignalBreakdown,
+    SignalResponse,
+)
 from app.utils.time import utc_iso_z, utc_timestamp
 
 from .ai_enhancer import AIConfidenceScore, AIEnhancer, MarketRegime, SignalQuality
 from .ict_phase1_enhancements import ICTPhase1Enhancements
+from .ict_map_builder import build_ict_annotations
 from .ict_strategies import ICTSignalResult, ICTStrategies
 from .kill_zones import KillZoneDetector, KillZoneInfo, KillZoneType
 from .smc_strategies import SMCSignalResult, SMCStrategies
+from .trade_plan import build_trade_plan
 
 
 class SignalEngine:
@@ -53,6 +65,8 @@ class SignalEngine:
         Returns:
             Tuple of (ict_signals, ict_metadata)
         """
+        self.ict_strategies = ICTStrategies()
+
         # Prefer 1H for strategy analysis, but gracefully fall back to any
         # available timeframe so sparse provider responses do not crash signal generation.
         analysis_candles = candles_1h or candles_15m or candles_1d
@@ -79,6 +93,185 @@ class SignalEngine:
             "order_blocks_count": len(self.ict_strategies.order_blocks),
             "fair_value_gaps_count": len(self.ict_strategies.fair_value_gaps),
         }
+
+    def generate_ict_map(
+        self,
+        *,
+        symbol: str,
+        candles: list[Candle],
+        interval: Interval,
+        min_rr: float = 1.5,
+    ) -> ICTMapResponse:
+        """Generate an isolated, chart-ready ICT map."""
+        ict_strategies = ICTStrategies()
+        smc_strategies = SMCStrategies()
+        kill_zone_detector = KillZoneDetector()
+
+        ict_signals = ict_strategies.analyze_candles(candles)
+        smc_signals = smc_strategies.analyze_candles(candles)
+        market_structure = ict_strategies.market_structure
+        timeframe_bias = ict_strategies.get_timeframe_bias()
+        smc_liquidity = smc_strategies.get_liquidity_analysis()
+        liquidity_targets = [
+            pool.price_level
+            for pool in smc_strategies.liquidity_pools
+            if not pool.swept
+        ]
+        kill_zone = kill_zone_detector.get_current_kill_zone(utc_timestamp())
+        annotations = build_ict_annotations(
+            interval=interval,
+            candles=candles,
+            ict_strategy=ict_strategies,
+            ict_signals=ict_signals,
+            smc_strategy=smc_strategies,
+            smc_signals=smc_signals,
+            kill_zone=kill_zone,
+        )
+        trade_plan = build_trade_plan(
+            candles=candles,
+            ict_signals=ict_signals,
+            smc_signals=smc_signals,
+            liquidity_targets=liquidity_targets,
+            kill_zone=kill_zone,
+            min_rr=min_rr,
+        )
+
+        if trade_plan.status == "unlocked":
+            annotations.extend(
+                [
+                    {
+                        "id": "trade-entry",
+                        "concept": "entry",
+                        "render_type": "level",
+                        "label": "Entry Zone",
+                        "direction": trade_plan.direction,
+                        "timeframe": interval,
+                        "price_low": trade_plan.entry_zone_low,
+                        "price_high": trade_plan.entry_zone_high,
+                        "status": "active",
+                        "confidence": trade_plan.confidence or 0,
+                        "is_primary_setup": True,
+                        "beginner_explanation": "The planned entry area for the qualified setup.",
+                        "detection_reason": "The entry comes from the selected ICT or SMC setup zone.",
+                    },
+                    {
+                        "id": "trade-stop-loss",
+                        "concept": "stop_loss",
+                        "render_type": "level",
+                        "label": "Invalidation",
+                        "direction": trade_plan.direction,
+                        "timeframe": interval,
+                        "price": trade_plan.stop_loss,
+                        "status": "active",
+                        "confidence": trade_plan.confidence or 0,
+                        "is_primary_setup": True,
+                        "beginner_explanation": "The price that invalidates the setup.",
+                        "detection_reason": "The level comes from the setup's structural invalidation.",
+                    },
+                ]
+            )
+            annotations.extend(
+                {
+                    "id": f"trade-{target.label.lower()}",
+                    "concept": "take_profit",
+                    "render_type": "level",
+                    "label": target.label,
+                    "direction": trade_plan.direction,
+                    "timeframe": interval,
+                    "price": target.price,
+                    "status": "active",
+                    "confidence": trade_plan.confidence or 0,
+                    "is_primary_setup": True,
+                    "beginner_explanation": "A structural target for the qualified setup.",
+                    "detection_reason": target.reason,
+                }
+                for target in trade_plan.take_profits
+            )
+
+        bias = market_structure.trend
+        if bias == "neutral" and ict_signals:
+            bias = "bullish" if "bullish" in ict_signals[0].signal_type.value else "bearish"
+
+        return ICTMapResponse(
+            symbol=symbol,
+            interval=interval,
+            bias=bias,
+            higher_timeframe_bias=timeframe_bias,
+            annotations=annotations,
+            trade_plan=trade_plan,
+            analysis_summary=(
+                f"ICT Map detected {len(ict_signals)} ICT signals, "
+                f"{len(ict_strategies.order_blocks)} order blocks, "
+                f"{len(ict_strategies.fair_value_gaps)} fair value gaps, and "
+                f"{len(smc_liquidity['buy_side_pools']) + len(smc_liquidity['sell_side_pools'])} "
+                "liquidity pools."
+            ),
+            updated_at=utc_iso_z(),
+            signals=[
+                ICTSignalResultModel(
+                    signal_type=signal.signal_type.value,
+                    strength=signal.strength,
+                    confidence=signal.confidence,
+                    price=signal.price,
+                    entry_zone_low=signal.entry_zone[0],
+                    entry_zone_high=signal.entry_zone[1],
+                    stop_loss=signal.stop_loss,
+                    take_profit=signal.take_profit,
+                    rationale=signal.rationale,
+                    market_phase=signal.market_phase,
+                    liquidity_pool=signal.liquidity_pool,
+                )
+                for signal in ict_signals
+            ],
+            market_structure=MarketStructure(
+                trend=market_structure.trend,
+                last_swing_high=market_structure.last_swing_high,
+                last_swing_low=market_structure.last_swing_low,
+                swing_high_timestamp=market_structure.swing_high_timestamp,
+                swing_low_timestamp=market_structure.swing_low_timestamp,
+                bos_confirmed=market_structure.bos_confirmed,
+                bos_direction=market_structure.bos_direction,
+                mss_confirmed=market_structure.mss_confirmed,
+                mss_direction=market_structure.mss_direction,
+            ),
+            order_blocks=[
+                {
+                    "high": block.high,
+                    "low": block.low,
+                    "timestamp": block.timestamp,
+                    "type": block.type,
+                    "confirmed": block.confirmed,
+                    "broken": block.broken,
+                    "breaker_confirmed": block.breaker_confirmed,
+                }
+                for block in ict_strategies.order_blocks
+            ],
+            fair_value_gaps=[
+                {
+                    "high": gap.high,
+                    "low": gap.low,
+                    "start_timestamp": gap.start_timestamp,
+                    "end_timestamp": gap.end_timestamp,
+                    "direction": gap.direction,
+                    "filled": gap.filled,
+                    "fill_price": gap.fill_price,
+                }
+                for gap in ict_strategies.fair_value_gaps
+            ],
+            liquidity_pools={
+                "buy_side": {
+                    f"pool_{pool.timestamp}": pool.price_level
+                    for pool in smc_strategies.liquidity_pools
+                    if pool.type == "buy_side"
+                },
+                "sell_side": {
+                    f"pool_{pool.timestamp}": pool.price_level
+                    for pool in smc_strategies.liquidity_pools
+                    if pool.type == "sell_side"
+                },
+            },
+            timeframe_bias=timeframe_bias,
+        )
 
     def evaluate_timeframe(
         self, candles: list[Candle], interval: Interval
@@ -318,6 +511,9 @@ class SignalEngine:
         Returns:
             SignalResponse with recommendation, strength, and AI-enhanced confidence
         """
+        self.ict_strategies = ICTStrategies()
+        self.smc_strategies = SMCStrategies()
+
         # ========================================
         # 1. ICT Strategy Analysis
         # ========================================

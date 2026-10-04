@@ -14,7 +14,7 @@ from slowapi.util import get_remote_address
 
 from app.config import settings
 from app.engine import SignalEngine
-from app.routers import alerts, data, health, journal, signal, watchlist, websocket
+from app.routers import alerts, data, health, journal, signal, symbols, watchlist, websocket
 from app.routers.data import set_cache as set_data_cache
 from app.routers.signal import set_cache as set_signal_cache
 from app.routers.signal import set_signal_engine as set_signal_engine
@@ -110,6 +110,7 @@ app.include_router(websocket.router, tags=["WebSocket"])
 app.include_router(watchlist.router, tags=["Watchlist"])
 app.include_router(alerts.router, tags=["Alerts"])
 app.include_router(journal.router)
+app.include_router(symbols.router)
 
 
 @app.get("/")
