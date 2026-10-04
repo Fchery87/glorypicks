@@ -1,0 +1,5 @@
+# Settings for this single-package project. pnpm reads them from this file.
+minimumReleaseAge: 4320 # minutes (3 days): new versions are not installed until they have been public this long
+allowBuilds:
+  sharp: true
+  unrs-resolver: false
