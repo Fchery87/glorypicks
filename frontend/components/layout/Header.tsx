@@ -19,7 +19,8 @@ export function Header({ onMenuToggle, isMenuOpen, children }: HeaderProps) {
         aria-hidden
         className="absolute bottom-0 left-0 right-0 h-px"
         style={{
-          background: 'linear-gradient(90deg, transparent 0%, var(--color-accent-primary) 20%, var(--color-accent-cyan) 50%, var(--color-accent-primary) 80%, transparent 100%)',
+          background:
+            'linear-gradient(90deg, transparent 0%, var(--color-accent-primary) 20%, var(--color-accent-cyan) 50%, var(--color-accent-primary) 80%, transparent 100%)',
           opacity: 0.35,
         }}
       />

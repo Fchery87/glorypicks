@@ -28,7 +28,14 @@ export function Logo({ className, size = 'md', showText = true }: LogoProps) {
         aria-label="GloryPicks logo"
       >
         <defs>
-          <linearGradient id="gp-mark-stroke" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+          <linearGradient
+            id="gp-mark-stroke"
+            x1="0"
+            y1="0"
+            x2="48"
+            y2="48"
+            gradientUnits="userSpaceOnUse"
+          >
             <stop offset="0" stopColor="#e6cd92" />
             <stop offset="1" stopColor="#b08a3c" />
           </linearGradient>
@@ -39,13 +46,58 @@ export function Logo({ className, size = 'md', showText = true }: LogoProps) {
           </radialGradient>
         </defs>
 
-        <circle cx="24" cy="24" r="22" stroke="url(#gp-mark-stroke)" strokeWidth={stroke * 0.6} opacity="0.55" />
-        <circle cx="24" cy="24" r="15" stroke="rgba(217, 184, 108, 0.18)" strokeWidth={stroke * 0.4} />
+        <circle
+          cx="24"
+          cy="24"
+          r="22"
+          stroke="url(#gp-mark-stroke)"
+          strokeWidth={stroke * 0.6}
+          opacity="0.55"
+        />
+        <circle
+          cx="24"
+          cy="24"
+          r="15"
+          stroke="rgba(217, 184, 108, 0.18)"
+          strokeWidth={stroke * 0.4}
+        />
 
-        <line x1="24" y1="3" x2="24" y2="18" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
-        <line x1="24" y1="30" x2="24" y2="45" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
-        <line x1="3" y1="24" x2="18" y2="24" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
-        <line x1="30" y1="24" x2="45" y2="24" stroke="#f6f1e6" strokeWidth={stroke} strokeLinecap="round" />
+        <line
+          x1="24"
+          y1="3"
+          x2="24"
+          y2="18"
+          stroke="#f6f1e6"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+        />
+        <line
+          x1="24"
+          y1="30"
+          x2="24"
+          y2="45"
+          stroke="#f6f1e6"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+        />
+        <line
+          x1="3"
+          y1="24"
+          x2="18"
+          y2="24"
+          stroke="#f6f1e6"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+        />
+        <line
+          x1="30"
+          y1="24"
+          x2="45"
+          y2="24"
+          stroke="#f6f1e6"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+        />
 
         <circle cx="24" cy="24" r={stroke * 2.2} fill="url(#gp-mark-core)" />
         <circle cx="24" cy="24" r={stroke * 1.1} fill="#f6e0a3" />
@@ -77,7 +129,14 @@ export function LogoIcon({ className, size = 24 }: { className?: string; size?: 
       aria-hidden
     >
       <defs>
-        <linearGradient id="gp-mark-stroke-icon" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="gp-mark-stroke-icon"
+          x1="0"
+          y1="0"
+          x2="48"
+          y2="48"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0" stopColor="#e6cd92" />
           <stop offset="1" stopColor="#b08a3c" />
         </linearGradient>
@@ -87,11 +146,34 @@ export function LogoIcon({ className, size = 24 }: { className?: string; size?: 
           <stop offset="1" stopColor="#d9b86c" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle cx="24" cy="24" r="22" stroke="url(#gp-mark-stroke-icon)" strokeWidth="2.4" opacity="0.7" />
+      <circle
+        cx="24"
+        cy="24"
+        r="22"
+        stroke="url(#gp-mark-stroke-icon)"
+        strokeWidth="2.4"
+        opacity="0.7"
+      />
       <line x1="24" y1="3" x2="24" y2="18" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
-      <line x1="24" y1="30" x2="24" y2="45" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
+      <line
+        x1="24"
+        y1="30"
+        x2="24"
+        y2="45"
+        stroke="#f6f1e6"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
       <line x1="3" y1="24" x2="18" y2="24" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
-      <line x1="30" y1="24" x2="45" y2="24" stroke="#f6f1e6" strokeWidth="3" strokeLinecap="round" />
+      <line
+        x1="30"
+        y1="24"
+        x2="45"
+        y2="24"
+        stroke="#f6f1e6"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
       <circle cx="24" cy="24" r="6" fill="url(#gp-mark-core-icon)" />
       <circle cx="24" cy="24" r="2.4" fill="#f6e0a3" />
     </svg>

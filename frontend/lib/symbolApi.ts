@@ -48,7 +48,9 @@ function mapSymbol(value: unknown): SymbolResult | null {
 }
 
 const mapList = (value: unknown): SymbolResult[] =>
-  Array.isArray(value) ? value.map(mapSymbol).filter((item): item is SymbolResult => item !== null) : [];
+  Array.isArray(value)
+    ? value.map(mapSymbol).filter((item): item is SymbolResult => item !== null)
+    : [];
 
 export function mapSymbolSearchResponse(value: unknown): SymbolSearchResponse {
   const body = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;

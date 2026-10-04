@@ -36,7 +36,9 @@ export function useWebSocket(symbol: string) {
     }
 
     try {
-      const ws = new WebSocket(`${WS_URL}/ws?symbol=${symbol}&session_id=${encodeURIComponent(getSessionId())}`);
+      const ws = new WebSocket(
+        `${WS_URL}/ws?symbol=${symbol}&session_id=${encodeURIComponent(getSessionId())}`
+      );
       wsRef.current = ws;
 
       ws.onopen = () => {

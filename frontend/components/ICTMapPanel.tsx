@@ -24,12 +24,26 @@ export function ICTMapPanel({
       <CardHeader className="flex flex-row items-center justify-between border-b border-border-subtle">
         <CardTitle className="text-text-primary">ICT Map</CardTitle>
         <div className="flex gap-1">
-          <Button size="sm" variant={mode === 'beginner' ? 'secondary' : 'outline'} onClick={() => onModeChange('beginner')}>Beginner</Button>
-          <Button size="sm" variant={mode === 'pro' ? 'secondary' : 'outline'} onClick={() => onModeChange('pro')}>Pro</Button>
+          <Button
+            size="sm"
+            variant={mode === 'beginner' ? 'secondary' : 'outline'}
+            onClick={() => onModeChange('beginner')}
+          >
+            Beginner
+          </Button>
+          <Button
+            size="sm"
+            variant={mode === 'pro' ? 'secondary' : 'outline'}
+            onClick={() => onModeChange('pro')}
+          >
+            Pro
+          </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 p-4">
-        {!ictMap ? <p className="text-sm text-text-secondary">Waiting for ICT analysis.</p> : (
+        {!ictMap ? (
+          <p className="text-sm text-text-secondary">Waiting for ICT analysis.</p>
+        ) : (
           <>
             <div className="flex items-center justify-between text-sm">
               <span className="text-text-tertiary">Bias</span>

@@ -3,7 +3,11 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -49,8 +53,10 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
   return (
     <TimezoneContext.Provider
       value={{
-        userTimezone, useLocalTimezone,
-        setUserTimezone, setUseLocalTimezone,
+        userTimezone,
+        useLocalTimezone,
+        setUserTimezone,
+        setUseLocalTimezone,
         convertTime: wrapConvert,
         formatKillZoneTime: wrapFormatKillZoneTime,
       }}
@@ -90,8 +96,11 @@ interface TimezoneSettingsProps {
 
 export function TimezoneSettings({ className }: TimezoneSettingsProps) {
   const {
-    userTimezone, useLocalTimezone,
-    setUserTimezone, setUseLocalTimezone, formatKillZoneTime,
+    userTimezone,
+    useLocalTimezone,
+    setUserTimezone,
+    setUseLocalTimezone,
+    formatKillZoneTime,
   } = useTimezone();
 
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -102,7 +111,9 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
       setCurrentTime(
         now.toLocaleTimeString('en-US', {
           timeZone: useLocalTimezone ? userTimezone : 'America/New_York',
-          hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+          hour: 'numeric',
+          minute: '2-digit',
+          timeZoneName: 'short',
         })
       );
     };
@@ -132,7 +143,9 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
         <div className="flex items-center justify-between">
           <div>
             <Label className="text-text-primary">Use Local Timezone</Label>
-            <p className="text-xs text-text-secondary mt-1">Convert all kill zone times to your local timezone</p>
+            <p className="text-xs text-text-secondary mt-1">
+              Convert all kill zone times to your local timezone
+            </p>
           </div>
           <Switch checked={useLocalTimezone} onCheckedChange={setUseLocalTimezone} />
         </div>
@@ -146,7 +159,9 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
               </SelectTrigger>
               <SelectContent>
                 {COMMON_TIMEZONES.map((tz) => (
-                  <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                  <SelectItem key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -160,7 +175,10 @@ export function TimezoneSettings({ className }: TimezoneSettingsProps) {
 
           <div className="space-y-2">
             {KILL_ZONE_SESSIONS.map((zone) => (
-              <div key={zone.name} className="flex items-center justify-between p-2 bg-bg-elevated rounded">
+              <div
+                key={zone.name}
+                className="flex items-center justify-between p-2 bg-bg-elevated rounded"
+              >
                 <span className="text-sm text-text-secondary">{zone.name}</span>
                 <span className="font-mono text-sm text-text-primary">
                   {formatKillZoneTime(zone.start, zone.end)}

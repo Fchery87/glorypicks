@@ -10,7 +10,7 @@ The v3 redesign consolidates insights from modern trading workstation patterns, 
 - **Bloomberg Terminal / Berg theme**: dark surfaces, monospace data, status chips, "live" dots, and dense information architecture.
 - **CrypTrade / Nixtio-style crypto dashboards**: deep dark backgrounds, neon-tinted accents, modular cards, signal cards with strong directional identity.
 - **Modern fintech UI trends (2025-26)**: staggered entry, directional glows, blur transitions, refined easing curves, micro-interactions on every pressable surface.
-- **Emil Kowalski's design engineering philosophy** (skill-driven): every animation has a purpose, easing curves are deliberate, transitions are interruptible, and details that nobody notices individually compound into something that *feels right*.
+- **Emil Kowalski's design engineering philosophy** (skill-driven): every animation has a purpose, easing curves are deliberate, transitions are interruptible, and details that nobody notices individually compound into something that _feels right_.
 
 ## Product positioning
 
@@ -27,32 +27,32 @@ A near-black graphite command center, sharper gold signature, and rich direction
 
 ### Palette
 
-| Token                         | Value      | Usage                                            |
-| ----------------------------- | ---------- | ------------------------------------------------ |
-| `--color-bg-primary`          | `#050608`  | page, app shell                                  |
-| `--color-bg-secondary`        | `#0A0D11`  | sidebar, ticker tape, deep panels                |
-| `--color-bg-tertiary`         | `#10141A`  | cards, controls                                  |
-| `--color-bg-elevated`         | `#161B22`  | hover/elevated controls                          |
-| `--color-text-primary`        | `#F6F1E6`  | primary text, instrument labels                  |
-| `--color-text-secondary`      | `#AAB1BA`  | descriptions, labels                             |
-| `--color-text-tertiary`       | `#6A727C`  | timestamps, metadata                             |
-| `--color-accent-primary`      | `#D9B86C`  | brand signature, focus, premium/risk highlights  |
-| `--color-accent-primary-soft` | `#E6CD92`  | gradient highlight, logo highlight               |
-| `--color-accent-cyan`         | `#5EEAD4`  | live feed, data sync, ICT marker                 |
-| `--color-accent-bullish`      | `#2DD474`  | buy/up/positive                                  |
-| `--color-accent-bearish`      | `#FF5F73`  | sell/down/risk                                   |
-| `--color-accent-amber`        | `#F4C95D`  | sessions, caution, timing                        |
-| `--color-accent-violet`       | `#A78BFA`  | asian session, secondary chips                   |
+| Token                         | Value     | Usage                                           |
+| ----------------------------- | --------- | ----------------------------------------------- |
+| `--color-bg-primary`          | `#050608` | page, app shell                                 |
+| `--color-bg-secondary`        | `#0A0D11` | sidebar, ticker tape, deep panels               |
+| `--color-bg-tertiary`         | `#10141A` | cards, controls                                 |
+| `--color-bg-elevated`         | `#161B22` | hover/elevated controls                         |
+| `--color-text-primary`        | `#F6F1E6` | primary text, instrument labels                 |
+| `--color-text-secondary`      | `#AAB1BA` | descriptions, labels                            |
+| `--color-text-tertiary`       | `#6A727C` | timestamps, metadata                            |
+| `--color-accent-primary`      | `#D9B86C` | brand signature, focus, premium/risk highlights |
+| `--color-accent-primary-soft` | `#E6CD92` | gradient highlight, logo highlight              |
+| `--color-accent-cyan`         | `#5EEAD4` | live feed, data sync, ICT marker                |
+| `--color-accent-bullish`      | `#2DD474` | buy/up/positive                                 |
+| `--color-accent-bearish`      | `#FF5F73` | sell/down/risk                                  |
+| `--color-accent-amber`        | `#F4C95D` | sessions, caution, timing                       |
+| `--color-accent-violet`       | `#A78BFA` | asian session, secondary chips                  |
 
 ## Motion language (v3)
 
 Custom easings replace Tailwind's defaults for every interactive surface:
 
 ```css
---ease-out:     cubic-bezier(0.23, 1, 0.32, 1);   /* UI entrances, hover lifts */
---ease-in-out:  cubic-bezier(0.77, 0, 0.175, 1);  /* on-screen state changes  */
---ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1); /* playful accents          */
---ease-drawer:  cubic-bezier(0.32, 0.72, 0, 1);   /* iOS-like drawer feel     */
+--ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* UI entrances, hover lifts */
+--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* on-screen state changes  */
+--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* playful accents          */
+--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1); /* iOS-like drawer feel     */
 --duration-fast: 140ms;
 --duration-base: 200ms;
 --duration-slow: 320ms;

@@ -115,7 +115,11 @@ function CockpitHero({
           {/* Status row */}
           <div className="mb-5 flex flex-wrap items-center gap-2.5">
             <div className="status-chip">
-              <span className={wsConnected ? 'live-dot status-pulse' : 'h-2 w-2 rounded-full bg-accent-bearish'} />
+              <span
+                className={
+                  wsConnected ? 'live-dot status-pulse' : 'h-2 w-2 rounded-full bg-accent-bearish'
+                }
+              />
               <span>{wsConnected ? 'Live execution context' : 'Feed reconnecting'}</span>
             </div>
             <div className="status-chip text-accent-primary border-accent-primary/25 bg-accent-primary/10">
@@ -170,9 +174,7 @@ function CockpitHero({
                     })
                   : '—'}
               </span>
-              {currentPrice && (
-                <span className="font-mono text-base text-text-tertiary">USD</span>
-              )}
+              {currentPrice && <span className="font-mono text-base text-text-tertiary">USD</span>}
             </div>
 
             {currentPrice !== null && priceChange !== null && (
@@ -203,8 +205,8 @@ function CockpitHero({
 
           {/* Sub copy */}
           <p className="mt-4 max-w-2xl text-[13.5px] leading-6 text-text-secondary">
-            Multi-timeframe structure, kill-zone timing, and risk sizing converge in one
-            command surface — built for fast decisions without leaving the chart.
+            Multi-timeframe structure, kill-zone timing, and risk sizing converge in one command
+            surface — built for fast decisions without leaving the chart.
           </p>
         </div>
 
@@ -280,7 +282,9 @@ function MetricTile({ label, value, detail, icon, tone, delay }: MetricTileProps
     <div className={cn('metric-tile p-3.5 rise-in', delay)}>
       <div className="mb-2.5 flex items-center justify-between text-text-tertiary">
         <span className="section-eyebrow text-[0.6rem]">{label}</span>
-        <span className={toneAccent} style={{ filter: toneGlow }}>{icon}</span>
+        <span className={toneAccent} style={{ filter: toneGlow }}>
+          {icon}
+        </span>
       </div>
       <div className="truncate font-mono text-[1.05rem] font-medium text-text-primary tabular-nums">
         {value}

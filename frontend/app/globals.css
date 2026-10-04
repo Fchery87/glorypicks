@@ -196,12 +196,11 @@
   .card-base {
     position: relative;
     overflow: hidden;
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in oklch, var(--color-bg-tertiary) 92%, white 8%) 0%,
-        var(--color-bg-secondary) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--color-bg-tertiary) 92%, white 8%) 0%,
+      var(--color-bg-secondary) 100%
+    );
     border: 1px solid color-mix(in oklch, var(--color-border-subtle) 88%, white 12%);
     border-radius: var(--radius-lg);
     box-shadow:
@@ -217,12 +216,11 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background:
-      radial-gradient(
-        circle at top right,
-        color-mix(in oklch, var(--color-accent-primary) 4%, transparent) 0%,
-        transparent 50%
-      );
+    background: radial-gradient(
+      circle at top right,
+      color-mix(in oklch, var(--color-accent-primary) 4%, transparent) 0%,
+      transparent 50%
+    );
     opacity: 0.9;
   }
 
@@ -260,17 +258,12 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background-image: linear-gradient(
-      rgba(255, 255, 255, 0.045) 1px,
-      transparent 1px
-    );
+    background-image: linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
     background-size: 100% 32px;
     opacity: 0.3;
     mask-image: linear-gradient(180deg, black 0%, transparent 80%);
     -webkit-mask-image: linear-gradient(180deg, black 0%, transparent 80%);
   }
-
-
 
   html.light .command-surface,
   html.light .card-base {
@@ -279,10 +272,7 @@
       0 18px 40px -18px rgba(82, 60, 28, 0.22);
   }
   html.light .command-surface::after {
-    background-image: linear-gradient(
-      rgba(23, 20, 15, 0.05) 1px,
-      transparent 1px
-    );
+    background-image: linear-gradient(rgba(23, 20, 15, 0.05) 1px, transparent 1px);
     opacity: 0.4;
   }
 
@@ -291,10 +281,8 @@
     position: relative;
     border: 1px solid var(--color-border-subtle);
     border-radius: 12px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
-    box-shadow:
-      0 1px 0 0 rgba(255, 255, 255, 0.045) inset;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+    box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.045) inset;
     transition:
       border-color var(--duration-base) var(--ease-out),
       transform var(--duration-base) var(--ease-out);
@@ -302,7 +290,11 @@
 
   @media (hover: hover) and (pointer: fine) {
     .metric-tile:hover {
-      border-color: color-mix(in oklch, var(--color-accent-primary) 35%, var(--color-border-subtle));
+      border-color: color-mix(
+        in oklch,
+        var(--color-accent-primary) 35%,
+        var(--color-border-subtle)
+      );
       transform: translateY(-1px);
     }
   }
@@ -390,13 +382,7 @@
     overflow: hidden;
     border-block: 1px solid var(--color-border-subtle);
     background: color-mix(in oklch, var(--color-bg-secondary) 80%, transparent);
-    mask-image: linear-gradient(
-      90deg,
-      transparent 0%,
-      black 6%,
-      black 94%,
-      transparent 100%
-    );
+    mask-image: linear-gradient(90deg, transparent 0%, black 6%, black 94%, transparent 100%);
   }
 
   .ticker-tape__track {
@@ -449,8 +435,11 @@
     font-size: 0.875rem;
     font-weight: 500;
     border-radius: var(--radius-sm);
-    transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out),
-      border-color 140ms var(--ease-out), color 140ms var(--ease-out);
+    transition:
+      transform 140ms var(--ease-out),
+      background-color 140ms var(--ease-out),
+      border-color 140ms var(--ease-out),
+      color 140ms var(--ease-out);
   }
   .btn-base:focus-visible {
     outline: none;
@@ -477,7 +466,9 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.875rem;
     color: var(--color-text-primary);
-    transition: border-color 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+    transition:
+      border-color 150ms var(--ease-out),
+      box-shadow 150ms var(--ease-out);
   }
   .input-base::placeholder {
     color: var(--color-text-tertiary);
@@ -711,16 +702,37 @@
   }
 
   @keyframes glowPulseBullish {
-    0%, 100% { opacity: 0.5; filter: blur(3xl); }
-    50% { opacity: 0.75; filter: blur(3xl); }
+    0%,
+    100% {
+      opacity: 0.5;
+      filter: blur(3xl);
+    }
+    50% {
+      opacity: 0.75;
+      filter: blur(3xl);
+    }
   }
   @keyframes glowPulseBearish {
-    0%, 100% { opacity: 0.5; filter: blur(3xl); }
-    50% { opacity: 0.75; filter: blur(3xl); }
+    0%,
+    100% {
+      opacity: 0.5;
+      filter: blur(3xl);
+    }
+    50% {
+      opacity: 0.75;
+      filter: blur(3xl);
+    }
   }
   @keyframes glowPulseNeutral {
-    0%, 100% { opacity: 0.4; filter: blur(3xl); }
-    50% { opacity: 0.6; filter: blur(3xl); }
+    0%,
+    100% {
+      opacity: 0.4;
+      filter: blur(3xl);
+    }
+    50% {
+      opacity: 0.6;
+      filter: blur(3xl);
+    }
   }
 
   /* ---------- Corner brackets — animated variant ---------- */
@@ -768,8 +780,14 @@
   }
 
   @keyframes statusPulseRing {
-    0% { transform: scale(0.8); opacity: 0.6; }
-    100% { transform: scale(1.6); opacity: 0; }
+    0% {
+      transform: scale(0.8);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
   }
 
   /* ---------- Reduced motion ---------- */
@@ -834,12 +852,24 @@
 .rise-in {
   animation: riseIn 480ms var(--ease-out) both;
 }
-.rise-in-1 { animation-delay: 40ms; }
-.rise-in-2 { animation-delay: 80ms; }
-.rise-in-3 { animation-delay: 120ms; }
-.rise-in-4 { animation-delay: 160ms; }
-.rise-in-5 { animation-delay: 200ms; }
-.rise-in-6 { animation-delay: 240ms; }
+.rise-in-1 {
+  animation-delay: 40ms;
+}
+.rise-in-2 {
+  animation-delay: 80ms;
+}
+.rise-in-3 {
+  animation-delay: 120ms;
+}
+.rise-in-4 {
+  animation-delay: 160ms;
+}
+.rise-in-5 {
+  animation-delay: 200ms;
+}
+.rise-in-6 {
+  animation-delay: 240ms;
+}
 
 /* ---------- Dropdown / popover entrance ---------- */
 @keyframes dropdownIn {

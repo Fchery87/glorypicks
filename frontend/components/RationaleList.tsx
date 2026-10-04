@@ -185,7 +185,10 @@ export function RationaleList() {
                     </li>
                   ) : (
                     item.rationale.map((reason, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-[12.5px] leading-relaxed">
+                      <li
+                        key={idx}
+                        className="flex items-start gap-2 text-[12.5px] leading-relaxed"
+                      >
                         {getRationaleIcon(reason) || (
                           <span className="w-1 h-1 rounded-full bg-border-strong mt-2 flex-shrink-0" />
                         )}

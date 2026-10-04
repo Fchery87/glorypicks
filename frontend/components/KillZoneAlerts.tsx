@@ -30,23 +30,26 @@ export function KillZoneAlerts({ className }: KillZoneAlertsProps) {
   const previousZoneType = useRef<string | null>(null);
   const { addToast } = useStore();
 
-  const createAlert = useCallback((type: 'enter' | 'exit' | 'reminder', zoneData: NonNullable<typeof currentZone>) => {
-    const message = getAlertMessage(type, zoneData);
-    const alert: KillZoneAlert = {
-      id: `${Date.now()}-${type}`,
-      type,
-      zone: zoneData.zone_name,
-      message,
-      timestamp: Date.now(),
-      read: false,
-    };
-    setAlerts((prev) => [alert, ...prev].slice(0, 50));
+  const createAlert = useCallback(
+    (type: 'enter' | 'exit' | 'reminder', zoneData: NonNullable<typeof currentZone>) => {
+      const message = getAlertMessage(type, zoneData);
+      const alert: KillZoneAlert = {
+        id: `${Date.now()}-${type}`,
+        type,
+        zone: zoneData.zone_name,
+        message,
+        timestamp: Date.now(),
+        read: false,
+      };
+      setAlerts((prev) => [alert, ...prev].slice(0, 50));
 
-    if (alertsEnabled) {
-      addToast?.(message, type === 'enter' ? 'success' : type === 'exit' ? 'info' : 'warning');
-      if (soundEnabled) playAlertSound(type);
-    }
-  }, [alertsEnabled, soundEnabled, addToast]);
+      if (alertsEnabled) {
+        addToast?.(message, type === 'enter' ? 'success' : type === 'exit' ? 'info' : 'warning');
+        if (soundEnabled) playAlertSound(type);
+      }
+    },
+    [alertsEnabled, soundEnabled, addToast]
+  );
 
   const getAlertMessage = (type: string, zoneData: NonNullable<typeof currentZone>): string => {
     switch (type) {
@@ -113,7 +116,12 @@ export function KillZoneAlerts({ className }: KillZoneAlertsProps) {
       <div className="flex items-center justify-between p-4 bg-bg-tertiary rounded-lg">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Bell className={cn('h-5 w-5', alertsEnabled ? 'text-accent-primary' : 'text-text-tertiary')} />
+            <Bell
+              className={cn(
+                'h-5 w-5',
+                alertsEnabled ? 'text-accent-primary' : 'text-text-tertiary'
+              )}
+            />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 h-4 w-4 bg-accent-bullish rounded-full text-[10px] flex items-center justify-center text-bg-primary font-bold">
                 {unreadCount}
@@ -122,12 +130,23 @@ export function KillZoneAlerts({ className }: KillZoneAlertsProps) {
           </div>
           <div>
             <p className="text-sm font-medium text-text-primary">Kill Zone Alerts</p>
-            <p className="text-xs text-text-secondary">{alertsEnabled ? 'Monitoring active' : 'Notifications disabled'}</p>
+            <p className="text-xs text-text-secondary">
+              {alertsEnabled ? 'Monitoring active' : 'Notifications disabled'}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setSoundEnabled(!soundEnabled)} className="h-8 w-8">
-            {soundEnabled ? <Volume2 className="h-4 w-4 text-text-secondary" /> : <VolumeX className="h-4 w-4 text-text-tertiary" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="h-8 w-8"
+          >
+            {soundEnabled ? (
+              <Volume2 className="h-4 w-4 text-text-secondary" />
+            ) : (
+              <VolumeX className="h-4 w-4 text-text-tertiary" />
+            )}
           </Button>
           <Switch checked={alertsEnabled} onCheckedChange={setAlertsEnabled} />
         </div>
@@ -139,29 +158,50 @@ export function KillZoneAlerts({ className }: KillZoneAlertsProps) {
             <span className="text-xs text-text-tertiary">Recent Alerts ({alerts.length})</span>
             <div className="flex gap-2">
               {unreadCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-6 text-xs">Mark all read</Button>
+                <Button variant="ghost" size="sm" onClick={markAllAsRead} className="h-6 text-xs">
+                  Mark all read
+                </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={clearAlerts} className="h-6 text-xs text-accent-bearish">Clear</Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAlerts}
+                className="h-6 text-xs text-accent-bearish"
+              >
+                Clear
+              </Button>
             </div>
           </div>
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {alerts.map((alert) => (
-              <div key={alert.id} className={cn(
-                'p-3 rounded-lg border text-sm transition-all',
-                !alert.read && 'bg-bg-elevated',
-                alert.type === 'enter' && 'border-accent-bullish/30',
-                alert.type === 'exit' && 'border-text-secondary/30',
-                alert.type === 'reminder' && 'border-yellow-500/30'
-              )}>
+              <div
+                key={alert.id}
+                className={cn(
+                  'p-3 rounded-lg border text-sm transition-all',
+                  !alert.read && 'bg-bg-elevated',
+                  alert.type === 'enter' && 'border-accent-bullish/30',
+                  alert.type === 'exit' && 'border-text-secondary/30',
+                  alert.type === 'reminder' && 'border-yellow-500/30'
+                )}
+              >
                 <div className="flex items-start gap-2">
                   {alert.type === 'enter' ? (
                     <BellRing className="h-4 w-4 text-accent-bullish flex-shrink-0 mt-0.5" />
                   ) : (
-                    <Bell className={cn('h-4 w-4 flex-shrink-0 mt-0.5', alert.type === 'reminder' ? 'text-yellow-500' : 'text-text-secondary')} />
+                    <Bell
+                      className={cn(
+                        'h-4 w-4 flex-shrink-0 mt-0.5',
+                        alert.type === 'reminder' ? 'text-yellow-500' : 'text-text-secondary'
+                      )}
+                    />
                   )}
                   <div className="flex-1">
-                    <p className={cn('leading-relaxed', !alert.read && 'font-medium')}>{alert.message}</p>
-                    <p className="text-xs text-text-tertiary mt-1">{new Date(alert.timestamp).toLocaleTimeString()}</p>
+                    <p className={cn('leading-relaxed', !alert.read && 'font-medium')}>
+                      {alert.message}
+                    </p>
+                    <p className="text-xs text-text-tertiary mt-1">
+                      {new Date(alert.timestamp).toLocaleTimeString()}
+                    </p>
                   </div>
                 </div>
               </div>

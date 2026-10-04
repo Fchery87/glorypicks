@@ -60,9 +60,7 @@ export function StatusBar() {
     <div
       className={cn(
         'fixed bottom-0 left-0 right-0 z-50 flex h-11 items-center border-t px-4 text-xs backdrop-blur-xl transition-colors duration-300',
-        hasErrors
-          ? 'border-error/30 bg-error/[0.07]'
-          : 'border-border-subtle bg-bg-primary/85'
+        hasErrors ? 'border-error/30 bg-error/[0.07]' : 'border-border-subtle bg-bg-primary/85'
       )}
     >
       {/* Gradient accent line at top of status bar */}

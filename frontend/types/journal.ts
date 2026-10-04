@@ -129,12 +129,7 @@ export type ICTPatternType =
   | 'other';
 
 export type EmotionalState =
-  | 'confident'
-  | 'neutral'
-  | 'fearful'
-  | 'greedy'
-  | 'impatient'
-  | 'revengeful';
+  'confident' | 'neutral' | 'fearful' | 'greedy' | 'impatient' | 'revengeful';
 
 export interface TradeStatistics {
   total_trades: number;

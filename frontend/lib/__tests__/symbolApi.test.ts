@@ -28,9 +28,7 @@ describe('symbol API helpers', () => {
       })
     ).toEqual({
       results: [{ symbol: 'AAPL', name: 'Apple', asset_class: 'stock', exchange: 'NASDAQ' }],
-      recent: [
-        { symbol: 'BTC-USD', name: 'BTC-USD', asset_class: 'crypto', currency: 'USD' },
-      ],
+      recent: [{ symbol: 'BTC-USD', name: 'BTC-USD', asset_class: 'crypto', currency: 'USD' }],
       trending: [],
     });
   });

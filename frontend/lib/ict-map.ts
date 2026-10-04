@@ -50,8 +50,7 @@ export function filterICTAnnotations(
     options.tradePlan?.status === 'unlocked'
       ? annotations
       : annotations.filter(
-          (annotation) =>
-            !['entry', 'stop_loss', 'take_profit'].includes(annotation.concept)
+          (annotation) => !['entry', 'stop_loss', 'take_profit'].includes(annotation.concept)
         );
 
   if (options.mode === 'pro') return actionable;

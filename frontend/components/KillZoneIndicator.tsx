@@ -3,7 +3,14 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { useKillZone, formatMinutes, getZoneColor, getVolatilityColor, formatZoneName, isInOptimalWindow } from '@/lib/killzone';
+import {
+  useKillZone,
+  formatMinutes,
+  getZoneColor,
+  getVolatilityColor,
+  formatZoneName,
+  isInOptimalWindow,
+} from '@/lib/killzone';
 import { Clock, Sun, Moon, Sunrise, Sunset, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 interface KillZoneIndicatorProps {
@@ -12,11 +19,16 @@ interface KillZoneIndicatorProps {
 
 function getZoneIcon(zoneType: string) {
   switch (zoneType) {
-    case 'london_kill_zone': return <Sunrise className="h-5 w-5 text-yellow-500" />;
-    case 'ny_kill_zone': return <Sun className="h-5 w-5 text-orange-500" />;
-    case 'london_close': return <Sunset className="h-5 w-5 text-blue-500" />;
-    case 'asian_session': return <Moon className="h-5 w-5 text-purple-500" />;
-    default: return <Clock className="h-5 w-5 text-text-tertiary" />;
+    case 'london_kill_zone':
+      return <Sunrise className="h-5 w-5 text-yellow-500" />;
+    case 'ny_kill_zone':
+      return <Sun className="h-5 w-5 text-orange-500" />;
+    case 'london_close':
+      return <Sunset className="h-5 w-5 text-blue-500" />;
+    case 'asian_session':
+      return <Moon className="h-5 w-5 text-purple-500" />;
+    default:
+      return <Clock className="h-5 w-5 text-text-tertiary" />;
   }
 }
 
@@ -65,7 +77,9 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
         <div className={cn('p-4 rounded-lg border-2 transition-all', getZoneColor(killZone))}>
           <div className="flex items-center gap-3 mb-2">
             {getZoneIcon(killZone.zone_type)}
-            <span className="font-semibold text-text-primary">{formatZoneName(killZone.zone_type)}</span>
+            <span className="font-semibold text-text-primary">
+              {formatZoneName(killZone.zone_type)}
+            </span>
           </div>
 
           <div className="space-y-2 text-sm">
@@ -89,13 +103,20 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
                 {killZone.time_remaining !== null && (
                   <div className="flex items-center justify-between">
                     <span className="text-text-secondary">Time Remaining</span>
-                    <span className="font-mono font-medium">{formatMinutes(killZone.time_remaining)}</span>
+                    <span className="font-mono font-medium">
+                      {formatMinutes(killZone.time_remaining)}
+                    </span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
                   <span className="text-text-secondary">Expected Volatility</span>
-                  <span className={cn('font-medium capitalize', getVolatilityColor(killZone.volatility_expected))}>
+                  <span
+                    className={cn(
+                      'font-medium capitalize',
+                      getVolatilityColor(killZone.volatility_expected)
+                    )}
+                  >
                     {killZone.volatility_expected}
                   </span>
                 </div>
@@ -104,13 +125,17 @@ export function KillZoneIndicator({ className }: KillZoneIndicatorProps) {
               <>
                 <div className="flex items-center justify-between">
                   <span className="text-text-secondary">Status</span>
-                  <Badge variant="outline" className="text-xs text-text-tertiary">Inactive</Badge>
+                  <Badge variant="outline" className="text-xs text-text-tertiary">
+                    Inactive
+                  </Badge>
                 </div>
 
                 {killZone.time_until_next !== null && (
                   <div className="flex items-center justify-between">
                     <span className="text-text-secondary">Next Kill Zone</span>
-                    <span className="font-mono font-medium">{formatMinutes(killZone.time_until_next)}</span>
+                    <span className="font-mono font-medium">
+                      {formatMinutes(killZone.time_until_next)}
+                    </span>
                   </div>
                 )}
               </>

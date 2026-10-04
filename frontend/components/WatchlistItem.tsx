@@ -44,29 +44,28 @@ export function WatchlistItem({ watchlistId }: WatchlistItemProps) {
 
   const watchlist = watchlists.find((w) => w.id === watchlistId);
 
-  const handleRealtimeUpdate = useCallback((update: {
-    symbol: string;
-    price?: number;
-    signal?: import('@/types').Signal;
-  }) => {
-    setSignals((current) => {
-      const previous = current[update.symbol] || {
-        symbol: update.symbol,
-        recommendation: 'Neutral',
-        strength: 0,
-        currentPrice: 0,
-      };
-      return {
-        ...current,
-        [update.symbol]: {
-          ...previous,
-          currentPrice: update.price ?? previous.currentPrice,
-          recommendation: update.signal?.recommendation ?? previous.recommendation,
-          strength: update.signal?.strength ?? previous.strength,
-        },
-      };
-    });
-  }, []);
+  const handleRealtimeUpdate = useCallback(
+    (update: { symbol: string; price?: number; signal?: import('@/types').Signal }) => {
+      setSignals((current) => {
+        const previous = current[update.symbol] || {
+          symbol: update.symbol,
+          recommendation: 'Neutral',
+          strength: 0,
+          currentPrice: 0,
+        };
+        return {
+          ...current,
+          [update.symbol]: {
+            ...previous,
+            currentPrice: update.price ?? previous.currentPrice,
+            recommendation: update.signal?.recommendation ?? previous.recommendation,
+            strength: update.signal?.strength ?? previous.strength,
+          },
+        };
+      });
+    },
+    []
+  );
 
   const { offline } = useMultiSymbolWebSocket(watchlist?.symbols ?? [], {
     onUpdate: handleRealtimeUpdate,

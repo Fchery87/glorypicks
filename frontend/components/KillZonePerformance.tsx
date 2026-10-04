@@ -7,7 +7,13 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useKillZonePerformance, formatZoneName } from '@/lib/killzone';
 import {
-  TrendingUp, TrendingDown, Target, Clock, Award, AlertCircle, Activity,
+  TrendingUp,
+  TrendingDown,
+  Target,
+  Clock,
+  Award,
+  AlertCircle,
+  Activity,
 } from 'lucide-react';
 
 interface KillZonePerformanceProps {
@@ -17,11 +23,16 @@ interface KillZonePerformanceProps {
 
 function getRecommendationColor(recommendation: string) {
   switch (recommendation) {
-    case 'strong_buy': return 'text-accent-bullish';
-    case 'favorable': return 'text-green-400';
-    case 'neutral': return 'text-yellow-500';
-    case 'avoid': return 'text-accent-bearish';
-    default: return 'text-text-secondary';
+    case 'strong_buy':
+      return 'text-accent-bullish';
+    case 'favorable':
+      return 'text-green-400';
+    case 'neutral':
+      return 'text-yellow-500';
+    case 'avoid':
+      return 'text-accent-bearish';
+    default:
+      return 'text-text-secondary';
   }
 }
 
@@ -65,7 +76,9 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
   if (!data) {
     return (
       <Card className={className}>
-        <CardContent className="p-6 text-center text-text-secondary">No performance data available</CardContent>
+        <CardContent className="p-6 text-center text-text-secondary">
+          No performance data available
+        </CardContent>
       </Card>
     );
   }
@@ -80,7 +93,9 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
             <Target className="h-5 w-5 text-accent-primary" />
             <h3 className="text-h3 font-semibold text-text-primary">Kill Zone Performance</h3>
           </div>
-          <Badge variant="outline" className="font-mono text-xs">{symbol}</Badge>
+          <Badge variant="outline" className="font-mono text-xs">
+            {symbol}
+          </Badge>
         </div>
       </CardHeader>
 
@@ -88,7 +103,9 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
         <div className="p-4 bg-bg-elevated rounded-lg space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-text-secondary text-sm">Optimal Session</span>
-            <span className="font-medium text-text-primary">{data.optimal_session && formatZoneName(data.optimal_session)}</span>
+            <span className="font-medium text-text-primary">
+              {data.optimal_session && formatZoneName(data.optimal_session)}
+            </span>
           </div>
           {data.overall_best_zone && (
             <div className="flex items-center justify-between">
@@ -138,39 +155,95 @@ export function KillZonePerformance({ symbol, className }: KillZonePerformancePr
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-text-secondary">Win Rate</span>
-                        <span className={cn('font-mono font-medium', zoneData.statistics.win_rate >= 60 ? 'text-accent-bullish' : zoneData.statistics.win_rate >= 50 ? 'text-yellow-500' : 'text-accent-bearish')}>
+                        <span
+                          className={cn(
+                            'font-mono font-medium',
+                            zoneData.statistics.win_rate >= 60
+                              ? 'text-accent-bullish'
+                              : zoneData.statistics.win_rate >= 50
+                                ? 'text-yellow-500'
+                                : 'text-accent-bearish'
+                          )}
+                        >
                           {zoneData.statistics.win_rate}%
                         </span>
                       </div>
-                      <Progress value={zoneData.statistics.win_rate} max={100} className={cn('h-1.5', zoneData.statistics.win_rate >= 60 ? 'bg-accent-bullish' : zoneData.statistics.win_rate >= 50 ? 'bg-yellow-500' : 'bg-accent-bearish')} />
+                      <Progress
+                        value={zoneData.statistics.win_rate}
+                        max={100}
+                        className={cn(
+                          'h-1.5',
+                          zoneData.statistics.win_rate >= 60
+                            ? 'bg-accent-bullish'
+                            : zoneData.statistics.win_rate >= 50
+                              ? 'bg-yellow-500'
+                              : 'bg-accent-bearish'
+                        )}
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 pt-2">
                       <div className="p-2 bg-bg-elevated rounded">
-                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1"><TrendingUp className="h-3 w-3" />Total Trades</div>
-                        <span className="font-mono text-lg">{zoneData.statistics.total_trades}</span>
-                      </div>
-                      <div className="p-2 bg-bg-elevated rounded">
-                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1"><TrendingDown className="h-3 w-3" />Avg Return</div>
-                        <span className={cn('font-mono text-lg', zoneData.statistics.avg_return_percent >= 0 ? 'text-accent-bullish' : 'text-accent-bearish')}>
-                          {zoneData.statistics.avg_return_percent >= 0 ? '+' : ''}{zoneData.statistics.avg_return_percent}%
+                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1">
+                          <TrendingUp className="h-3 w-3" />
+                          Total Trades
+                        </div>
+                        <span className="font-mono text-lg">
+                          {zoneData.statistics.total_trades}
                         </span>
                       </div>
                       <div className="p-2 bg-bg-elevated rounded">
-                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1"><Clock className="h-3 w-3" />Avg Duration</div>
-                        <span className="font-mono text-lg">{Math.round(zoneData.statistics.avg_duration_minutes)}m</span>
+                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1">
+                          <TrendingDown className="h-3 w-3" />
+                          Avg Return
+                        </div>
+                        <span
+                          className={cn(
+                            'font-mono text-lg',
+                            zoneData.statistics.avg_return_percent >= 0
+                              ? 'text-accent-bullish'
+                              : 'text-accent-bearish'
+                          )}
+                        >
+                          {zoneData.statistics.avg_return_percent >= 0 ? '+' : ''}
+                          {zoneData.statistics.avg_return_percent}%
+                        </span>
                       </div>
                       <div className="p-2 bg-bg-elevated rounded">
-                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1"><Target className="h-3 w-3" />Best Pattern</div>
-                        <span className="font-mono text-sm truncate">{zoneData.statistics.best_pattern || 'N/A'}</span>
+                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1">
+                          <Clock className="h-3 w-3" />
+                          Avg Duration
+                        </div>
+                        <span className="font-mono text-lg">
+                          {Math.round(zoneData.statistics.avg_duration_minutes)}m
+                        </span>
+                      </div>
+                      <div className="p-2 bg-bg-elevated rounded">
+                        <div className="flex items-center gap-1 text-text-tertiary text-xs mb-1">
+                          <Target className="h-3 w-3" />
+                          Best Pattern
+                        </div>
+                        <span className="font-mono text-sm truncate">
+                          {zoneData.statistics.best_pattern || 'N/A'}
+                        </span>
                       </div>
                     </div>
                   </div>
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  {zoneData.is_best_zone && <Badge className="bg-accent-bullish/20 text-accent-bullish"><Award className="h-3 w-3 mr-1" />Best Zone</Badge>}
-                  {zoneData.is_worst_zone && <Badge className="bg-accent-bearish/20 text-accent-bearish"><AlertCircle className="h-3 w-3 mr-1" />Worst Zone</Badge>}
+                  {zoneData.is_best_zone && (
+                    <Badge className="bg-accent-bullish/20 text-accent-bullish">
+                      <Award className="h-3 w-3 mr-1" />
+                      Best Zone
+                    </Badge>
+                  )}
+                  {zoneData.is_worst_zone && (
+                    <Badge className="bg-accent-bearish/20 text-accent-bearish">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Worst Zone
+                    </Badge>
+                  )}
                 </div>
               </div>
             </TabsContent>

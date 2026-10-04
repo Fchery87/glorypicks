@@ -23,8 +23,8 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
     if (checked && currentZone && !isInOptimalWindow(currentZone)) {
       setSignalError?.(
         `Kill Zone Filter Active: Currently in ${currentZone.zone_name}. ` +
-        `Signals may be suppressed outside optimal trading windows. ` +
-        `Next optimal window: ${formatMinutes(currentZone.time_until_next)}`
+          `Signals may be suppressed outside optimal trading windows. ` +
+          `Next optimal window: ${formatMinutes(currentZone.time_until_next)}`
       );
     } else {
       setSignalError?.(null);
@@ -52,7 +52,14 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
   }
 
   return (
-    <Card className={cn(filterEnabled && currentZone && !currentZone.optimal_for_entries ? 'border-yellow-500/50 bg-yellow-500/5' : '', className)}>
+    <Card
+      className={cn(
+        filterEnabled && currentZone && !currentZone.optimal_for_entries
+          ? 'border-yellow-500/50 bg-yellow-500/5'
+          : '',
+        className
+      )}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -77,7 +84,9 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
               <Shield className="h-4 w-4 text-accent-bullish flex-shrink-0 mt-0.5" />
               <div className="text-xs">
                 <span className="text-accent-bullish font-medium">Filter Active</span>
-                <p className="text-text-secondary mt-1">Only showing signals during optimal kill zones</p>
+                <p className="text-text-secondary mt-1">
+                  Only showing signals during optimal kill zones
+                </p>
               </div>
             </div>
 
@@ -99,13 +108,17 @@ export function KillZoneFilter({ className }: KillZoneFilterProps) {
                   Optimal Entry Window
                 </Badge>
                 {currentZone.time_remaining && (
-                  <span className="text-xs text-text-secondary">{formatMinutes(currentZone.time_remaining)} remaining</span>
+                  <span className="text-xs text-text-secondary">
+                    {formatMinutes(currentZone.time_remaining)} remaining
+                  </span>
                 )}
               </div>
             )}
           </>
         ) : (
-          <div className="text-xs text-text-secondary">Enable to only show signals during optimal trading windows</div>
+          <div className="text-xs text-text-secondary">
+            Enable to only show signals during optimal trading windows
+          </div>
         )}
 
         <div className="pt-2 border-t border-border-subtle">

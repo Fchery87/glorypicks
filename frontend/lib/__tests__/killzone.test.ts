@@ -95,27 +95,45 @@ describe('isInOptimalWindow', () => {
 describe('getZoneColor', () => {
   it('returns muted colors for inactive zones', () => {
     const data: KillZoneData = {
-      zone_type: 'off_hours', zone_name: '', is_active: false,
-      time_until_next: null, time_remaining: null, session: '',
-      optimal_for_entries: false, volatility_expected: '', rationale: '',
+      zone_type: 'off_hours',
+      zone_name: '',
+      is_active: false,
+      time_until_next: null,
+      time_remaining: null,
+      session: '',
+      optimal_for_entries: false,
+      volatility_expected: '',
+      rationale: '',
     };
     expect(getZoneColor(data)).toContain('bg-bg-tertiary');
   });
 
   it('returns bullish colors for active optimal zones', () => {
     const data: KillZoneData = {
-      zone_type: 'london_kill_zone', zone_name: '', is_active: true,
-      time_until_next: null, time_remaining: 30, session: '',
-      optimal_for_entries: true, volatility_expected: 'high', rationale: '',
+      zone_type: 'london_kill_zone',
+      zone_name: '',
+      is_active: true,
+      time_until_next: null,
+      time_remaining: 30,
+      session: '',
+      optimal_for_entries: true,
+      volatility_expected: 'high',
+      rationale: '',
     };
     expect(getZoneColor(data)).toContain('accent-bullish');
   });
 
   it('returns warning colors for active non-optimal zones', () => {
     const data: KillZoneData = {
-      zone_type: 'asian_session', zone_name: '', is_active: true,
-      time_until_next: null, time_remaining: 30, session: '',
-      optimal_for_entries: false, volatility_expected: 'low', rationale: '',
+      zone_type: 'asian_session',
+      zone_name: '',
+      is_active: true,
+      time_until_next: null,
+      time_remaining: 30,
+      session: '',
+      optimal_for_entries: false,
+      volatility_expected: 'low',
+      rationale: '',
     };
     expect(getZoneColor(data)).toContain('yellow-500');
   });

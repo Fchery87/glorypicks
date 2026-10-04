@@ -5,7 +5,16 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Calculator, TrendingUp, Target, AlertCircle, DollarSign, Percent, Shield, Zap } from 'lucide-react';
+import {
+  Calculator,
+  TrendingUp,
+  Target,
+  AlertCircle,
+  DollarSign,
+  Percent,
+  Shield,
+  Zap,
+} from 'lucide-react';
 
 interface PositionCalculatorProps {
   signal?: {

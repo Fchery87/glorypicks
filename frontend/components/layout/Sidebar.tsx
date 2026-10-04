@@ -9,7 +9,18 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WatchlistItem } from '@/components/WatchlistItem';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Star, Bell, Plus, Trash2, ChevronDown, BookOpen, LayoutDashboard, X, Sparkles, Pencil } from 'lucide-react';
+import {
+  Star,
+  Bell,
+  Plus,
+  Trash2,
+  ChevronDown,
+  BookOpen,
+  LayoutDashboard,
+  X,
+  Sparkles,
+  Pencil,
+} from 'lucide-react';
 import { getSessionId } from '@/lib/session';
 import type { Watchlist } from '@/types';
 import { getAlertHistory, getAlertStats } from '@/lib/alertApi';
@@ -38,9 +49,7 @@ const WatchlistSection = ({ watchlist }: { watchlist: Watchlist }) => {
 
     try {
       const response = await fetch(
-        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') +
-          '/watchlist/' +
-          watchlist.id,
+        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') + '/watchlist/' + watchlist.id,
         {
           method: 'PUT',
           headers: {
@@ -69,9 +78,7 @@ const WatchlistSection = ({ watchlist }: { watchlist: Watchlist }) => {
     setIsDeleting(true);
     try {
       await fetch(
-        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') +
-          '/watchlist/' +
-          watchlist.id,
+        (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000') + '/watchlist/' + watchlist.id,
         {
           method: 'DELETE',
           headers: { 'X-Session-ID': getSessionId() },
@@ -283,7 +290,8 @@ export function Sidebar({ className, style }: SidebarProps) {
             aria-hidden
             className="pointer-events-none absolute top-0 left-0 right-0 h-px"
             style={{
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
+              background:
+                'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
             }}
           />
           <div className="relative flex items-center justify-between">
@@ -384,7 +392,8 @@ export function Sidebar({ className, style }: SidebarProps) {
                   Active
                 </p>
                 <p className="mt-1 font-mono text-lg text-text-primary">
-                  {alertStats?.active_alerts ?? alerts.filter((alert) => alert.status === 'active').length}
+                  {alertStats?.active_alerts ??
+                    alerts.filter((alert) => alert.status === 'active').length}
                 </p>
               </div>
               <div className="rounded-lg border border-border-subtle bg-bg-tertiary/50 p-2.5">
@@ -440,7 +449,10 @@ export function Sidebar({ className, style }: SidebarProps) {
               ) : (
                 <div className="space-y-2">
                   {alertHistory.map((entry) => (
-                    <div key={`${entry.alert_id}-${entry.triggered_at}`} className="border-b border-border-subtle pb-2 last:border-0 last:pb-0">
+                    <div
+                      key={`${entry.alert_id}-${entry.triggered_at}`}
+                      className="border-b border-border-subtle pb-2 last:border-0 last:pb-0"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-mono text-xs text-text-primary">{entry.symbol}</span>
                         <span className="text-[10px] text-text-tertiary">
@@ -450,7 +462,9 @@ export function Sidebar({ className, style }: SidebarProps) {
                           })}
                         </span>
                       </div>
-                      <p className="mt-0.5 text-[11px] leading-4 text-text-secondary">{entry.message}</p>
+                      <p className="mt-0.5 text-[11px] leading-4 text-text-secondary">
+                        {entry.message}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -462,7 +476,10 @@ export function Sidebar({ className, style }: SidebarProps) {
 
       {isCreateDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseDialog} />
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCloseDialog}
+          />
           <div className="relative bg-bg-secondary border border-border-default rounded-xl shadow-2xl w-full max-w-md mx-4 p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
@@ -500,9 +517,7 @@ export function Sidebar({ className, style }: SidebarProps) {
                   autoFocus
                   className="w-full"
                 />
-                {createError && (
-                  <p className="text-xs text-accent-bearish mt-1.5">{createError}</p>
-                )}
+                {createError && <p className="text-xs text-accent-bearish mt-1.5">{createError}</p>}
               </div>
 
               <div className="flex gap-2 pt-1">

@@ -49,7 +49,8 @@ function TickerItem({ sym, px, ch }: TickerItemProps) {
         className="h-3 w-px ml-1"
         aria-hidden
         style={{
-          background: 'linear-gradient(180deg, transparent, var(--color-border-default), transparent)',
+          background:
+            'linear-gradient(180deg, transparent, var(--color-border-default), transparent)',
         }}
       />
     </div>

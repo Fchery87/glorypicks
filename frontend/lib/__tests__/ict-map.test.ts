@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildICTMapUrl,
-  filterICTAnnotations,
-  getTradePlanViewModel,
-} from '@/lib/ict-map';
+import { buildICTMapUrl, filterICTAnnotations, getTradePlanViewModel } from '@/lib/ict-map';
 import type { ICTAnnotation, TradePlan } from '@/types';
 
 const annotation = (overrides: Partial<ICTAnnotation> = {}): ICTAnnotation => ({

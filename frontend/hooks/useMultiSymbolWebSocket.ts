@@ -32,7 +32,9 @@ export function useMultiSymbolWebSocket(
   const socketRef = useRef<WebSocket | null>(null);
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attemptRef = useRef(0);
-  const symbolsKey = [...new Set(symbols.map((symbol) => symbol.trim().toUpperCase()).filter(Boolean))]
+  const symbolsKey = [
+    ...new Set(symbols.map((symbol) => symbol.trim().toUpperCase()).filter(Boolean)),
+  ]
     .sort()
     .join(',');
 

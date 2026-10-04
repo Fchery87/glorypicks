@@ -168,11 +168,12 @@ export function SignalCard() {
               config.borderColor
             )}
             style={{
-              boxShadow: signal.recommendation === 'Buy'
-                ? '0 0 30px rgba(45, 212, 116, 0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
-                : signal.recommendation === 'Sell'
-                  ? '0 0 30px rgba(255, 95, 115, 0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
-                  : 'inset 0 1px 0 rgba(255,255,255,0.06)'
+              boxShadow:
+                signal.recommendation === 'Buy'
+                  ? '0 0 30px rgba(45, 212, 116, 0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
+                  : signal.recommendation === 'Sell'
+                    ? '0 0 30px rgba(255, 95, 115, 0.15), inset 0 1px 0 rgba(255,255,255,0.06)'
+                    : 'inset 0 1px 0 rgba(255,255,255,0.06)',
             }}
           >
             <Icon className={cn('h-10 w-10', config.color, config.glow)} />
@@ -192,9 +193,7 @@ export function SignalCard() {
             </Badge>
             <div className="mt-3 flex flex-wrap items-baseline gap-2">
               <span
-                className={cn(
-                  'display-numeral text-5xl tracking-[-0.045em] text-text-primary'
-                )}
+                className={cn('display-numeral text-5xl tracking-[-0.045em] text-text-primary')}
               >
                 {strengthPercent}
               </span>

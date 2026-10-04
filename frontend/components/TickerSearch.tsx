@@ -5,11 +5,7 @@ import { useStore } from '@/lib/store';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Search, X, Command, TrendingUp, Star, Sparkles } from 'lucide-react';
-import {
-  recordRecentSymbol,
-  searchSymbols,
-  type SymbolResult,
-} from '@/lib/symbolApi';
+import { recordRecentSymbol, searchSymbols, type SymbolResult } from '@/lib/symbolApi';
 
 const POPULAR_SYMBOLS = {
   stocks: [
@@ -137,7 +133,17 @@ export function TickerSearch() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await searchSymbols(query, activeClass === 'all' ? 'all' : activeClass === 'indices' ? 'index' : activeClass === 'stocks' ? 'stock' : activeClass, controller.signal);
+        const response = await searchSymbols(
+          query,
+          activeClass === 'all'
+            ? 'all'
+            : activeClass === 'indices'
+              ? 'index'
+              : activeClass === 'stocks'
+                ? 'stock'
+                : activeClass,
+          controller.signal
+        );
         setBackendResults(response.results);
         setRecent(response.recent);
         setTrending(response.trending);
@@ -157,7 +163,9 @@ export function TickerSearch() {
     };
   }, [query, activeClass]);
 
-  const filteredSymbols = query ? backendResults ?? getFallbackSymbols() : backendResults ?? getFallbackSymbols();
+  const filteredSymbols = query
+    ? (backendResults ?? getFallbackSymbols())
+    : (backendResults ?? getFallbackSymbols());
   const sections = query
     ? [{ title: 'Results', items: filteredSymbols }]
     : [
@@ -247,7 +255,9 @@ export function TickerSearch() {
 
           <div className="max-h-80 overflow-y-auto">
             {isSearching ? (
-              <div className="p-8 text-center text-text-secondary text-sm">Searching symbols...</div>
+              <div className="p-8 text-center text-text-secondary text-sm">
+                Searching symbols...
+              </div>
             ) : filteredSymbols.length === 0 ? (
               <div className="p-8 text-center">
                 <Search className="h-8 w-8 text-text-tertiary mx-auto mb-3" />
@@ -264,64 +274,67 @@ export function TickerSearch() {
                       </p>
                     )}
                     {section.items.map((item) => {
-                  const isActive = symbol === item.symbol;
-                  return (
-                    <div
-                      key={item.symbol}
-                      className={cn(
-                        'group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150',
-                        isActive
-                          ? 'bg-accent-primary/8 border border-accent-primary/20'
-                          : 'border border-transparent hover:bg-bg-tertiary'
-                      )}
-                      onClick={() => handleSelect(item.symbol)}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
+                      const isActive = symbol === item.symbol;
+                      return (
                         <div
+                          key={item.symbol}
                           className={cn(
-                            'flex h-7 w-7 items-center justify-center rounded-md border',
+                            'group flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-150',
                             isActive
-                              ? 'border-accent-primary/40 bg-accent-primary/10 text-accent-primary'
-                              : 'border-border-subtle bg-bg-tertiary text-text-tertiary'
+                              ? 'bg-accent-primary/8 border border-accent-primary/20'
+                              : 'border border-transparent hover:bg-bg-tertiary'
                           )}
+                          onClick={() => handleSelect(item.symbol)}
                         >
-                          <TrendingUp className="h-3.5 w-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
                               className={cn(
-                                'font-mono text-sm font-semibold tracking-[0.04em]',
-                                isActive ? 'text-accent-primary' : 'text-text-primary'
+                                'flex h-7 w-7 items-center justify-center rounded-md border',
+                                isActive
+                                  ? 'border-accent-primary/40 bg-accent-primary/10 text-accent-primary'
+                                  : 'border-border-subtle bg-bg-tertiary text-text-tertiary'
                               )}
                             >
-                              {item.symbol}
-                            </span>
-                            {isActive && (
-                              <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-accent-primary/15 text-accent-primary rounded font-mono uppercase tracking-[0.14em]">
-                                <Sparkles className="h-2.5 w-2.5" />
-                                Active
-                              </span>
-                            )}
-                            {isInWatchlist(item.symbol) && (
-                              <Star className="h-3 w-3 text-accent-primary fill-accent-primary" />
-                            )}
-                          </div>
-                            <p className="text-text-tertiary text-xs truncate">
-                              {item.name}
-                              {[item.exchange, item.currency, item.sector].filter(Boolean).length > 0 && (
-                                <span className="ml-2 text-[10px]">
-                                  {[item.exchange, item.currency, item.sector].filter(Boolean).join(' · ')}
+                              <TrendingUp className="h-3.5 w-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={cn(
+                                    'font-mono text-sm font-semibold tracking-[0.04em]',
+                                    isActive ? 'text-accent-primary' : 'text-text-primary'
+                                  )}
+                                >
+                                  {item.symbol}
                                 </span>
-                              )}
-                            </p>
+                                {isActive && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-accent-primary/15 text-accent-primary rounded font-mono uppercase tracking-[0.14em]">
+                                    <Sparkles className="h-2.5 w-2.5" />
+                                    Active
+                                  </span>
+                                )}
+                                {isInWatchlist(item.symbol) && (
+                                  <Star className="h-3 w-3 text-accent-primary fill-accent-primary" />
+                                )}
+                              </div>
+                              <p className="text-text-tertiary text-xs truncate">
+                                {item.name}
+                                {[item.exchange, item.currency, item.sector].filter(Boolean)
+                                  .length > 0 && (
+                                  <span className="ml-2 text-[10px]">
+                                    {[item.exchange, item.currency, item.sector]
+                                      .filter(Boolean)
+                                      .join(' · ')}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-text-tertiary text-[10px] uppercase tracking-[0.14em] font-mono">
+                            {item.asset_class}
+                          </span>
                         </div>
-                      </div>
-                      <span className="text-text-tertiary text-[10px] uppercase tracking-[0.14em] font-mono">
-                        {item.asset_class}
-                      </span>
-                    </div>
-                  );
+                      );
                     })}
                   </div>
                 ))}
@@ -330,7 +343,9 @@ export function TickerSearch() {
           </div>
 
           <div className="px-3 py-2 border-t border-border-subtle bg-bg-tertiary/40 flex items-center justify-between text-[10px] text-text-tertiary font-mono uppercase tracking-[0.14em]">
-            <span>{filteredSymbols.length} result{filteredSymbols.length === 1 ? '' : 's'}</span>
+            <span>
+              {filteredSymbols.length} result{filteredSymbols.length === 1 ? '' : 's'}
+            </span>
             <span className="flex items-center gap-1">
               Press{' '}
               <kbd className="px-1.5 py-0.5 bg-bg-tertiary border border-border-default rounded-sm">
@@ -341,7 +356,6 @@ export function TickerSearch() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

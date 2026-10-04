@@ -179,10 +179,15 @@ export function AlertManager({ defaultSymbol = '' }: { defaultSymbol?: string })
             ) : (
               <div className="space-y-2">
                 {history.map((item) => (
-                  <div key={`${item.alert_id}-${item.triggered_at}`} className="border-b border-border-subtle pb-2 text-sm">
+                  <div
+                    key={`${item.alert_id}-${item.triggered_at}`}
+                    className="border-b border-border-subtle pb-2 text-sm"
+                  >
                     <div className="flex justify-between gap-3">
                       <span className="font-mono text-text-primary">{item.symbol}</span>
-                      <span className="text-xs text-text-tertiary">{new Date(item.triggered_at).toLocaleString()}</span>
+                      <span className="text-xs text-text-tertiary">
+                        {new Date(item.triggered_at).toLocaleString()}
+                      </span>
                     </div>
                     <p className="text-text-secondary">{item.message}</p>
                   </div>

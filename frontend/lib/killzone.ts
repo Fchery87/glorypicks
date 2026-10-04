@@ -5,11 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 // ─── Kill Zone API Types (mirrors backend /killzone response) ───
 
 export type KillZoneType =
-  | 'london_kill_zone'
-  | 'ny_kill_zone'
-  | 'london_close'
-  | 'asian_session'
-  | 'off_hours';
+  'london_kill_zone' | 'ny_kill_zone' | 'london_close' | 'asian_session' | 'off_hours';
 
 export interface KillZoneData {
   zone_type: KillZoneType;
@@ -28,27 +24,35 @@ export interface KillZonePerformanceData {
   optimal_session: string;
   overall_best_zone: string;
   overall_worst_zone: string;
-  zone_recommendations: Record<string, {
-    zone_type: string;
-    recommendation: string;
-    confidence: number;
-    message: string;
-    statistics: {
-      total_trades: number;
-      win_rate: number;
-      avg_return_percent: number;
-      avg_duration_minutes: number;
-      best_pattern: string;
-      worst_pattern: string;
-    } | null;
-    is_best_zone: boolean;
-    is_worst_zone: boolean;
-  }>;
+  zone_recommendations: Record<
+    string,
+    {
+      zone_type: string;
+      recommendation: string;
+      confidence: number;
+      message: string;
+      statistics: {
+        total_trades: number;
+        win_rate: number;
+        avg_return_percent: number;
+        avg_duration_minutes: number;
+        best_pattern: string;
+        worst_pattern: string;
+      } | null;
+      is_best_zone: boolean;
+      is_worst_zone: boolean;
+    }
+  >;
 }
 
 // ─── Session Schedule (domain constants) ───
 
-export const KILL_ZONE_SESSIONS: { name: string; start: string; end: string; type: KillZoneType }[] = [
+export const KILL_ZONE_SESSIONS: {
+  name: string;
+  start: string;
+  end: string;
+  type: KillZoneType;
+}[] = [
   { name: 'London Kill Zone', start: '3:00', end: '5:00', type: 'london_kill_zone' },
   { name: 'NYSE Kill Zone', start: '9:30', end: '11:30', type: 'ny_kill_zone' },
   { name: 'London Close', start: '11:00', end: '12:00', type: 'london_close' },
@@ -77,10 +81,14 @@ export function getZoneColor(data: KillZoneData | null): string {
 
 export function getVolatilityColor(volatility: string): string {
   switch (volatility) {
-    case 'high': return 'text-accent-bullish';
-    case 'medium': return 'text-yellow-500';
-    case 'low': return 'text-text-tertiary';
-    default: return 'text-text-tertiary';
+    case 'high':
+      return 'text-accent-bullish';
+    case 'medium':
+      return 'text-yellow-500';
+    case 'low':
+      return 'text-text-tertiary';
+    default:
+      return 'text-text-tertiary';
   }
 }
 
@@ -101,7 +109,10 @@ export function convertTime(
   const estDate = new Date();
   estDate.setHours(hour, minute, 0, 0);
   const formatter = new Intl.DateTimeFormat('en-US', {
-    hour: 'numeric', minute: '2-digit', hour12: false, timeZone: timezone,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: timezone,
   });
   const parts = formatter.formatToParts(estDate);
   return {
@@ -114,11 +125,7 @@ export function convertTime(
 /**
  * Format a kill zone time range for display in the user's timezone.
  */
-export function formatKillZoneTime(
-  startTime: string,
-  endTime: string,
-  timezone?: string
-): string {
+export function formatKillZoneTime(startTime: string, endTime: string, timezone?: string): string {
   if (!timezone) return `${startTime} - ${endTime} EST`;
   const [startHour, startMin] = startTime.split(':').map(Number);
   const [endHour, endMin] = endTime.split(':').map(Number);
@@ -184,7 +191,9 @@ export function useKillZonePerformance(symbol?: string) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_URL()}/killzone/performance/${encodeURIComponent(symbol)}`);
+        const response = await fetch(
+          `${API_URL()}/killzone/performance/${encodeURIComponent(symbol)}`
+        );
         if (!response.ok) throw new Error('Failed to fetch performance data');
         const result = await response.json();
         if (!cancelled) setData(result);
@@ -195,7 +204,9 @@ export function useKillZonePerformance(symbol?: string) {
       }
     };
     fetchPerformance();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [symbol]);
 
   return { data, loading, error };

@@ -29,7 +29,11 @@ const LAYOUT_OPTIONS: { value: ChartLayout; label: string; icon: React.ReactNode
   { value: '2x2', label: 'Matrix', icon: <LayoutGrid className="h-3.5 w-3.5" /> },
 ];
 
-export function MultiChartGrid({ isPremium, annotations = [], showAnnotations = true }: MultiChartGridProps) {
+export function MultiChartGrid({
+  isPremium,
+  annotations = [],
+  showAnnotations = true,
+}: MultiChartGridProps) {
   const { symbol, chartLayout, setChartLayout, charts, setChartInterval, candles } = useStore();
 
   const [chartData, setChartData] = useState<Record<string, any[]>>({});
@@ -246,9 +250,7 @@ function ChartCard({
           <div className="absolute inset-0 flex items-center justify-center bg-bg-primary/40">
             <div className="flex items-center gap-2.5 text-text-secondary">
               <div className="h-4 w-4 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
-              <span className="text-[11px] font-mono uppercase tracking-[0.14em]">
-                Loading
-              </span>
+              <span className="text-[11px] font-mono uppercase tracking-[0.14em]">Loading</span>
             </div>
           </div>
         ) : candles.length > 0 ? (
