@@ -1,7 +1,7 @@
 # GloryPicks - Professional Trading Signals Dashboard
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/glorypicks)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Fchery87/glorypicks)
+[![License](https://img.shields.io/badge/license-not%20yet%20chosen-lightgrey.svg)](#-license)
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
 
@@ -38,8 +38,8 @@ A real-time trading dashboard for studying ICT-style setups. A Buy or Sell is sh
 - **Keyboard shortcuts** - ⌘K for quick search, optimized for power users
 
 ### Technical Features
-- **Production-grade architecture** with Docker containerization
-- **Provider redundancy** (Finnhub, Alpha Vantage, Binance) with fallback support
+- **Local setup** with Docker Compose, or with uv and pnpm.
+- **Market data:** Finnhub, Alpha Vantage, and Binance when keys are configured. Demo candles are used when they are not.
 - **Caching system** for optimized performance
 - **Type-safe** - Full TypeScript on frontend, Python type hints on backend
 - **Real-time WebSocket** connections with auto-reconnection
@@ -52,70 +52,45 @@ A real-time trading dashboard for studying ICT-style setups. A Buy or Sell is sh
 ### Prerequisites
 
 - **Docker** and **Docker Compose** (recommended)
-- **Node.js 18+** and **Bun** (for local frontend development)
-- **Python 3.12+** (for local backend development)
-- **API Keys**:
-  - **Finnhub API key (REQUIRED)**: https://finnhub.io/register (free tier)
-  - Alpha Vantage API key (optional): https://www.alphavantage.co/
+- **Node.js 24+** and **pnpm** for the frontend
+- **Python 3.12** and **uv** for the backend
+- Provider API keys are optional. Without them, signal requests use demo candles.
 
-### Option 1: Docker (Recommended)
+### Option 1: Docker Compose
+
+Docker builds both services from their Dockerfiles. It does not require a local uv or pnpm install.
 
 ```bash
-# Clone and setup
-git clone <repository-url>
-cd glorypicks
-
-# Configure environment
 cp backend/.env.example backend/.env
-# Edit backend/.env and add your FINNHUB_API_KEY
-
-# Start all services
-docker-compose up --build
-
-# Access the application
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:8000
-# API Docs: http://localhost:8000/docs
+cp frontend/.env.example frontend/.env.local
+docker compose up --build
 ```
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
 
 ### Option 2: Local Development
 
 **Backend:**
 ```bash
 cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Configure environment
+uv sync
 cp .env.example .env
-# Edit .env and add your API keys
-
-# Run server
-python -m app.main
-# or
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload
 ```
+
+The backend is available at http://localhost:8000.
 
 **Frontend:**
 ```bash
 cd frontend
-
-# Install dependencies
-bun install
-
-# Configure environment
+pnpm install
 cp .env.example .env.local
-
-# Run development server
-bun dev
-
-# Access at http://localhost:3000
+pnpm dev
 ```
+
+The frontend is available at http://localhost:3000. Provider keys in `backend/.env` are optional. Without them, signal requests use demo candles.
 
 ---
 
@@ -178,9 +153,9 @@ Accents:       #E8E4DD (primary), #4ADE80 (bullish), #FB7185 (bearish)
 
 | Metric | Target | Status |
 |--------|--------|--------|
-| Time-to-Insight (TTI) | < 2 seconds | ✅ |
-| WebSocket Latency (p95) | < 1.5 seconds | ✅ |
-| Timeframe Switching | < 500ms | ✅ |
+| Signal callout latency | Not measured in this repository | — |
+| WebSocket latency | Not measured in this repository | — |
+| Timeframe switching | Not measured in this repository | — |
 | Signal callout | Buy or Sell only when bias, confirmation, and trade plan agree | Enforced in the engine |
 
 ---
@@ -208,7 +183,7 @@ GET /signal/AAPL/history
 GET /signal/AAPL/ict
 ```
 
-`style` is `swing` or `scalp`. Swing is the default. History returns recorded signals and their planned entry, stop, and target.
+`style` is `swing` or `scalp`. Swing is the default. History returns recorded signals and their planned entry, stop, and target. Scoring a plan against later prices is available to tests, but no endpoint runs that scoring yet.
 
 **Watchlists**
 ```bash
@@ -257,13 +232,13 @@ glorypicks/
 │   │   ├── services/          # Business logic
 │   │   └── main.py            # FastAPI entry point
 │   ├── tests/
-│   └── requirements.txt
+│   ├── pyproject.toml
+│   └── uv.lock
 ├── frontend/
-│   ├── app/                   # Next.js App Router
+│   ├── app/                   # Next.js App Router pages
 │   ├── components/
 │   │   ├── ui/                # Design system components
-│   │   ├── layout/            # Header, Sidebar, StatusBar
-│   │   └── pages/             # Page components
+│   │   └── layout/            # Header, Sidebar, StatusBar
 │   ├── lib/                   # Utilities, store
 │   └── types/                 # TypeScript definitions
 ├── docker-compose.yml
@@ -281,7 +256,7 @@ pytest
 
 # Frontend tests
 cd frontend
-bun test
+pnpm test
 
 # API test
 curl http://localhost:8000/health
@@ -338,7 +313,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+No license file has been added yet. Do not assume the source is licensed for reuse.
 
 ---
 
