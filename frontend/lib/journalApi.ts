@@ -11,7 +11,7 @@ import {
   JournalTradeSignal,
   JournalTradeCreatePayload,
 } from '@/types/journal';
-import { getAuthHeaders } from '@/lib/session';
+import { apiFetch, getAuthHeaders } from '@/lib/session';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -33,9 +33,7 @@ export async function getTrades(
   if (params?.max_pnl !== undefined) searchParams.set('max_pnl', params.max_pnl.toString());
   if (params?.limit) searchParams.set('limit', params.limit.toString());
 
-  const response = await fetch(`${API_URL}/journal/trades?${searchParams}`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/trades?${searchParams}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -54,9 +52,7 @@ export async function getReviewMetrics(
     if (Array.isArray(value)) value.forEach((item) => searchParams.append(key, item));
     else if (value !== undefined && value !== '') searchParams.set(key, String(value));
   });
-  const response = await fetch(`${API_URL}/journal/review-metrics?${searchParams}`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/review-metrics?${searchParams}`);
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to fetch review metrics');
@@ -66,9 +62,7 @@ export async function getReviewMetrics(
 
 /** Get open trades */
 export async function getOpenTrades(): Promise<TradeEntry[]> {
-  const response = await fetch(`${API_URL}/journal/trades/open`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/trades/open`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -80,9 +74,9 @@ export async function getOpenTrades(): Promise<TradeEntry[]> {
 
 /** Create a new trade */
 export async function createTrade(tradeData: JournalTradeCreatePayload): Promise<TradeEntry> {
-  const response = await fetch(`${API_URL}/journal/trades`, {
+  const response = await apiFetch(`${API_URL}/journal/trades`, {
     method: 'POST',
-    headers: { ...getAuthHeaders() },
+    
     body: JSON.stringify(tradeData),
   });
 
@@ -99,9 +93,9 @@ export async function appendTradeSignal(
   tradeId: string,
   signal: JournalTradeSignal
 ): Promise<TradeEntry> {
-  const response = await fetch(`${API_URL}/journal/trades/${tradeId}/signals`, {
+  const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}/signals`, {
     method: 'POST',
-    headers: { ...getAuthHeaders() },
+    
     body: JSON.stringify(signal),
   });
 
@@ -118,9 +112,9 @@ export async function updateTrade(
   tradeId: string,
   updates: Partial<TradeEntry>
 ): Promise<TradeEntry> {
-  const response = await fetch(`${API_URL}/journal/trades/${tradeId}`, {
+  const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}`, {
     method: 'PATCH',
-    headers: { ...getAuthHeaders() },
+    
     body: JSON.stringify(updates),
   });
 
@@ -137,9 +131,9 @@ export async function closeTrade(
   tradeId: string,
   exitData: { exit_price: number; post_trade_notes?: string; emotional_state?: string }
 ): Promise<TradeEntry> {
-  const response = await fetch(`${API_URL}/journal/trades/${tradeId}/close`, {
+  const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}/close`, {
     method: 'POST',
-    headers: { ...getAuthHeaders() },
+    
     body: JSON.stringify({
       ...exitData,
       exit_time: new Date().toISOString(),
@@ -156,9 +150,9 @@ export async function closeTrade(
 
 /** Delete a trade */
 export async function deleteTrade(tradeId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/journal/trades/${tradeId}`, {
+  const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}`, {
     method: 'DELETE',
-    headers: { ...getAuthHeaders() },
+    
   });
 
   if (!response.ok) {
@@ -172,9 +166,7 @@ export async function getStatistics(days?: number): Promise<TradeStatistics> {
   const searchParams = new URLSearchParams();
   if (days) searchParams.set('days', days.toString());
 
-  const response = await fetch(`${API_URL}/journal/statistics?${searchParams}`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/statistics?${searchParams}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -186,9 +178,7 @@ export async function getStatistics(days?: number): Promise<TradeStatistics> {
 
 /** Get journal analytics (Premium feature) */
 export async function getAnalytics(): Promise<JournalAnalytics> {
-  const response = await fetch(`${API_URL}/journal/analytics`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/analytics`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -200,9 +190,7 @@ export async function getAnalytics(): Promise<JournalAnalytics> {
 
 /** Get tier limits */
 export async function getTierLimits(): Promise<UserTierLimits> {
-  const response = await fetch(`${API_URL}/journal/tier-limits`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/tier-limits`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -214,9 +202,8 @@ export async function getTierLimits(): Promise<UserTierLimits> {
 
 /** Create sample trades (for demo) */
 export async function createSampleTrades(): Promise<TradeEntry[]> {
-  const response = await fetch(`${API_URL}/journal/trades/sample`, {
+  const response = await apiFetch(`${API_URL}/journal/trades/sample`, {
     method: 'POST',
-    headers: { ...getAuthHeaders() },
   });
 
   if (!response.ok) {
@@ -233,9 +220,7 @@ export async function getPatternOptions(): Promise<{
   emotions: { value: string; label: string }[];
   directions: { value: string; label: string }[];
 }> {
-  const response = await fetch(`${API_URL}/journal/patterns`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/patterns`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -268,9 +253,7 @@ export async function importTrades(file: File): Promise<JournalImportResult> {
 
 /** Download all trades as a CSV file */
 export async function exportTrades(): Promise<Blob> {
-  const response = await fetch(`${API_URL}/journal/trades/export`, {
-    headers: { ...getAuthHeaders() },
-  });
+  const response = await apiFetch(`${API_URL}/journal/trades/export`);
 
   if (!response.ok) {
     const error = await response.json();

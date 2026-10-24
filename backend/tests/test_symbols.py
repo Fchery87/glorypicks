@@ -20,18 +20,29 @@ def test_search_and_metadata() -> None:
 
 def test_search_filters_asset_class_and_validates_limit() -> None:
     client = TestClient(app)
-    assert all(item["asset_class"] == "crypto" for item in client.get(
-        "/symbols/search?q=USD&asset_class=crypto"
-    ).json()) is True
+    assert (
+        all(
+            item["asset_class"] == "crypto"
+            for item in client.get("/symbols/search?q=USD&asset_class=crypto").json()
+        )
+        is True
+    )
     assert client.get("/symbols/search?limit=0").status_code == 422
 
 
 def test_recent_symbols_are_session_scoped_and_normalized() -> None:
     client = TestClient(app)
-    assert client.post("/symbols/recent/aapl", headers={"X-Session-ID": "one"}).json()["symbol"] == "AAPL"
+    assert (
+        client.post("/symbols/recent/aapl", headers={"X-Session-ID": "one"}).json()["symbol"]
+        == "AAPL"
+    )
     assert client.get("/symbols/recent", headers={"X-Session-ID": "two"}).json() == []
-    assert client.get("/symbols/recent", headers={"X-Session-ID": "one"}).json()[0]["symbol"] == "AAPL"
-    assert client.post("/symbols/recent/unknown", headers={"X-Session-ID": "one"}).status_code == 404
+    assert (
+        client.get("/symbols/recent", headers={"X-Session-ID": "one"}).json()[0]["symbol"] == "AAPL"
+    )
+    assert (
+        client.post("/symbols/recent/unknown", headers={"X-Session-ID": "one"}).status_code == 404
+    )
 
 
 def test_trending_and_routes() -> None:

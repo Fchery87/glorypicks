@@ -461,7 +461,7 @@ class ICTStrategies:
             return []
 
         # Sort by strength and confidence
-        sorted_signals = sorted(signals, key=lambda x: (x.strength * x.confidence), reverse=True)
+        sorted_signals = sorted(signals, key=lambda x: x.strength * x.confidence, reverse=True)
 
         # Remove duplicates and keep top 3
         unique_signals: list[ICTSignalResult] = []

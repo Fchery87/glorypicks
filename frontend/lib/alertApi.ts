@@ -4,7 +4,7 @@
  */
 
 import type { Alert, AlertTriggered, AlertStats, AlertType, SoundName } from '@/types';
-import { getAuthHeaders } from '@/lib/session';
+import { apiFetch } from '@/lib/session';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8000';
 
@@ -41,7 +41,7 @@ export interface UpdateAlertData {
  * Create a new alert
  */
 export async function createAlert(data: CreateAlertData): Promise<Alert> {
-  const response = await fetch(`${API_BASE}/alerts`, {
+  const response = await apiFetch(`${API_BASE}/alerts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -66,9 +66,7 @@ export async function getAlerts(symbol?: string): Promise<Alert[]> {
     ? `${API_BASE}/alerts?symbol=${encodeURIComponent(symbol)}`
     : `${API_BASE}/alerts`;
 
-  const response = await fetch(url, {
-    headers: getAuthHeaders(),
-  });
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error('Failed to fetch alerts');
@@ -81,9 +79,7 @@ export async function getAlerts(symbol?: string): Promise<Alert[]> {
  * Get a specific alert by ID
  */
 export async function getAlert(alertId: string): Promise<Alert> {
-  const response = await fetch(`${API_BASE}/alerts/${alertId}`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await apiFetch(`${API_BASE}/alerts/${alertId}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch alert');
@@ -96,7 +92,7 @@ export async function getAlert(alertId: string): Promise<Alert> {
  * Update an existing alert
  */
 export async function updateAlert(alertId: string, data: UpdateAlertData): Promise<Alert> {
-  const response = await fetch(`${API_BASE}/alerts/${alertId}`, {
+  const response = await apiFetch(`${API_BASE}/alerts/${alertId}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -117,9 +113,9 @@ export async function updateAlert(alertId: string, data: UpdateAlertData): Promi
  * Delete an alert
  */
 export async function deleteAlert(alertId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/alerts/${alertId}`, {
+  const response = await apiFetch(`${API_BASE}/alerts/${alertId}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
+    
   });
 
   if (!response.ok) {
@@ -131,9 +127,9 @@ export async function deleteAlert(alertId: string): Promise<void> {
  * Reset a triggered alert back to active status
  */
 export async function resetAlert(alertId: string): Promise<Alert> {
-  const response = await fetch(`${API_BASE}/alerts/${alertId}/reset`, {
+  const response = await apiFetch(`${API_BASE}/alerts/${alertId}/reset`, {
     method: 'POST',
-    headers: getAuthHeaders(),
+    
   });
 
   if (!response.ok) {
@@ -147,9 +143,7 @@ export async function resetAlert(alertId: string): Promise<Alert> {
  * Get alert trigger history
  */
 export async function getAlertHistory(limit: number = 100): Promise<AlertTriggered[]> {
-  const response = await fetch(`${API_BASE}/alerts/history?limit=${limit}`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await apiFetch(`${API_BASE}/alerts/history?limit=${limit}`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch alert history');
@@ -162,9 +156,7 @@ export async function getAlertHistory(limit: number = 100): Promise<AlertTrigger
  * Get alert statistics
  */
 export async function getAlertStats(): Promise<AlertStats> {
-  const response = await fetch(`${API_BASE}/alerts/stats`, {
-    headers: getAuthHeaders(),
-  });
+  const response = await apiFetch(`${API_BASE}/alerts/stats`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch alert stats');

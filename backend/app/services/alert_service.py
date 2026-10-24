@@ -18,7 +18,10 @@ import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from app.models import Signal
+import json
+
+from app.db import get_database
+from app.models import Recommendation, Signal
 from app.models.alert import (
     Alert,
     AlertCreate,
@@ -38,12 +41,35 @@ class AlertService:
     """
 
     def __init__(self) -> None:
-        """Initialize the alert service with in-memory storage."""
-        self._storage: dict[str, Alert] = {}
-        self._history: list[AlertTriggered] = []
+        """Initialize process-only trigger state. Alert records live in the database."""
         self._triggered_cache: dict[str, datetime] = {}
         self._observations: dict[tuple[str, str], dict[str, Any]] = {}
         self._cooldown_period = timedelta(minutes=5)
+
+    def _alerts(self, user_id: str | None = None) -> list[Alert]:
+        database = get_database()
+        if user_id is None:
+            rows = database.query("SELECT payload FROM alerts")
+            payloads = [json.loads(row["payload"]) for row in rows]
+        else:
+            payloads = database.list_json("alerts", user_id)
+        return [Alert.model_validate(payload) for payload in payloads]
+
+    def _save(self, alert: Alert) -> None:
+        get_database().put_json("alerts", alert.id, alert.user_id, alert.model_dump(mode="json"))
+
+    def _history_for(self, user_id: str) -> list[AlertTriggered]:
+        rows = get_database().query(
+            "SELECT payload FROM alert_history WHERE user_id = ? ORDER BY id DESC",
+            (user_id,),
+        )
+        return [AlertTriggered.model_validate(json.loads(row["payload"])) for row in rows]
+
+    def _record_trigger(self, user_id: str, triggered_alert: AlertTriggered) -> None:
+        get_database().execute(
+            "INSERT INTO alert_history (user_id, alert_id, payload) VALUES (?, ?, ?)",
+            (user_id, triggered_alert.alert_id, triggered_alert.model_dump_json()),
+        )
 
     # =======================================================================
     # CRUD Operations
@@ -61,7 +87,7 @@ class AlertService:
             Created alert
         """
         # Enforce alert limit (50 per user)
-        user_alerts = [a for a in self._storage.values() if a.user_id == user_id]
+        user_alerts = self._alerts(user_id)
         if len(user_alerts) >= 50:
             raise ValueError("Maximum alert limit reached (50 per user)")
 
@@ -84,12 +110,13 @@ class AlertService:
             trigger_data=None,
         )
 
-        self._storage[alert.id] = alert
+        self._save(alert)
         return alert
 
     def get(self, user_id: str, alert_id: str) -> Alert | None:
         """Get a specific alert by ID (with ownership check)."""
-        alert = self._storage.get(alert_id)
+        payload = get_database().get_json("alerts", alert_id)
+        alert = Alert.model_validate(payload) if payload else None
         if alert and alert.user_id == user_id:
             return alert
         return None
@@ -105,7 +132,7 @@ class AlertService:
         Returns:
             List of alerts
         """
-        alerts = [a for a in self._storage.values() if a.user_id == user_id]
+        alerts = self._alerts(user_id)
 
         if symbol:
             symbol = symbol.upper()
@@ -125,13 +152,14 @@ class AlertService:
             if hasattr(alert, key) and value is not None:
                 setattr(alert, key, value)
 
+        self._save(alert)
         return alert
 
     def delete(self, user_id: str, alert_id: str) -> bool:
         """Delete an alert."""
         alert = self.get(user_id, alert_id)
         if alert:
-            del self._storage[alert_id]
+            get_database().delete_row("alerts", alert_id, user_id)
             return True
         return False
 
@@ -160,7 +188,7 @@ class AlertService:
         # Get active alerts for this symbol, optionally scoped to session
         relevant_alerts = [
             a
-            for a in self._storage.values()
+            for a in self._alerts(user_id)
             if a.symbol == signal.symbol
             and a.enabled
             and a.status == "active"
@@ -180,9 +208,10 @@ class AlertService:
                     alert.status = "triggered"
                     alert.triggered_at = utc_now()
                     alert.trigger_data = triggered_alert.trigger_data
+                    self._save(alert)
 
                     # Add to history
-                    self._history.append(triggered_alert)
+                    self._record_trigger(alert.user_id, triggered_alert)
 
                     # Update cooldown cache
                     self._triggered_cache[cache_key] = utc_now()
@@ -206,7 +235,7 @@ class AlertService:
         previous = self._observations.get(observation_key)
         signal = Signal(
             symbol=symbol,
-            recommendation="Neutral",
+            recommendation=Recommendation.NEUTRAL,
             strength=0,
             price=price,
         )
@@ -214,7 +243,7 @@ class AlertService:
 
         relevant_alerts = [
             alert
-            for alert in self._storage.values()
+            for alert in self._alerts(user_id)
             if alert.symbol == symbol
             and alert.enabled
             and alert.status == "active"
@@ -230,7 +259,8 @@ class AlertService:
                     alert.status = "triggered"
                     alert.triggered_at = utc_now()
                     alert.trigger_data = triggered_alert.trigger_data
-                    self._history.append(triggered_alert)
+                    self._save(alert)
+                    self._record_trigger(alert.user_id, triggered_alert)
                     self._triggered_cache[cache_key] = utc_now()
                     triggered.append(triggered_alert)
 
@@ -338,7 +368,10 @@ class AlertService:
             return None, ""
 
         previous_strength = None if previous is None else previous.get("strength")
-        if previous_strength is not None and previous_strength < alert.strength_threshold <= signal.strength:
+        if (
+            previous_strength is not None
+            and previous_strength < alert.strength_threshold <= signal.strength
+        ):
             return (
                 {
                     "strength": signal.strength,
@@ -358,7 +391,10 @@ class AlertService:
             return None, ""
 
         previous_strength = None if previous is None else previous.get("strength")
-        if previous_strength is not None and previous_strength > alert.strength_threshold >= signal.strength:
+        if (
+            previous_strength is not None
+            and previous_strength > alert.strength_threshold >= signal.strength
+        ):
             return (
                 {
                     "strength": signal.strength,
@@ -461,10 +497,7 @@ class AlertService:
     def get_history(self, user_id: str, limit: int = 100) -> list[AlertTriggered]:
         """Get alert trigger history for a user."""
         # Get all alert IDs for this user
-        user_alert_ids = {a.id for a in self._storage.values() if a.user_id == user_id}
-
-        # Filter history by alert IDs
-        history = [h for h in self._history if h.alert_id in user_alert_ids]
+        history = self._history_for(user_id)
 
         # Sort by triggered_at descending
         history.sort(key=lambda h: h.triggered_at, reverse=True)
@@ -473,25 +506,18 @@ class AlertService:
 
     def get_stats(self, user_id: str) -> AlertStats:
         """Get alert statistics for a user."""
-        user_alerts = [a for a in self._storage.values() if a.user_id == user_id]
+        user_alerts = self._alerts(user_id)
 
         active = [a for a in user_alerts if a.enabled and a.status == "active"]
 
         # Count triggers today
         today = utc_now().date()
-        triggered_today = len(
-            [
-                h
-                for h in self._history
-                if h.alert_id in {a.id for a in user_alerts} and h.triggered_at.date() == today
-            ]
-        )
+        history = self._history_for(user_id)
+        triggered_today = len([item for item in history if item.triggered_at.date() == today])
 
-        # Most triggered symbols
         symbol_counts: defaultdict[str, int] = defaultdict(int)
-        for h in self._history:
-            if h.alert_id in {a.id for a in user_alerts}:
-                symbol_counts[h.symbol] += 1
+        for item in history:
+            symbol_counts[item.symbol] += 1
 
         most_triggered = sorted(symbol_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
@@ -513,6 +539,8 @@ class AlertService:
             alert.triggered_at = None
             alert.trigger_data = None
             self._triggered_cache.pop(f"{alert.id}:{alert.symbol}", None)
+            self._observations.pop((user_id, alert.symbol), None)
+            self._save(alert)
 
         return alert
 

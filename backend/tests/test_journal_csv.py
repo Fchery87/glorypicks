@@ -63,17 +63,11 @@ def test_import_reports_rows_rejected_by_free_tier_limit() -> None:
         "entry_price": 100,
         "position_size": 1,
     }
-    content = (
-        "symbol,direction,entry_price,position_size\n"
-        "MSFT,long,200,1\n"
-        "NVDA,long,300,1\n"
-    )
+    content = "symbol,direction,entry_price,position_size\nMSFT,long,200,1\nNVDA,long,300,1\n"
 
     with TestClient(app) as client:
         for _ in range(9):
-            assert client.post(
-                "/journal/trades", json=trade, headers=headers
-            ).status_code == 201
+            assert client.post("/journal/trades", json=trade, headers=headers).status_code == 201
         response = client.post(
             "/journal/trades/import",
             files={"file": ("trades.csv", content.encode(), "text/csv")},
@@ -102,11 +96,14 @@ def test_export_requires_premium_and_is_session_scoped() -> None:
 
     with TestClient(app) as client:
         assert client.post("/journal/trades", json=trade, headers=owner_headers).status_code == 201
-        assert client.post(
-            "/journal/trades",
-            json={**trade, "symbol": "MSFT"},
-            headers=other_headers,
-        ).status_code == 201
+        assert (
+            client.post(
+                "/journal/trades",
+                json={**trade, "symbol": "MSFT"},
+                headers=other_headers,
+            ).status_code
+            == 201
+        )
 
         export_response = client.get("/journal/trades/export", headers=owner_headers)
         free_response = client.get(
@@ -115,9 +112,9 @@ def test_export_requires_premium_and_is_session_scoped() -> None:
 
     assert export_response.status_code == 200
     assert export_response.headers["content-type"].startswith("text/csv")
-    assert "attachment; filename=\"trade-journal.csv\"" in export_response.headers[
-        "content-disposition"
-    ]
+    assert (
+        'attachment; filename="trade-journal.csv"' in export_response.headers["content-disposition"]
+    )
     rows = list(csv.DictReader(io.StringIO(export_response.text)))
     assert [row["symbol"] for row in rows] == ["AAPL"]
     assert free_response.status_code == 403

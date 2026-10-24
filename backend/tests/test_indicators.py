@@ -1,4 +1,5 @@
 """Unit tests for technical indicators."""
+
 import pytest
 import numpy as np
 from app.indicators import Indicators
@@ -51,8 +52,7 @@ class TestRSI:
     def test_rsi_basic(self):
         """Test basic RSI calculation."""
         # Create price series with known gain/loss pattern
-        prices = [44, 45, 46, 45, 44, 43, 44, 45, 46, 47,
-                  48, 47, 46, 47, 48, 49, 50, 49, 48, 49]
+        prices = [44, 45, 46, 45, 44, 43, 44, 45, 46, 47, 48, 47, 46, 47, 48, 49, 50, 49, 48, 49]
         period = 14
         result = Indicators.rsi(prices, period)
 
@@ -130,9 +130,7 @@ class TestMACD:
 
         # Check histogram = macd - signal where all values exist
         for i in range(len(prices)):
-            if (macd_line[i] is not None and
-                signal_line[i] is not None and
-                histogram[i] is not None):
+            if macd_line[i] is not None and signal_line[i] is not None and histogram[i] is not None:
                 expected_histogram = macd_line[i] - signal_line[i]
                 assert histogram[i] == pytest.approx(expected_histogram, abs=1e-6)
 
@@ -157,13 +155,13 @@ class TestEMA:
         result = Indicators._ema(data, period)
 
         # First (period-1) values should be 0
-        assert all(result[:period-1] == 0)
+        assert all(result[: period - 1] == 0)
 
         # Period'th value should be SMA of first period values
-        assert result[period-1] == pytest.approx(12.0)
+        assert result[period - 1] == pytest.approx(12.0)
 
         # EMA should be between min and max of data
-        valid_ema = result[period-1:]
+        valid_ema = result[period - 1 :]
         assert all(10 <= v <= 19 for v in valid_ema)
 
 
@@ -174,7 +172,7 @@ class TestCalculateAllIndicators:
         """Test calculation of all indicators together."""
         # Create sample candles
         candles = [
-            Candle(t=i*1000, o=float(i), h=float(i+1), l=float(i-1), c=float(i), v=1000)
+            Candle(t=i * 1000, o=float(i), h=float(i + 1), l=float(i - 1), c=float(i), v=1000)
             for i in range(1, 250)
         ]
 
@@ -205,7 +203,7 @@ class TestCalculateAllIndicators:
         """Test indicator values are reasonable."""
         # Create trending price data
         candles = [
-            Candle(t=i*1000, o=float(i), h=float(i+1), l=float(i-1), c=float(i), v=1000)
+            Candle(t=i * 1000, o=float(i), h=float(i + 1), l=float(i - 1), c=float(i), v=1000)
             for i in range(1, 250)
         ]
 

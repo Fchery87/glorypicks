@@ -3,8 +3,9 @@
 import csv
 import io
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+from app.db import get_database
 from app.utils.time import utc_now
 
 from ..models.journal import (
@@ -46,9 +47,7 @@ class TradeJournalService(BaseService):
             "tags",
         }
     )
-    REQUIRED_IMPORT_COLUMNS = frozenset(
-        {"symbol", "direction", "entry_price", "position_size"}
-    )
+    REQUIRED_IMPORT_COLUMNS = frozenset({"symbol", "direction", "entry_price", "position_size"})
     EXPORT_COLUMNS = (
         "id",
         "symbol",
@@ -81,23 +80,21 @@ class TradeJournalService(BaseService):
     FREE_TIER_MAX_TRADES = 10
     PREMIUM_MAX_TRADES = float("inf")
 
-    def __init__(self) -> None:
-        """Initialize trade journal service."""
-        super().__init__()
-        # Store trades by user_id -> list of trades
-        self._trades: dict[str, list[TradeEntry]] = {}
-
     def _get_user_trades(self, user_id: str) -> list[TradeEntry]:
-        """Get all trades for a user."""
-        if user_id not in self._trades:
-            self._trades[user_id] = []
-        return self._trades[user_id]
+        """Get all trades for a user from the database."""
+        return [
+            TradeEntry.model_validate(row)
+            for row in get_database().list_json("trades", user_id)
+        ]
+
+    def _save_trade(self, trade: TradeEntry) -> None:
+        get_database().put_json(
+            "trades", trade.id, trade.user_id, trade.model_dump(mode="json")
+        )
 
     def _is_premium_user(self, user_id: str) -> bool:
-        """Check if user has premium tier."""
-        # TODO: Implement proper user tier checking when auth is added
-        # For now, use a simple check based on user_id prefix
-        return user_id.startswith("premium_")
+        """A session is premium only when the server has granted it."""
+        return get_database().is_premium(user_id)
 
     def _check_tier_limits(self, user_id: str) -> UserTierLimits:
         """Check user's tier limits."""
@@ -150,9 +147,15 @@ class TradeJournalService(BaseService):
             )
         if len({item.key for item in request.checklist}) != len(request.checklist):
             raise ValueError("Checklist keys must be unique")
-        if request.initial_signal and request.initial_signal.symbol.upper() != request.symbol.upper():
+        if (
+            request.initial_signal
+            and request.initial_signal.symbol.upper() != request.symbol.upper()
+        ):
             raise ValueError("Initial signal symbol must match trade symbol")
-        if request.chart_snapshot and request.chart_snapshot.symbol.upper() != request.symbol.upper():
+        if (
+            request.chart_snapshot
+            and request.chart_snapshot.symbol.upper() != request.symbol.upper()
+        ):
             raise ValueError("Chart snapshot symbol must match trade symbol")
 
         signal_history: list[TradeSignalSnapshot] = []
@@ -189,11 +192,7 @@ class TradeJournalService(BaseService):
             chart_snapshot=request.chart_snapshot,
         )
 
-        # Store trade
-        if user_id not in self._trades:
-            self._trades[user_id] = []
-        self._trades[user_id].append(trade)
-
+        self._save_trade(trade)
         return trade
 
     async def append_signal(
@@ -210,8 +209,7 @@ class TradeJournalService(BaseService):
             raise ValueError("Signal symbol must match trade symbol")
 
         if any(
-            snapshot.source_signal_id
-            and snapshot.source_signal_id == request.source_signal_id
+            snapshot.source_signal_id and snapshot.source_signal_id == request.source_signal_id
             for snapshot in trade.signal_history
         ):
             return trade
@@ -224,11 +222,8 @@ class TradeJournalService(BaseService):
             deep=True,
             update={"signal_history": [*trade.signal_history, snapshot], "updated_at": utc_now()},
         )
-        for index, stored_trade in enumerate(self._get_user_trades(user_id)):
-            if stored_trade.id == trade_id:
-                self._get_user_trades(user_id)[index] = updated_trade
-                return updated_trade
-        return None
+        self._save_trade(updated_trade)
+        return updated_trade
 
     async def import_csv(self, user_id: str, content: str) -> JournalImportResponse:
         """Import validated trade-create rows for one user."""
@@ -263,9 +258,7 @@ class TradeJournalService(BaseService):
                     request_data["tags"] = [
                         tag.strip() for tag in request_data["tags"].split(";") if tag.strip()
                     ]
-                trade = await self.create(
-                    user_id, TradeCreateRequest.model_validate(request_data)
-                )
+                trade = await self.create(user_id, TradeCreateRequest.model_validate(request_data))
                 imported_count += 1
                 results.append(
                     JournalImportRow(row_number=row_number, accepted=True, trade_id=trade.id)
@@ -291,9 +284,7 @@ class TradeJournalService(BaseService):
             data["direction"] = trade.direction.value
             data["status"] = trade.status.value
             data["ict_pattern"] = trade.ict_pattern.value if trade.ict_pattern else ""
-            data["emotional_state"] = (
-                trade.emotional_state.value if trade.emotional_state else ""
-            )
+            data["emotional_state"] = trade.emotional_state.value if trade.emotional_state else ""
             data["tags"] = ";".join(trade.tags)
             data["screenshots"] = ";".join(trade.screenshots)
             writer.writerow({column: data.get(column, "") for column in self.EXPORT_COLUMNS})
@@ -325,7 +316,7 @@ class TradeJournalService(BaseService):
             if updated_trade.status == TradeStatus.CLOSED and updated_trade.exit_price:
                 self._calculate_pnl(updated_trade)
 
-            trades[i] = updated_trade
+            self._save_trade(updated_trade)
             return updated_trade
 
         return None
@@ -341,12 +332,7 @@ class TradeJournalService(BaseService):
 
     async def delete(self, user_id: str, trade_id: str) -> bool:
         """Delete a trade for the specified user."""
-        trades = self._get_user_trades(user_id)
-        for i, trade in enumerate(trades):
-            if trade.id == trade_id:
-                trades.pop(i)
-                return True
-        return False
+        return get_database().delete_row("trades", trade_id, user_id)
 
     def _calculate_pnl(self, trade: TradeEntry) -> None:
         """Calculate P&L metrics for a closed trade."""
@@ -560,8 +546,8 @@ class TradeJournalService(BaseService):
         direction: TradeDirection | None = None,
         timeframe: str | None = None,
         emotional_state: str | None = None,
-        start_date=None,
-        end_date=None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         min_pnl: float | None = None,
         max_pnl: float | None = None,
     ) -> list[TradeEntry]:
@@ -577,9 +563,7 @@ class TradeJournalService(BaseService):
         if tags:
             normalized_tags = {tag.strip().lower() for tag in tags}
             trades = [
-                t
-                for t in trades
-                if normalized_tags.intersection(tag.lower() for tag in t.tags)
+                t for t in trades if normalized_tags.intersection(tag.lower() for tag in t.tags)
             ]
         if direction:
             trades = [t for t in trades if t.direction == direction]
@@ -614,16 +598,16 @@ class TradeJournalService(BaseService):
             tags=filters.tags,
             direction=filters.direction,
             timeframe=filters.timeframe,
-            emotional_state=filters.emotional_state.value
-            if filters.emotional_state
-            else None,
+            emotional_state=filters.emotional_state.value if filters.emotional_state else None,
             start_date=filters.start_date,
             end_date=filters.end_date,
             min_pnl=filters.min_pnl,
             max_pnl=filters.max_pnl,
         )
         closed_trades = [
-            trade for trade in trades if trade.status == TradeStatus.CLOSED and trade.pnl_dollar is not None
+            trade
+            for trade in trades
+            if trade.status == TradeStatus.CLOSED and trade.pnl_dollar is not None
         ]
         winners = [trade for trade in closed_trades if trade.pnl_dollar and trade.pnl_dollar > 0]
         checklist_trades = [trade for trade in trades if trade.checklist]

@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.adapters import AlphaVantageAdapter, DemoAdapter, FinnhubAdapter
 from app.config import settings
+from app.db import get_database
 from app.engine import SignalEngine
 from app.engine.kill_zones import KillZoneDetector, KillZoneType
 from app.models import (
@@ -123,6 +124,7 @@ async def fetch_candles_with_failover(
 @router.get("/signal", response_model=SignalResponse)
 async def get_signal(
     symbol: str = Query(..., description="Trading symbol (e.g., AAPL, BTC/USDT)"),
+    style: str = Query("swing", pattern="^(swing|scalp)$"),
 ) -> Any:
     """
     Generate trading signal for a symbol.
@@ -156,12 +158,20 @@ async def get_signal(
             _signal_engine = SignalEngine()
 
         signal = _signal_engine.generate_signal(
-            symbol=symbol, candles_15m=candles_15m, candles_1h=candles_1h, candles_1d=candles_1d
+            symbol=symbol, candles_15m=candles_15m, candles_1h=candles_1h, candles_1d=candles_1d,
+            style=style,
         )
 
-        # Cache the signal
+        # Cache the signal and keep a durable copy for later review.
         if _cache and settings.CACHE_ENABLED:
             await _cache.set_signal(symbol, signal)
+        get_database().record_signal(
+            signal.model_dump(mode="json"),
+            {
+                "price_at_signal": candles_15m[-1].close if candles_15m else None,
+                **(signal.trade_plan.model_dump(mode="json") if signal.trade_plan else {}),
+            },
+        )
 
         return signal
 
@@ -170,6 +180,12 @@ async def get_signal(
     except Exception as e:
         logger.error(f"Error generating signal for {symbol}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating signal: {str(e)}")
+
+
+@router.get("/signal/{symbol}/history")
+async def get_signal_history(symbol: str, limit: int = Query(50, ge=1, le=200)) -> list[dict[str, Any]]:
+    """Return recorded signals for one symbol, newest first."""
+    return get_database().list_signals(symbol, limit)
 
 
 @router.get("/signal/{symbol}/ict", response_model=ICTMapResponse)

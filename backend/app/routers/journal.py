@@ -118,7 +118,6 @@ async def get_trades(
 ) -> list[TradeEntry]:
     """Get all trades for the current user with optional filtering."""
 
-
     try:
         if any(
             value is not None
@@ -178,7 +177,6 @@ async def get_review_metrics(
 async def get_open_trades(user_id: str = Depends(get_session_id)) -> Any:
     """Get all open trades for the current user."""
 
-
     try:
         trades = await trade_journal_service.get_open_trades(user_id)
         return trades
@@ -188,9 +186,7 @@ async def get_open_trades(user_id: str = Depends(get_session_id)) -> Any:
 
 
 @router.get("/trades/{trade_id}", response_model=TradeEntry)
-async def get_trade(
-    trade_id: str, user_id: str = Depends(get_session_id)
-) -> Any:
+async def get_trade(trade_id: str, user_id: str = Depends(get_session_id)) -> Any:
     """Get a specific trade by ID."""
     trade = await trade_journal_service.get(user_id, trade_id)
 
@@ -205,7 +201,6 @@ async def create_trade(
     request: TradeCreateRequest, user_id: str = Depends(get_session_id)
 ) -> TradeEntry:
     """Create a new trade entry."""
-
 
     try:
         trade = await trade_journal_service.create(user_id, request)
@@ -287,9 +282,7 @@ async def close_trade(
 
 
 @router.delete("/trades/{trade_id}", status_code=204)
-async def delete_trade(
-    trade_id: str, user_id: str = Depends(get_session_id)
-) -> None:
+async def delete_trade(trade_id: str, user_id: str = Depends(get_session_id)) -> None:
     """Delete a trade by ID."""
     success = await trade_journal_service.delete(user_id, trade_id)
 
@@ -309,7 +302,6 @@ async def get_statistics(
     **Premium Feature**: Detailed analytics including win rate by pattern,
     emotional state analysis, and expectancy metrics.
     """
-
 
     # Check tier
     tier_limits = trade_journal_service._check_tier_limits(user_id)
@@ -336,7 +328,6 @@ async def get_analytics(user_id: str = Depends(get_session_id)) -> Any:
     top performers, and detailed insights.
     """
 
-
     # Check tier
     tier_limits = trade_journal_service._check_tier_limits(user_id)
 
@@ -358,7 +349,6 @@ async def get_analytics(user_id: str = Depends(get_session_id)) -> Any:
 async def get_tier_limits(user_id: str = Depends(get_session_id)) -> Any:
     """Get current user's tier limits and remaining quota."""
 
-
     try:
         limits = trade_journal_service._check_tier_limits(user_id)
         return limits
@@ -372,7 +362,6 @@ async def create_sample_trades(
     user_id: str = Depends(get_session_id),
 ) -> Any:
     """Create sample trades for demo purposes."""
-
 
     sample_trades = [
         TradeCreateRequest(

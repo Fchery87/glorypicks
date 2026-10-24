@@ -1,5 +1,5 @@
 import type { AssetClass, Symbol } from '@/types';
-import { getAuthHeaders } from '@/lib/session';
+import { apiFetch } from '@/lib/session';
 
 export interface SymbolResult extends Symbol {
   exchange?: string;
@@ -67,8 +67,8 @@ export async function searchSymbols(
   assetClass: AssetClass | 'all' = 'all',
   signal?: AbortSignal
 ): Promise<SymbolSearchResponse> {
-  const response = await fetch(buildSymbolSearchUrl(query, assetClass), {
-    headers: getAuthHeaders(),
+  const response = await apiFetch(buildSymbolSearchUrl(query, assetClass), {
+    
     signal,
   });
   if (!response.ok) throw new Error(`Symbol search failed (${response.status})`);
@@ -78,11 +78,11 @@ export async function searchSymbols(
 
   const [recentResponse, trendingResponse] = await Promise.all([
     fetch(`${apiBaseUrl()}/symbols/recent`, {
-      headers: getAuthHeaders(),
+      
       signal,
     }),
     fetch(`${apiBaseUrl()}/symbols/trending`, {
-      headers: getAuthHeaders(),
+      
       signal,
     }),
   ]);
@@ -98,9 +98,9 @@ export async function searchSymbols(
 }
 
 export async function recordRecentSymbol(symbol: string): Promise<void> {
-  const response = await fetch(buildRecentSymbolUrl(symbol), {
+  const response = await apiFetch(buildRecentSymbolUrl(symbol), {
     method: 'POST',
-    headers: getAuthHeaders(),
+    
   });
   if (!response.ok) throw new Error(`Unable to record recent symbol (${response.status})`);
 }

@@ -44,6 +44,8 @@ interface CockpitHeroProps {
   watchlistCount: number;
   priceChange: number | null;
   priceChangePct: number | null;
+  style: 'swing' | 'scalp';
+  onStyleChange: (style: 'swing' | 'scalp') => void;
 }
 
 function CockpitHero({
@@ -57,6 +59,8 @@ function CockpitHero({
   watchlistCount,
   priceChange,
   priceChangePct,
+  style,
+  onStyleChange,
 }: CockpitHeroProps) {
   const recommendation = signal?.recommendation ?? 'Neutral';
   const isBullish = recommendation === 'Buy';
@@ -129,6 +133,24 @@ function CockpitHero({
             <div className="status-chip">
               <Zap className="h-3.5 w-3.5 text-accent-amber" />
               <span>ICT v3 engine</span>
+            </div>
+            <div className="status-chip p-0.5">
+              {(['swing', 'scalp'] as const).map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  aria-pressed={style === choice}
+                  onClick={() => onStyleChange(choice)}
+                  className={cn(
+                    'rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em]',
+                    style === choice
+                      ? 'bg-accent-primary/15 text-accent-primary'
+                      : 'text-text-tertiary'
+                  )}
+                >
+                  {choice}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -326,6 +348,16 @@ export default function HomePage() {
 
   const [isPremium, setIsPremium] = useState(false);
   const [ictMapMode, setICTMapMode] = useState<'beginner' | 'pro'>('beginner');
+  const [style, setStyle] = useState<'swing' | 'scalp'>('swing');
+  const chooseStyle = (choice: 'swing' | 'scalp') => {
+    setStyle(choice);
+    localStorage.setItem('glorypicks-signal-style', choice);
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('glorypicks-signal-style');
+    if (saved === 'swing' || saved === 'scalp') setStyle(saved);
+  }, []);
 
   useEffect(() => {
     if (getSessionId().startsWith('premium_')) {
@@ -393,7 +425,9 @@ export default function HomePage() {
 
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const response = await fetch(`${apiUrl}/signal?symbol=${encodeURIComponent(symbol)}`);
+        const response = await fetch(
+          `${apiUrl}/signal?symbol=${encodeURIComponent(symbol)}&style=${style}`
+        );
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -419,7 +453,7 @@ export default function HomePage() {
     };
 
     fetchSignal();
-  }, [symbol, setSignal, setIsLoadingSignal, setSignalError]);
+  }, [symbol, style, setSignal, setIsLoadingSignal, setSignalError]);
 
   const primaryInterval = charts[0]?.interval ?? '15m';
   useEffect(() => {
@@ -520,6 +554,8 @@ export default function HomePage() {
               watchlistCount={watchlists.length}
               priceChange={priceChange}
               priceChangePct={priceChangePct}
+              style={style}
+              onStyleChange={chooseStyle}
             />
 
             <MultiChartGrid

@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 from app.models import Candle, ICTAnnotation, Interval
 
+from .directions import Side, parse_side, side_from_signal_type
 from .ict_strategies import ICTSignalResult, ICTStrategies
 from .kill_zones import KillZoneInfo
 from .smc_strategies import SMCSignalResult, SMCStrategies
-
-
-def _signal_direction(signal_type: str) -> str:
-    return "bullish" if any(token in signal_type for token in ("bullish", "buy")) else "bearish"
 
 
 def build_ict_annotations(
@@ -27,8 +25,9 @@ def build_ict_annotations(
 ) -> list[ICTAnnotation]:
     """Build beginner-readable annotations from fresh strategy state."""
 
+    all_signals: list[ICTSignalResult | SMCSignalResult] = [*ict_signals, *smc_signals]
     strongest = max(
-        [*ict_signals, *smc_signals],
+        all_signals,
         key=lambda signal: signal.strength * signal.confidence,
         default=None,
     )
@@ -42,7 +41,7 @@ def build_ict_annotations(
                 concept="order_block",
                 render_type="zone",
                 label=f"{block.type.title()} Order Block",
-                direction=block.type,
+                direction=parse_side(block.type),
                 timeframe=interval,
                 price_low=block.low,
                 price_high=block.high,
@@ -56,7 +55,7 @@ def build_ict_annotations(
             )
         )
         if block.breaker_confirmed:
-            direction = "bullish" if block.type == "bearish" else "bearish"
+            direction: Side = "bullish" if block.type == "bearish" else "bearish"
             annotations.append(
                 ICTAnnotation(
                     id=f"breaker-block-{block.timestamp}",
@@ -84,7 +83,7 @@ def build_ict_annotations(
                 concept="fair_value_gap",
                 render_type="zone",
                 label=f"{gap.direction.title()} Fair Value Gap",
-                direction=gap.direction,
+                direction=parse_side(gap.direction),
                 timeframe=interval,
                 price_low=gap.low,
                 price_high=gap.high,
@@ -120,9 +119,11 @@ def build_ict_annotations(
             )
         )
 
-    for index, signal in enumerate([*ict_signals, *smc_signals]):
+    for index, signal in enumerate(all_signals):
         signal_type = signal.signal_type.value
-        concept = "mss" if "mss" in signal_type else "bos" if "bos" in signal_type else None
+        concept: Literal["mss", "bos"] | None = (
+            "mss" if "mss" in signal_type else "bos" if "bos" in signal_type else None
+        )
         if concept:
             annotations.append(
                 ICTAnnotation(
@@ -130,14 +131,16 @@ def build_ict_annotations(
                     concept=concept,
                     render_type="marker",
                     label=signal_type.replace("_", " ").title(),
-                    direction=_signal_direction(signal_type),
+                    direction=side_from_signal_type(signal_type),
                     timeframe=interval,
                     price=signal.price,
                     status="active",
                     confidence=signal.confidence,
                     is_primary_setup=signal_type == primary_type,
                     beginner_explanation="Price broke a recent structural level.",
-                    detection_reason=signal.rationale[0] if signal.rationale else "Structure changed.",
+                    detection_reason=signal.rationale[0]
+                    if signal.rationale
+                    else "Structure changed.",
                 )
             )
 

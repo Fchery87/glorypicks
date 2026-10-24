@@ -1,11 +1,8 @@
-"""
-AI Enhancer Module for Signal Quality Assessment
+"""Signal quality scoring.
 
-This module uses machine learning-inspired algorithms to:
-- Score pattern success probability based on historical performance
-- Classify current market regime (trending/ranging/volatile)
-- Filter false signals based on market conditions
-- Adapt confidence based on symbol-specific performance
+The score is a heuristic over price regime, confluence, and stored pattern
+outcomes. It is not a trained model. Pattern outcomes stay empty until a caller
+records them with update_pattern_performance.
 """
 
 from dataclasses import dataclass
@@ -73,7 +70,7 @@ class PatternPerformance:
     last_updated: datetime
 
 
-class AIEnhancer:
+class SignalQualityScorer:
     """
     AI-enhanced signal quality assessment
 

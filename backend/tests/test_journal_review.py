@@ -105,9 +105,7 @@ def test_journal_filters_and_review_metrics_share_scope() -> None:
             json={
                 **_trade("AAPL", "long"),
                 "linked_signal_id": "review-signal-1",
-                "checklist": [
-                    {"key": "risk", "label": "Risk set", "passed": True}
-                ],
+                "checklist": [{"key": "risk", "label": "Risk set", "passed": True}],
             },
             headers=headers,
         ).json()["id"]

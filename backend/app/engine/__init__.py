@@ -5,20 +5,25 @@ from typing import Any, cast
 from app.indicators import Indicators
 from app.models import (
     Candle,
+    FairValueGap,
+    ICTAnnotation,
     ICTMapResponse,
     ICTSignalResult as ICTSignalResultModel,
+    ICTSignalType as ICTSignalTypeModel,
     Interval,
     MiniSignal,
     MarketStructure,
+    OrderBlock,
     Recommendation,
     SignalBreakdown,
     SignalResponse,
 )
 from app.utils.time import utc_iso_z, utc_timestamp
 
-from .ai_enhancer import AIConfidenceScore, AIEnhancer, MarketRegime, SignalQuality
+from .ai_enhancer import AIConfidenceScore, SignalQualityScorer, MarketRegime, SignalQuality
 from .ict_phase1_enhancements import ICTPhase1Enhancements
 from .ict_map_builder import build_ict_annotations
+from .directions import Direction, parse_direction, parse_side
 from .ict_strategies import ICTSignalResult, ICTStrategies
 from .kill_zones import KillZoneDetector, KillZoneInfo, KillZoneType
 from .smc_strategies import SMCSignalResult, SMCStrategies
@@ -43,7 +48,7 @@ class SignalEngine:
         self.ict_strategies = ICTStrategies()
         self.ict_phase1 = ICTPhase1Enhancements()
         self.smc_strategies = SMCStrategies()
-        self.ai_enhancer = AIEnhancer()
+        self.ai_enhancer = SignalQualityScorer()
         self.kill_zone_detector = KillZoneDetector()
 
     def _analyze_with_ict(
@@ -113,9 +118,7 @@ class SignalEngine:
         timeframe_bias = ict_strategies.get_timeframe_bias()
         smc_liquidity = smc_strategies.get_liquidity_analysis()
         liquidity_targets = [
-            pool.price_level
-            for pool in smc_strategies.liquidity_pools
-            if not pool.swept
+            pool.price_level for pool in smc_strategies.liquidity_pools if not pool.swept
         ]
         kill_zone = kill_zone_detector.get_current_kill_zone(utc_timestamp())
         annotations = build_ict_annotations(
@@ -137,58 +140,59 @@ class SignalEngine:
         )
 
         if trade_plan.status == "unlocked":
-            annotations.extend(
-                [
-                    {
-                        "id": "trade-entry",
-                        "concept": "entry",
-                        "render_type": "level",
-                        "label": "Entry Zone",
-                        "direction": trade_plan.direction,
-                        "timeframe": interval,
-                        "price_low": trade_plan.entry_zone_low,
-                        "price_high": trade_plan.entry_zone_high,
-                        "status": "active",
-                        "confidence": trade_plan.confidence or 0,
-                        "is_primary_setup": True,
-                        "beginner_explanation": "The planned entry area for the qualified setup.",
-                        "detection_reason": "The entry comes from the selected ICT or SMC setup zone.",
-                    },
-                    {
-                        "id": "trade-stop-loss",
-                        "concept": "stop_loss",
-                        "render_type": "level",
-                        "label": "Invalidation",
-                        "direction": trade_plan.direction,
-                        "timeframe": interval,
-                        "price": trade_plan.stop_loss,
-                        "status": "active",
-                        "confidence": trade_plan.confidence or 0,
-                        "is_primary_setup": True,
-                        "beginner_explanation": "The price that invalidates the setup.",
-                        "detection_reason": "The level comes from the setup's structural invalidation.",
-                    },
-                ]
+            confidence = trade_plan.confidence or 0
+            annotations.append(
+                ICTAnnotation(
+                    id="trade-entry",
+                    concept="entry",
+                    render_type="level",
+                    label="Entry Zone",
+                    direction=trade_plan.direction,
+                    timeframe=interval,
+                    price_low=trade_plan.entry_zone_low,
+                    price_high=trade_plan.entry_zone_high,
+                    status="active",
+                    confidence=confidence,
+                    is_primary_setup=True,
+                    beginner_explanation="The planned entry area for the qualified setup.",
+                    detection_reason="The entry comes from the selected ICT or SMC setup zone.",
+                )
+            )
+            annotations.append(
+                ICTAnnotation(
+                    id="trade-stop-loss",
+                    concept="stop_loss",
+                    render_type="level",
+                    label="Invalidation",
+                    direction=trade_plan.direction,
+                    timeframe=interval,
+                    price=trade_plan.stop_loss,
+                    status="active",
+                    confidence=confidence,
+                    is_primary_setup=True,
+                    beginner_explanation="The price that invalidates the setup.",
+                    detection_reason="The level comes from the setup's structural invalidation.",
+                )
             )
             annotations.extend(
-                {
-                    "id": f"trade-{target.label.lower()}",
-                    "concept": "take_profit",
-                    "render_type": "level",
-                    "label": target.label,
-                    "direction": trade_plan.direction,
-                    "timeframe": interval,
-                    "price": target.price,
-                    "status": "active",
-                    "confidence": trade_plan.confidence or 0,
-                    "is_primary_setup": True,
-                    "beginner_explanation": "A structural target for the qualified setup.",
-                    "detection_reason": target.reason,
-                }
+                ICTAnnotation(
+                    id=f"trade-{target.label.lower()}",
+                    concept="take_profit",
+                    render_type="level",
+                    label=target.label,
+                    direction=trade_plan.direction,
+                    timeframe=interval,
+                    price=target.price,
+                    status="active",
+                    confidence=confidence,
+                    is_primary_setup=True,
+                    beginner_explanation="A structural target for the qualified setup.",
+                    detection_reason=target.reason,
+                )
                 for target in trade_plan.take_profits
             )
 
-        bias = market_structure.trend
+        bias: Direction = parse_direction(market_structure.trend)
         if bias == "neutral" and ict_signals:
             bias = "bullish" if "bullish" in ict_signals[0].signal_type.value else "bearish"
 
@@ -209,7 +213,7 @@ class SignalEngine:
             updated_at=utc_iso_z(),
             signals=[
                 ICTSignalResultModel(
-                    signal_type=signal.signal_type.value,
+                    signal_type=ICTSignalTypeModel(signal.signal_type.value),
                     strength=signal.strength,
                     confidence=signal.confidence,
                     price=signal.price,
@@ -224,7 +228,7 @@ class SignalEngine:
                 for signal in ict_signals
             ],
             market_structure=MarketStructure(
-                trend=market_structure.trend,
+                trend=parse_direction(market_structure.trend),
                 last_swing_high=market_structure.last_swing_high,
                 last_swing_low=market_structure.last_swing_low,
                 swing_high_timestamp=market_structure.swing_high_timestamp,
@@ -235,27 +239,27 @@ class SignalEngine:
                 mss_direction=market_structure.mss_direction,
             ),
             order_blocks=[
-                {
-                    "high": block.high,
-                    "low": block.low,
-                    "timestamp": block.timestamp,
-                    "type": block.type,
-                    "confirmed": block.confirmed,
-                    "broken": block.broken,
-                    "breaker_confirmed": block.breaker_confirmed,
-                }
+                OrderBlock(
+                    high=block.high,
+                    low=block.low,
+                    timestamp=block.timestamp,
+                    type=parse_side(block.type),
+                    confirmed=block.confirmed,
+                    broken=block.broken,
+                    breaker_confirmed=block.breaker_confirmed,
+                )
                 for block in ict_strategies.order_blocks
             ],
             fair_value_gaps=[
-                {
-                    "high": gap.high,
-                    "low": gap.low,
-                    "start_timestamp": gap.start_timestamp,
-                    "end_timestamp": gap.end_timestamp,
-                    "direction": gap.direction,
-                    "filled": gap.filled,
-                    "fill_price": gap.fill_price,
-                }
+                FairValueGap(
+                    high=gap.high,
+                    low=gap.low,
+                    start_timestamp=gap.start_timestamp,
+                    end_timestamp=gap.end_timestamp,
+                    direction=parse_side(gap.direction),
+                    filled=gap.filled,
+                    fill_price=gap.fill_price,
+                )
                 for gap in ict_strategies.fair_value_gaps
             ],
             liquidity_pools={
@@ -492,6 +496,7 @@ class SignalEngine:
         candles_15m: list[Candle],
         candles_1h: list[Candle],
         candles_1d: list[Candle],
+        style: str = "swing",
     ) -> SignalResponse:
         """
         Generate complete signal for a symbol across all timeframes using ICT + SMC + AI.
@@ -620,56 +625,32 @@ class SignalEngine:
         # ========================================
         # 6. Calculate Final Signal
         # ========================================
-        # Combine all factors with AI adjustment
-        final_strength = min(
-            100,
-            int(
-                weighted_strength
-                + confluence_bonus
-                + phase1_bonus
-                + (ai_score.success_probability - 50) * 0.3  # AI adjustment
-            ),
-        )
-
-        # Determine recommendation
-        if bullish_count >= 2:
-            recommendation = Recommendation.BUY
-        elif bearish_count >= 2:
-            recommendation = Recommendation.SELL
+        # Swing bias comes from the daily chart and needs the 1-hour chart to agree.
+        # Scalp bias comes from the 1-hour chart and needs the 15-minute chart to agree.
+        # The entry clock never gets its own vote.
+        if style == "scalp":
+            bias_signal, bias_strength = h1_signal, h1_strength
+            confirm_signal, confirm_strength = m15_signal, m15_strength
+            bias_name, confirm_name = "1-hour", "15-minute"
         else:
-            recommendation = Recommendation.NEUTRAL
+            style = "swing"
+            bias_signal, bias_strength = d1_signal, d1_strength
+            confirm_signal, confirm_strength = h1_signal, h1_strength
+            bias_name, confirm_name = "daily", "1-hour"
+        if (
+            bias_signal == confirm_signal
+            and bias_signal in {MiniSignal.BULLISH, MiniSignal.BEARISH}
+        ):
+            voted = Recommendation.BUY if bias_signal == MiniSignal.BULLISH else Recommendation.SELL
+        else:
+            voted = Recommendation.NEUTRAL
+        vote_strength = min(100, int((bias_strength + confirm_strength) / 2))
 
-        # AI can override to neutral if quality is poor
-        if ai_score.quality_rating in [SignalQuality.POOR, SignalQuality.REJECT]:
-            if final_strength < 50:
-                recommendation = Recommendation.NEUTRAL
-
-        # If strength is too weak, override to neutral
-        if final_strength < 40:
-            recommendation = Recommendation.NEUTRAL
-
-        # ========================================
-        # 7. Kill Zone Detection
-        # ========================================
-        # Get current kill zone info
         current_timestamp = utc_timestamp()
         kill_zone_info = self.kill_zone_detector.get_current_kill_zone(current_timestamp)
-
-        # Check if we should trade based on kill zone
         should_trade, kill_zone_reason = self.kill_zone_detector.should_trade_signal(
-            current_timestamp, final_strength
+            current_timestamp, vote_strength
         )
-
-        # Adjust strength based on kill zone (bonus for optimal zones)
-        if kill_zone_info.is_active and kill_zone_info.optimal_for_entries:
-            final_strength = min(100, final_strength + 5)  # +5 bonus in optimal zones
-        elif kill_zone_info.zone_type == KillZoneType.OFF_HOURS and not should_trade:
-            # Reduce strength significantly outside kill zones
-            final_strength = max(0, final_strength - 15)
-
-        # ========================================
-        # 8. Build Enhanced Rationale
-        # ========================================
         enhanced_rationale = self._build_enhanced_rationale_v2(
             ict_signals=ict_signals,
             smc_signals=smc_signals,
@@ -680,11 +661,38 @@ class SignalEngine:
             ai_score=ai_score,
             kill_zone_info=kill_zone_info,
         )
-
-        # Add kill zone trading recommendation if applicable
         if not should_trade:
-            enhanced_rationale.append(f"⚠️ Timing Caution: {kill_zone_reason}")
+            enhanced_rationale.append(f"Timing caution: {kill_zone_reason}")
 
+        trade_plan = build_trade_plan(
+            candles=candles_15m,
+            ict_signals=ict_signals,
+            smc_signals=smc_signals,
+            liquidity_targets=[],
+            kill_zone=kill_zone_info,
+            min_rr=1.5,
+        )
+        plan_direction = {"bullish": Recommendation.BUY, "bearish": Recommendation.SELL}.get(
+            trade_plan.direction or ""
+        )
+        if voted == Recommendation.NEUTRAL:
+            recommendation = Recommendation.NEUTRAL
+            enhanced_rationale.append(
+                f"No {style} callout: the {bias_name} bias and {confirm_name} confirmation do not agree."
+            )
+        elif trade_plan.status != "unlocked" or plan_direction is None:
+            recommendation = Recommendation.NEUTRAL
+            enhanced_rationale.append("No complete trade plan agrees with that bias.")
+        elif plan_direction != voted:
+            recommendation = Recommendation.NEUTRAL
+            enhanced_rationale.append(
+                f"Timeframes vote {voted.value}, but the trade plan is {trade_plan.direction}."
+            )
+        else:
+            recommendation = voted
+        final_strength = (
+            vote_strength if recommendation != Recommendation.NEUTRAL else min(vote_strength, 39)
+        )
         return SignalResponse(
             symbol=symbol,
             recommendation=recommendation,
@@ -692,6 +700,7 @@ class SignalEngine:
             breakdown=SignalBreakdown(d1=d1_signal, h1=h1_signal, m15=m15_signal),
             rationale=enhanced_rationale,
             updated_at=utc_iso_z(),
+            trade_plan=trade_plan,
         )
 
     def _calculate_ict_boost(

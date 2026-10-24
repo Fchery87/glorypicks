@@ -1,7 +1,8 @@
-"""Typed in-memory symbol catalog and per-session discovery history."""
+"""Typed symbol catalog and per-session discovery history."""
 
 from collections.abc import Iterable
 
+from app.db import get_database
 from app.models import AssetClass
 from app.models.symbol import SymbolMetadata
 
@@ -11,14 +12,22 @@ class SymbolService:
 
     def __init__(self) -> None:
         self._catalog = _default_catalog()
-        self._recent: dict[str, list[str]] = {}
+
+    def _recent_symbols(self, session_id: str) -> list[str]:
+        rows = get_database().query(
+            "SELECT symbol FROM recent_symbols WHERE session_id = ? ORDER BY position",
+            (session_id,),
+        )
+        return [str(row["symbol"]) for row in rows]
 
     @staticmethod
     def normalize_symbol(symbol: str) -> str:
         """Normalize a symbol and reject malformed values."""
         normalized = symbol.strip().upper()
-        if not normalized or len(normalized) > 32 or any(
-            char not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-/" for char in normalized
+        if (
+            not normalized
+            or len(normalized) > 32
+            or any(char not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-/" for char in normalized)
         ):
             raise ValueError("Invalid symbol")
         return normalized
@@ -46,16 +55,21 @@ class SymbolService:
         metadata = self._catalog.get(normalized)
         if metadata is None:
             raise KeyError(normalized)
-        history = self._recent.setdefault(session_id, [])
-        if normalized in history:
-            history.remove(normalized)
+        history = [item for item in self._recent_symbols(session_id) if item != normalized]
         history.insert(0, normalized)
-        del history[50:]
+        history = history[:50]
+        database = get_database()
+        database.execute("DELETE FROM recent_symbols WHERE session_id = ?", (session_id,))
+        for position, item in enumerate(history):
+            database.execute(
+                "INSERT INTO recent_symbols (session_id, symbol, position) VALUES (?, ?, ?)",
+                (session_id, item, position),
+            )
         return metadata
 
     def recent(self, session_id: str, limit: int = 20) -> list[SymbolMetadata]:
         """Return most recently recorded symbols for one session."""
-        return [self._catalog[symbol] for symbol in self._recent.get(session_id, [])[:limit]]
+        return [self._catalog[symbol] for symbol in self._recent_symbols(session_id)[:limit]]
 
     def trending(self, limit: int = 20) -> list[SymbolMetadata]:
         """Return the curated, stable trending catalog ordering."""

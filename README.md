@@ -5,7 +5,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat&logo=next.js&logoColor=white)](https://nextjs.org)
 
-A production-ready, real-time multi-asset trading signals dashboard implementing **complete ICT (Inner Circle Trading) strategies** including Breaker Blocks, Fair Value Gaps, Market Maker Model phases, and BOS/MSS analysis for stocks, crypto, forex, and indices.
+A real-time trading dashboard for studying ICT-style setups. A Buy or Sell is shown only when the selected trading style has an agreeing bias and a complete trade plan in the same direction. Otherwise the callout stays Neutral and says why.
 
 **Live Demo**: [http://localhost:3000](http://localhost:3000)  
 **API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -14,18 +14,20 @@ A production-ready, real-time multi-asset trading signals dashboard implementing
 
 ## ✨ Features
 
-### Core Trading Features
-- **Complete ICT Strategy Implementation** - Professional-grade institutional trading analysis
-  - **Breaker Blocks**: Bullish/bearish order block role reversal detection
-  - **Fair Value Gaps (FVG)**: Price imbalance identification for entry zones
-  - **Market Maker Model**: MMBM (Buy) and MMSM (Sell) phase recognition  
-  - **BOS/MSS**: Break of Structure and Market Structure Shift detection
-- **Real-time signals** across multiple asset classes (Stocks, Crypto, Forex, Indices)
-- **Interactive candlestick charts** with TradingView Lightweight Charts
-- **Multi-timeframe analysis** (15m, 1h, 1d) with weighted signals
-- **WebSocket streaming** for live price updates and signal changes
-- **Smart Money Concepts** integration for institutional-level analysis
-- **Watchlists & Alerts** - Save favorite symbols and set price/signal alerts
+### Signals
+
+- **Swing or scalp:** the dashboard toggle chooses one book of signals. Swing is the default, and the choice is remembered in the browser.
+- **Swing:** the daily chart sets the bias and the 1-hour chart must confirm it.
+- **Scalp:** the 1-hour chart sets the bias and the 15-minute chart must confirm it. This is not a 1-minute or 5-minute feed.
+- **Trade plan agreement:** the plan must be complete and point the same way. A missing plan or a conflicting plan returns Neutral.
+- **Recorded plans:** each signal stores the price at signal time, planned entry, stop, and first target in SQLite. Later prices can score the plan after a one-bar delay and half the spread.
+
+### Workspace
+
+- Charts, watchlists, price alerts, and a trade journal.
+- Signed browser sessions. The first response returns `X-Session-Token`, and later requests send it.
+- Premium journal access is a server-side grant. Choosing a session name does not grant it.
+- Demo market data is used when no provider key is configured.
 
 ### Professional UI/UX
 - **Institutional-grade design** - Clean, precise, confidence-inspiring interface
@@ -117,6 +119,22 @@ bun dev
 
 ---
 
+## Using the dashboard
+
+1. Open http://localhost:3000 and search for a symbol.
+2. Use the Swing / Scalp control in the status row. Swing looks for daily bias confirmed by the 1-hour chart. Scalp looks for 1-hour bias confirmed by the 15-minute chart.
+3. Read the callout beside the symbol. Buy or Sell means the bias, confirmation, and trade plan agree. Neutral means they do not, and the rationale names the missing agreement.
+4. Use the trade plan, chart, and journal as study tools. A Neutral result stays empty on purpose. The app does not substitute the other trading style.
+5. Alerts still belong to the symbol. The toggle changes the signal being displayed, not which alerts can fire.
+
+```bash
+curl "http://localhost:8000/signal?symbol=AAPL&style=swing"
+curl "http://localhost:8000/signal?symbol=AAPL&style=scalp"
+curl "http://localhost:8000/signal/AAPL/history"
+```
+
+---
+
 ## 🏗️ Architecture
 
 ### Tech Stack
@@ -163,7 +181,7 @@ Accents:       #E8E4DD (primary), #4ADE80 (bullish), #FB7185 (bearish)
 | Time-to-Insight (TTI) | < 2 seconds | ✅ |
 | WebSocket Latency (p95) | < 1.5 seconds | ✅ |
 | Timeframe Switching | < 500ms | ✅ |
-| Signal Accuracy | Deterministic | ✅ |
+| Signal callout | Buy or Sell only when bias, confirmation, and trade plan agree | Enforced in the engine |
 
 ---
 
@@ -184,9 +202,13 @@ GET /data?symbol=AAPL&interval=15m&limit=200
 
 **Trading Signals**
 ```bash
-GET /signal?symbol=AAPL
-GET /signal/AAPL/ict  # Detailed ICT analysis
+GET /signal?symbol=AAPL&style=swing
+GET /signal?symbol=AAPL&style=scalp
+GET /signal/AAPL/history
+GET /signal/AAPL/ict
 ```
+
+`style` is `swing` or `scalp`. Swing is the default. History returns recorded signals and their planned entry, stop, and target.
 
 **Watchlists**
 ```bash
@@ -287,6 +309,8 @@ BINANCE_API_KEY=your_key_here (optional)
 REDIS_URL=redis://localhost:6379/0 (optional)
 LOG_LEVEL=info
 ALLOWED_ORIGINS=http://localhost:3000
+DATABASE_PATH=data/glorypicks.db
+SESSION_SECRET=replace-with-a-long-random-string
 ```
 
 ### Frontend (.env.local)
@@ -328,4 +352,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Built with ❤️ for the trading community**
 
-*Last Updated: February 2026*
+*Last updated: October 2026*

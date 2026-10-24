@@ -3,6 +3,7 @@
 import logging
 import uuid
 
+from app.db import get_database
 from app.models.watchlist import Watchlist, WatchlistCreate, WatchlistUpdate
 from app.services.base import BaseService
 from app.utils.time import utc_now
@@ -21,12 +22,16 @@ class WatchlistService(BaseService):
     - Automatic timestamp management
     """
 
-    def __init__(self) -> None:
-        """Initialize the watchlist service."""
-        super().__init__()
-        self._storage: dict[str, Watchlist] = {}
-        self._user_watchlists: dict[str, list[str]] = {}  # user_id -> [watchlist_ids]
-        logger.info("WatchlistService initialized")
+    def _save(self, watchlist: Watchlist) -> None:
+        get_database().put_json(
+            "watchlists", watchlist.id, watchlist.user_id, watchlist.model_dump(mode="json")
+        )
+
+    def _owned(self, user_id: str) -> list[Watchlist]:
+        return [
+            Watchlist.model_validate(row)
+            for row in get_database().list_json("watchlists", user_id)
+        ]
 
     async def create(self, user_id: str, data: WatchlistCreate) -> Watchlist:
         """Create a new watchlist.
@@ -42,7 +47,7 @@ class WatchlistService(BaseService):
             ValueError: If maximum watchlist limit reached
         """
         # Enforce max 10 watchlists per user
-        user_lists = self._user_watchlists.get(user_id, [])
+        user_lists = self._owned(user_id)
         if len(user_lists) >= 10:
             logger.warning(f"User {user_id} exceeded max watchlist limit")
             raise ValueError("Maximum 10 watchlists allowed per user")
@@ -63,9 +68,7 @@ class WatchlistService(BaseService):
             updated_at=utc_now(),
         )
 
-        # Store watchlist
-        self._storage[watchlist_id] = watchlist
-        self._user_watchlists.setdefault(user_id, []).append(watchlist_id)
+        self._save(watchlist)
 
         logger.info(f"Created watchlist {watchlist_id} for user {user_id}")
         return watchlist
@@ -80,7 +83,8 @@ class WatchlistService(BaseService):
         Returns:
             Watchlist if found and user owns it, None otherwise
         """
-        watchlist = self._storage.get(watchlist_id)
+        payload = get_database().get_json("watchlists", watchlist_id)
+        watchlist = Watchlist.model_validate(payload) if payload else None
 
         # Verify ownership
         if watchlist and watchlist.user_id != user_id:
@@ -100,8 +104,7 @@ class WatchlistService(BaseService):
         Returns:
             List of watchlists owned by the user
         """
-        watchlist_ids = self._user_watchlists.get(user_id, [])
-        watchlists = [self._storage[wid] for wid in watchlist_ids if wid in self._storage]
+        watchlists = self._owned(user_id)
 
         logger.debug(f"Listed {len(watchlists)} watchlists for user {user_id}")
         return watchlists
@@ -133,7 +136,7 @@ class WatchlistService(BaseService):
 
         # Update timestamp
         watchlist.updated_at = utc_now()
-        self._storage[watchlist_id] = watchlist
+        self._save(watchlist)
 
         logger.info(f"Updated watchlist {watchlist_id} for user {user_id}")
         return watchlist
@@ -152,13 +155,7 @@ class WatchlistService(BaseService):
         if not watchlist:
             return False
 
-        # Remove from storage
-        del self._storage[watchlist_id]
-        self._user_watchlists[user_id].remove(watchlist_id)
-
-        # Clean up empty user entries
-        if not self._user_watchlists[user_id]:
-            del self._user_watchlists[user_id]
+        get_database().delete_row("watchlists", watchlist_id, user_id)
 
         logger.info(f"Deleted watchlist {watchlist_id} for user {user_id}")
         return True
@@ -191,7 +188,7 @@ class WatchlistService(BaseService):
         if symbol_normalized not in watchlist.symbols:
             watchlist.symbols.append(symbol_normalized)
             watchlist.updated_at = utc_now()
-            self._storage[watchlist_id] = watchlist
+            self._save(watchlist)
 
             logger.info(f"Added symbol {symbol_normalized} to watchlist {watchlist_id}")
 
@@ -217,7 +214,7 @@ class WatchlistService(BaseService):
         if symbol_normalized in watchlist.symbols:
             watchlist.symbols.remove(symbol_normalized)
             watchlist.updated_at = utc_now()
-            self._storage[watchlist_id] = watchlist
+            self._save(watchlist)
 
             logger.info(f"Removed symbol {symbol_normalized} from watchlist {watchlist_id}")
 

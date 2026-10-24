@@ -295,6 +295,7 @@ class SignalResponse(BaseModel):
     key_levels: dict[str, float] | None = Field(
         default=None, description="Key price levels (support/resistance)"
     )
+    trade_plan: "TradePlan | None" = None
 
 
 class ProviderStatus(BaseModel):

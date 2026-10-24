@@ -12,6 +12,7 @@ from app.models import (
     TakeProfitTarget,
 )
 
+from .directions import Side, side_from_signal_type
 from .ict_strategies import ICTSignalResult
 from .kill_zones import KillZoneInfo
 from .smc_strategies import SMCSignalResult
@@ -20,7 +21,7 @@ from .smc_strategies import SMCSignalResult
 @dataclass(frozen=True)
 class _Candidate:
     setup: str
-    direction: str
+    direction: Side
     confidence: float
     entry_low: float
     entry_high: float
@@ -29,15 +30,11 @@ class _Candidate:
     rationale: str
 
 
-def _direction_from_signal(signal_type: str) -> str:
-    return "bullish" if any(token in signal_type for token in ("bullish", "buy")) else "bearish"
-
-
 def _candidate_from_signal(signal: ICTSignalResult | SMCSignalResult) -> _Candidate:
     signal_type = signal.signal_type.value
     return _Candidate(
         setup=signal_type.replace("_", " ").title(),
-        direction=_direction_from_signal(signal_type),
+        direction=side_from_signal_type(signal_type),
         confidence=signal.confidence,
         entry_low=signal.entry_zone[0],
         entry_high=signal.entry_zone[1],
@@ -101,7 +98,9 @@ def _checklist(
             key="invalidation",
             label="Stop-loss or invalidation exists",
             passed=candidate is not None and risk is not None and risk > 0,
-            reason=None if candidate and risk and risk > 0 else "The invalidation distance is not usable.",
+            reason=None
+            if candidate and risk and risk > 0
+            else "The invalidation distance is not usable.",
         ),
         TradePlanChecklistItem(
             key="structural_target",
@@ -125,13 +124,17 @@ def _checklist(
             key="confidence",
             label="Setup confidence is at least 70",
             passed=candidate is not None and candidate.confidence >= 70,
-            reason=None if candidate and candidate.confidence >= 70 else "Setup confidence is below 70.",
+            reason=None
+            if candidate and candidate.confidence >= 70
+            else "Setup confidence is below 70.",
         ),
         TradePlanChecklistItem(
             key="timing",
             label="Timing does not carry a severe warning",
             passed=kill_zone.is_active and kill_zone.optimal_for_entries,
-            reason=None if kill_zone.is_active and kill_zone.optimal_for_entries else "The setup is outside an optimal kill zone.",
+            reason=None
+            if kill_zone.is_active and kill_zone.optimal_for_entries
+            else "The setup is outside an optimal kill zone.",
         ),
         TradePlanChecklistItem(
             key="data_quality",
@@ -154,9 +157,11 @@ def build_trade_plan(
 ) -> TradePlan:
     """Build a Trade Plan and remove actionable prices when it is withheld."""
 
-    all_signals = [*ict_signals, *smc_signals]
+    all_signals: list[ICTSignalResult | SMCSignalResult] = [*ict_signals, *smc_signals]
     candidate = (
-        _candidate_from_signal(max(all_signals, key=lambda signal: signal.strength * signal.confidence))
+        _candidate_from_signal(
+            max(all_signals, key=lambda signal: signal.strength * signal.confidence)
+        )
         if all_signals
         else None
     )

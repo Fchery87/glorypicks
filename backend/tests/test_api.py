@@ -1,4 +1,5 @@
 """Integration tests for API endpoints."""
+
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
@@ -195,9 +196,7 @@ class TestCORSHeaders:
             },
         )
         # Preflight OPTIONS request should have CORS headers
-        assert "access-control-allow-origin" in [
-            k.lower() for k in response.headers.keys()
-        ]
+        assert "access-control-allow-origin" in [k.lower() for k in response.headers.keys()]
 
 
 class TestErrorHandling:

@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     CACHE_ENABLED: bool = True
     CACHE_TTL_SECONDS: int = 300
 
+    # Persistence. SQLite is the local store. Session tokens are signed with this secret.
+    DATABASE_PATH: str = "data/glorypicks.db"
+    SESSION_SECRET: str = "glorypicks-local-dev-secret"
+
     # WebSocket Settings
     WS_HEARTBEAT_INTERVAL: int = 30
     WS_RECONNECT_DELAY: int = 5
