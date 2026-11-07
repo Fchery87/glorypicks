@@ -83,7 +83,10 @@ app.add_middleware(
     allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "X-Requested-With", "X-Session-ID"],
+    allow_headers=[
+        "Content-Type", "Authorization", "X-Requested-With", "X-Session-ID", "X-Session-Token"
+    ],
+    expose_headers=["X-Session-Token"],
     max_age=600,
 )
 
