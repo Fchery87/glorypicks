@@ -1,7 +1,7 @@
 """Trade Journal models for tracking trading performance."""
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -9,21 +9,21 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.utils.time import utc_now
 
 
-class TradeDirection(str, Enum):
+class TradeDirection(StrEnum):
     """Trade direction enum."""
 
     LONG = "long"
     SHORT = "short"
 
 
-class TradeStatus(str, Enum):
+class TradeStatus(StrEnum):
     """Trade status enum."""
 
     OPEN = "open"
     CLOSED = "closed"
 
 
-class EmotionalState(str, Enum):
+class EmotionalState(StrEnum):
     """Emotional state during trade."""
 
     CONFIDENT = "confident"
@@ -34,7 +34,7 @@ class EmotionalState(str, Enum):
     REVENGEFUL = "revengeful"
 
 
-class ICTPatternType(str, Enum):
+class ICTPatternType(StrEnum):
     """ICT pattern types for trade tagging."""
 
     BREAKER_BLOCK_BULLISH = "breaker_block_bullish"

@@ -29,8 +29,7 @@ class WatchlistService(BaseService):
 
     def _owned(self, user_id: str) -> list[Watchlist]:
         return [
-            Watchlist.model_validate(row)
-            for row in get_database().list_json("watchlists", user_id)
+            Watchlist.model_validate(row) for row in get_database().list_json("watchlists", user_id)
         ]
 
     async def create(self, user_id: str, data: WatchlistCreate) -> Watchlist:

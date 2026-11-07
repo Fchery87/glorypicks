@@ -115,7 +115,6 @@ export async function updateAlert(alertId: string, data: UpdateAlertData): Promi
 export async function deleteAlert(alertId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/alerts/${alertId}`, {
     method: 'DELETE',
-    
   });
 
   if (!response.ok) {
@@ -129,7 +128,6 @@ export async function deleteAlert(alertId: string): Promise<void> {
 export async function resetAlert(alertId: string): Promise<Alert> {
   const response = await apiFetch(`${API_BASE}/alerts/${alertId}/reset`, {
     method: 'POST',
-    
   });
 
   if (!response.ok) {

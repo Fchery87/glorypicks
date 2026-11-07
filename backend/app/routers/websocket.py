@@ -314,7 +314,9 @@ async def websocket_endpoint(
         ]
 
         # If provider stream failed, use fallback polling
-        for subscribed_symbol, provider_client in zip(normalized_symbols, provider_clients):
+        for subscribed_symbol, provider_client in zip(
+            normalized_symbols, provider_clients, strict=False
+        ):
             if not provider_client:
                 logger.info(f"Using fallback polling for {subscribed_symbol}")
                 fallback_tasks.append(

@@ -76,7 +76,7 @@ export async function getOpenTrades(): Promise<TradeEntry[]> {
 export async function createTrade(tradeData: JournalTradeCreatePayload): Promise<TradeEntry> {
   const response = await apiFetch(`${API_URL}/journal/trades`, {
     method: 'POST',
-    
+
     body: JSON.stringify(tradeData),
   });
 
@@ -95,7 +95,7 @@ export async function appendTradeSignal(
 ): Promise<TradeEntry> {
   const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}/signals`, {
     method: 'POST',
-    
+
     body: JSON.stringify(signal),
   });
 
@@ -114,7 +114,7 @@ export async function updateTrade(
 ): Promise<TradeEntry> {
   const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}`, {
     method: 'PATCH',
-    
+
     body: JSON.stringify(updates),
   });
 
@@ -133,7 +133,7 @@ export async function closeTrade(
 ): Promise<TradeEntry> {
   const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}/close`, {
     method: 'POST',
-    
+
     body: JSON.stringify({
       ...exitData,
       exit_time: new Date().toISOString(),
@@ -152,7 +152,6 @@ export async function closeTrade(
 export async function deleteTrade(tradeId: string): Promise<void> {
   const response = await apiFetch(`${API_URL}/journal/trades/${tradeId}`, {
     method: 'DELETE',
-    
   });
 
   if (!response.ok) {

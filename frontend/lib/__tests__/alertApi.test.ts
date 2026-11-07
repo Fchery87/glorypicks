@@ -40,9 +40,9 @@ describe('alert API', () => {
     const alert = { id: 'alert-1', symbol: 'AAPL' };
     apiFetchMock.mockResolvedValue(jsonResponse(alert, 201));
 
-    await expect(
-      createAlert({ symbol: 'AAPL', alert_type: 'signal_flip' })
-    ).resolves.toEqual(alert);
+    await expect(createAlert({ symbol: 'AAPL', alert_type: 'signal_flip' })).resolves.toEqual(
+      alert
+    );
 
     expect(getAuthHeadersMock).toHaveBeenCalledOnce();
     expect(apiFetchMock).toHaveBeenCalledWith(
@@ -108,9 +108,9 @@ describe('alert API', () => {
 
   it('throws backend error details for failed create and update requests', async () => {
     apiFetchMock.mockResolvedValueOnce(jsonResponse({ detail: 'Invalid alert' }, 400));
-    await expect(
-      createAlert({ symbol: 'AAPL', alert_type: 'signal_flip' })
-    ).rejects.toThrow('Invalid alert');
+    await expect(createAlert({ symbol: 'AAPL', alert_type: 'signal_flip' })).rejects.toThrow(
+      'Invalid alert'
+    );
 
     apiFetchMock.mockResolvedValueOnce(jsonResponse({ detail: 'Alert not found' }, 404));
     await expect(updateAlert('missing', { enabled: false })).rejects.toThrow('Alert not found');

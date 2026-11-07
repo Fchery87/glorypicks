@@ -12,7 +12,6 @@ from typing import Any
 
 from app.config import settings
 
-
 _JSON_TABLES = frozenset({"watchlists", "alerts", "trades"})
 
 
@@ -154,7 +153,8 @@ class Database:
     def record_signal(self, payload: dict[str, Any], plan: dict[str, Any] | None = None) -> None:
         plan = plan or {}
         levels = plan.get("entry_zone_low"), plan.get("entry_zone_high")
-        entry = None if None in levels else (float(levels[0]) + float(levels[1])) / 2
+        low, high = levels
+        entry = None if low is None or high is None else (float(low) + float(high)) / 2
         targets = plan.get("take_profits") or []
         self.execute(
             """

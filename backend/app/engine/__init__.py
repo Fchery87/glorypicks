@@ -8,22 +8,26 @@ from app.models import (
     FairValueGap,
     ICTAnnotation,
     ICTMapResponse,
-    ICTSignalResult as ICTSignalResultModel,
-    ICTSignalType as ICTSignalTypeModel,
     Interval,
-    MiniSignal,
     MarketStructure,
+    MiniSignal,
     OrderBlock,
     Recommendation,
     SignalBreakdown,
     SignalResponse,
 )
+from app.models import (
+    ICTSignalResult as ICTSignalResultModel,
+)
+from app.models import (
+    ICTSignalType as ICTSignalTypeModel,
+)
 from app.utils.time import utc_iso_z, utc_timestamp
 
-from .ai_enhancer import AIConfidenceScore, SignalQualityScorer, MarketRegime, SignalQuality
-from .ict_phase1_enhancements import ICTPhase1Enhancements
-from .ict_map_builder import build_ict_annotations
+from .ai_enhancer import AIConfidenceScore, MarketRegime, SignalQuality, SignalQualityScorer
 from .directions import Direction, parse_direction, parse_side
+from .ict_map_builder import build_ict_annotations
+from .ict_phase1_enhancements import ICTPhase1Enhancements
 from .ict_strategies import ICTSignalResult, ICTStrategies
 from .kill_zones import KillZoneDetector, KillZoneInfo, KillZoneType
 from .smc_strategies import SMCSignalResult, SMCStrategies
@@ -637,10 +641,10 @@ class SignalEngine:
             bias_signal, bias_strength = d1_signal, d1_strength
             confirm_signal, confirm_strength = h1_signal, h1_strength
             bias_name, confirm_name = "daily", "1-hour"
-        if (
-            bias_signal == confirm_signal
-            and bias_signal in {MiniSignal.BULLISH, MiniSignal.BEARISH}
-        ):
+        if bias_signal == confirm_signal and bias_signal in {
+            MiniSignal.BULLISH,
+            MiniSignal.BEARISH,
+        }:
             voted = Recommendation.BUY if bias_signal == MiniSignal.BULLISH else Recommendation.SELL
         else:
             voted = Recommendation.NEUTRAL

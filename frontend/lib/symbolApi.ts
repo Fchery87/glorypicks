@@ -68,7 +68,6 @@ export async function searchSymbols(
   signal?: AbortSignal
 ): Promise<SymbolSearchResponse> {
   const response = await apiFetch(buildSymbolSearchUrl(query, assetClass), {
-    
     signal,
   });
   if (!response.ok) throw new Error(`Symbol search failed (${response.status})`);
@@ -78,11 +77,9 @@ export async function searchSymbols(
 
   const [recentResponse, trendingResponse] = await Promise.all([
     fetch(`${apiBaseUrl()}/symbols/recent`, {
-      
       signal,
     }),
     fetch(`${apiBaseUrl()}/symbols/trending`, {
-      
       signal,
     }),
   ]);
@@ -100,7 +97,6 @@ export async function searchSymbols(
 export async function recordRecentSymbol(symbol: string): Promise<void> {
   const response = await apiFetch(buildRecentSymbolUrl(symbol), {
     method: 'POST',
-    
   });
   if (!response.ok) throw new Error(`Unable to record recent symbol (${response.status})`);
 }

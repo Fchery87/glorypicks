@@ -158,7 +158,10 @@ async def get_signal(
             _signal_engine = SignalEngine()
 
         signal = _signal_engine.generate_signal(
-            symbol=symbol, candles_15m=candles_15m, candles_1h=candles_1h, candles_1d=candles_1d,
+            symbol=symbol,
+            candles_15m=candles_15m,
+            candles_1h=candles_1h,
+            candles_1d=candles_1d,
             style=style,
         )
 
@@ -183,7 +186,9 @@ async def get_signal(
 
 
 @router.get("/signal/{symbol}/history")
-async def get_signal_history(symbol: str, limit: int = Query(50, ge=1, le=200)) -> list[dict[str, Any]]:
+async def get_signal_history(
+    symbol: str, limit: int = Query(50, ge=1, le=200)
+) -> list[dict[str, Any]]:
     """Return recorded signals for one symbol, newest first."""
     return get_database().list_signals(symbol, limit)
 

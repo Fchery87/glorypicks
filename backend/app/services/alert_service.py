@@ -14,11 +14,10 @@ This service handles:
 - WebSocket notification broadcasting
 """
 
+import json
 import uuid
 from collections import defaultdict
 from datetime import datetime, timedelta
-
-import json
 
 from app.db import get_database
 from app.models import Recommendation, Signal

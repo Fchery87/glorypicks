@@ -5,9 +5,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.routers.dependencies import get_session_id
-
 from app.models.watchlist import Watchlist, WatchlistCreate, WatchlistUpdate
+from app.routers.dependencies import get_session_id
 from app.services.watchlist_service import WatchlistService
 
 logger = logging.getLogger(__name__)

@@ -1,13 +1,13 @@
 """Pydantic models for API contracts."""
 
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 
-class AssetClass(str, Enum):
+class AssetClass(StrEnum):
     """Asset class enum."""
 
     STOCK = "stock"
@@ -16,7 +16,7 @@ class AssetClass(str, Enum):
     INDEX = "index"
 
 
-class Interval(str, Enum):
+class Interval(StrEnum):
     """Timeframe interval enum."""
 
     M1 = "1m"
@@ -31,7 +31,7 @@ class Interval(str, Enum):
     MO1 = "1M"
 
 
-class Recommendation(str, Enum):
+class Recommendation(StrEnum):
     """Signal recommendation enum."""
 
     BUY = "Buy"
@@ -39,7 +39,7 @@ class Recommendation(str, Enum):
     NEUTRAL = "Neutral"
 
 
-class MiniSignal(str, Enum):
+class MiniSignal(StrEnum):
     """Per-timeframe signal enum."""
 
     BULLISH = "Bullish"
@@ -48,7 +48,7 @@ class MiniSignal(str, Enum):
 
 
 # ICT Strategy Models
-class ICTSignalType(str, Enum):
+class ICTSignalType(StrEnum):
     """ICT signal types."""
 
     BULLISH_BREAKER = "bullish_breaker"

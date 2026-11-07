@@ -6,10 +6,12 @@ A plan is not a result until both the entry and one exit can be seen.
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.models import Candle
 
 
-def _entry(plan: dict) -> float | None:
+def _entry(plan: dict[str, Any]) -> float | None:
     low = plan.get("entry_zone_low")
     high = plan.get("entry_zone_high")
     if low is None or high is None:
@@ -18,11 +20,11 @@ def _entry(plan: dict) -> float | None:
 
 
 def score_plan(
-    plan: dict,
+    plan: dict[str, Any],
     later: list[Candle],
     spread: float = 0.0,
     delay_bars: int = 1,
-) -> dict:
+) -> dict[str, Any]:
     """Return whether the delayed fill reached the stop or the first target."""
     entry = _entry(plan)
     stop = plan.get("stop_loss")
@@ -35,7 +37,9 @@ def score_plan(
         return {"status": "waiting", "reason": "No price bar has arrived after the delay."}
 
     slip = spread / 2
-    fill = later[delay_bars].open + slip if direction == "bullish" else later[delay_bars].open - slip
+    fill = (
+        later[delay_bars].open + slip if direction == "bullish" else later[delay_bars].open - slip
+    )
     risk = abs(fill - float(stop))
     if risk == 0:
         return {"status": "incomplete", "reason": "The stop is on the fill price."}

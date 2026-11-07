@@ -7,9 +7,9 @@ from dataclasses import dataclass
 
 from app.models import (
     Candle,
+    TakeProfitTarget,
     TradePlan,
     TradePlanChecklistItem,
-    TakeProfitTarget,
 )
 
 from .directions import Side, side_from_signal_type

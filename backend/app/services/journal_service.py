@@ -83,14 +83,11 @@ class TradeJournalService(BaseService):
     def _get_user_trades(self, user_id: str) -> list[TradeEntry]:
         """Get all trades for a user from the database."""
         return [
-            TradeEntry.model_validate(row)
-            for row in get_database().list_json("trades", user_id)
+            TradeEntry.model_validate(row) for row in get_database().list_json("trades", user_id)
         ]
 
     def _save_trade(self, trade: TradeEntry) -> None:
-        get_database().put_json(
-            "trades", trade.id, trade.user_id, trade.model_dump(mode="json")
-        )
+        get_database().put_json("trades", trade.id, trade.user_id, trade.model_dump(mode="json"))
 
     def _is_premium_user(self, user_id: str) -> bool:
         """A session is premium only when the server has granted it."""

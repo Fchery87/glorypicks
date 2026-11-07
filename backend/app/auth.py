@@ -23,9 +23,7 @@ _TOKEN_HEADER = "X-Session-Token"
 
 def _sign(session_id: str) -> str:
     body = base64.urlsafe_b64encode(session_id.encode()).decode().rstrip("=")
-    digest = hmac.new(
-        settings.SESSION_SECRET.encode(), body.encode(), hashlib.sha256
-    ).hexdigest()
+    digest = hmac.new(settings.SESSION_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()
     return f"{body}.{digest}"
 
 
@@ -40,9 +38,7 @@ def read_token(token: str) -> str | None:
     body, separator, digest = token.partition(".")
     if not body or not separator:
         return None
-    expected = hmac.new(
-        settings.SESSION_SECRET.encode(), body.encode(), hashlib.sha256
-    ).hexdigest()
+    expected = hmac.new(settings.SESSION_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()
     if not hmac.compare_digest(expected, digest):
         return None
     padding = "=" * (-len(body) % 4)
